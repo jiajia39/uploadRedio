@@ -1,0 +1,329 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("MSSQL_URL")
+}
+
+model Basic_Option {
+  iAutoID    Int       @id(map: "PK_Basic_Option") @default(autoincrement())
+  cType      String?   @db.NVarChar(50)
+  cName      String?   @db.NVarChar(255)
+  cValue     String?   @db.NVarChar(255)
+  cMemo      String?   @db.NVarChar(255)
+  dAddTime   DateTime? @db.DateTime
+  cOperation String?   @db.NVarChar(50)
+}
+
+model TW_BPID {
+  cGuid           String    @id(map: "PK_TW_BPID") @db.UniqueIdentifier
+  cBPID           String?   @db.NVarChar(20)
+  cFunnelName     String?   @db.NVarChar(255)
+  cAccountManager String?   @db.NVarChar(255)
+  cCustomerName   String?   @db.NVarChar(255)
+  cType           String?   @db.NVarChar(20)
+  cBU             String?   @db.NVarChar(50)
+  cDescription    String?   @db.NVarChar(255)
+  cMemo           String?   @db.NVarChar(255)
+  dAddTime        DateTime? @db.DateTime
+  dLastUpdateTime DateTime? @db.DateTime
+  iUpdates        Int?
+  bEnable         Boolean?
+}
+
+model TW_POC {
+  cGuid       String    @id(map: "PK_TW_POC") @db.UniqueIdentifier
+  cPocName    String?   @db.NVarChar(50)
+  cYear       String?   @db.NVarChar(20)
+  cContractID String?   @db.NVarChar(50)
+  cPONumber   String?   @db.NVarChar(50)
+  cBPID       String?   @db.NVarChar(50)
+  cEUName     String?   @db.NVarChar(255)
+  cIONumber   String?   @db.NVarChar(50)
+  cProposalID String?   @db.NVarChar(50)
+  cMemo       String?   @db.NVarChar(255)
+  dAddTime    DateTime? @db.DateTime
+}
+
+model TW_TimesWork {
+  cGuid            String    @id(map: "PK_TW_TimesWork") @db.UniqueIdentifier
+  cUserId          String?   @db.NVarChar(20)
+  cUserName        String?   @db.NVarChar(50)
+  dDate            DateTime? @db.Date
+  cBpidGuid        String?   @db.UniqueIdentifier
+  cBPID            String?   @db.NVarChar(255)
+  cFunnelName      String?   @db.NVarChar(255)
+  cCustomerName    String?   @db.NVarChar(255)
+  cTaskType        String?   @db.NVarChar(50)
+  cTask            String?   @db.NVarChar(50)
+  cTaskDescription String?   @db.NVarChar(255)
+  iHour            Int?
+  bBillable        Boolean?
+  cPocName         String?   @db.NVarChar(50)
+  dAddTime         DateTime? @db.DateTime
+  cMemo            String?   @db.NVarChar(255)
+  dLastUpdateTime  DateTime? @db.DateTime
+  iUpdates         Int?
+}
+
+model Mes_Route {
+  cGuid           String    @id(map: "PK_Mes_Route") @db.UniqueIdentifier
+  cPartNumber     String?   @db.NVarChar(50)
+  cProductName    String?   @db.NVarChar(50)
+  cRouteCode      String?   @db.NVarChar(50)
+  cRouteName      String?   @db.NVarChar(50)
+  cRouteVersion   String?   @db.NVarChar(50)
+  cMemo           String?   @db.NVarChar(50)
+  iStatus         Int?
+  cCreateUserGuid String?   @db.UniqueIdentifier
+  cCreateUserId   String?   @db.VarChar(20)
+  cCreateUserName String?   @db.NVarChar(50)
+  dCreateTime     DateTime? @db.DateTime
+  cModifyUserGuid String?   @db.UniqueIdentifier
+  cModifyUserId   String?   @db.VarChar(20)
+  cModifyUserName String?   @db.NVarChar(50)
+  dModifyTime     DateTime? @db.DateTime
+}
+
+model Mes_RouteDetail {
+  cGuid           String    @id(map: "PK_Mes_RouteDetail") @db.UniqueIdentifier
+  cRouteGuid      String?   @db.UniqueIdentifier
+  iOrder          Int?
+  cOpNumber       String?   @db.NVarChar(50)
+  cOpName         String?   @db.NVarChar(50)
+  cOpDescription  String?   @db.NVarChar(50)
+  iStatus         Int?
+  cCreateUserGuid String?   @db.UniqueIdentifier
+  cCreateUserId   String?   @db.VarChar(20)
+  cCreateUserName String?   @db.NVarChar(50)
+  dCreateTime     DateTime? @db.DateTime
+  cModifyUserGuid String?   @db.UniqueIdentifier
+  cModifyUserId   String?   @db.VarChar(20)
+  cModifyUserName String?   @db.NVarChar(50)
+  dModifyTime     DateTime? @db.DateTime
+}
+
+model Mes_WorkOrder {
+  cGuid           String    @id(map: "PK_Mes_WorkOrder") @db.UniqueIdentifier
+  cWorkOrder      String?   @db.NVarChar(50)
+  cCustomerCode   String?   @db.NVarChar(50)
+  cCustomerName   String?   @db.NVarChar(50)
+  cRouteGuid      String?   @db.UniqueIdentifier
+  cPartNumber     String?   @db.NVarChar(50)
+  cProductName    String?   @db.NVarChar(50)
+  cRouteCode      String?   @db.NVarChar(50)
+  cRouteName      String?   @db.NVarChar(50)
+  cRouteVersion   String?   @db.NVarChar(50)
+  iPriority       Int?
+  iStatus         Int?
+  iPlanQty        Int?
+  iQtyGood        Int?
+  iQtyBad         Int?
+  iQty            Int?
+  dPlanStart      DateTime? @db.DateTime
+  dPlanEnd        DateTime? @db.DateTime
+  dActualStart    DateTime? @db.DateTime
+  dActualEnd      DateTime? @db.DateTime
+  cCreateUserGuid String?   @db.UniqueIdentifier
+  cCreateUserId   String?   @db.VarChar(20)
+  cCreateUserName String?   @db.NVarChar(50)
+  dCreateTime     DateTime? @db.DateTime
+  cModifyUserGuid String?   @db.UniqueIdentifier
+  cModifyUserId   String?   @db.VarChar(20)
+  cModifyUserName String?   @db.NVarChar(50)
+  dModifyTime     DateTime? @db.DateTime
+}
+
+model Mes_WorkOrderDetail {
+  cGuid           String    @id(map: "PK_Mes_WorkOrderDetail") @db.UniqueIdentifier
+  cWorkOrderGuid  String?   @db.UniqueIdentifier
+  cWorkOrder      String?   @db.NVarChar(50)
+  iOrder          Int?
+  cOpNumber       String?   @db.NVarChar(50)
+  cOpName         String?   @db.NVarChar(50)
+  cOpDescription  String?   @db.NVarChar(50)
+  iStatus         Int?
+  iPlanQty        Int?
+  iQtyGood        Int?
+  iQtyBad         Int?
+  iQty            Int?
+  iPercent        Decimal?  @db.Decimal(10, 2)
+  dPlanStart      DateTime? @db.DateTime
+  dPlanEnd        DateTime? @db.DateTime
+  dActualStart    DateTime? @db.DateTime
+  dActualEnd      DateTime? @db.DateTime
+  cCreateUserGuid String?   @db.UniqueIdentifier
+  cCreateUserId   String?   @db.VarChar(20)
+  cCreateUserName String?   @db.NVarChar(50)
+  dCreateTime     DateTime? @db.DateTime
+  cModifyUserGuid String?   @db.UniqueIdentifier
+  cModifyUserId   String?   @db.VarChar(20)
+  cModifyUserName String?   @db.NVarChar(50)
+  dModifyTime     DateTime? @db.DateTime
+}
+
+model Sys_Dictionary {
+  cGuid           String    @id(map: "PK_Sys_Dictionary") @db.UniqueIdentifier
+  cName           String?   @db.NVarChar(50)
+  cValue          String?   @db.NVarChar(50)
+  cCategory       String?   @db.NVarChar(50)
+  iStatus         Int?
+  cCreateUserGuid String?   @db.UniqueIdentifier
+  cCreateUserId   String?   @db.VarChar(20)
+  cCreateUserName String?   @db.NVarChar(50)
+  dCreateTime     DateTime? @db.DateTime
+  cModifyUserGuid String?   @db.UniqueIdentifier
+  cModifyUserId   String?   @db.VarChar(20)
+  cModifyUserName String?   @db.NVarChar(50)
+  dModifyTime     DateTime? @db.DateTime
+}
+
+model Sys_Job {
+  cGuid          String    @id(map: "PK__Sys_Job__1CE36B85D3DE359B") @db.UniqueIdentifier
+  create_time    DateTime? @db.DateTime
+  update_time    DateTime? @db.DateTime
+  code           String?   @unique(map: "UK1fu1amroa8n5mma3q9tey7bu9") @db.VarChar(255)
+  cron           String?   @db.VarChar(255)
+  handler        String?   @db.VarChar(255)
+  handler_param  String?   @db.VarChar(2000)
+  name           String?   @db.VarChar(255)
+  notify_emails  String?   @db.VarChar(2000)
+  remark         String?   @db.VarChar(2000)
+  status         Boolean?
+  create_user_id String?   @db.VarChar(20)
+  update_user_id String?   @db.VarChar(20)
+}
+
+model Sys_Job_Log {
+  cGuid         String    @id(map: "PK__Sys_Job___1CE36B85C2AE6BCF") @db.UniqueIdentifier
+  end_time      DateTime? @db.DateTime
+  error_info    String?   @db.VarChar(Max)
+  handler_param String?   @db.VarChar(255)
+  result_info   String?   @db.VarChar(2000)
+  start_time    DateTime? @db.DateTime
+  status        Boolean?
+  job_id        String    @db.UniqueIdentifier
+}
+
+model Sys_Job_Mail {
+  cGuid          String    @id(map: "PK__Sys_Job___1CE36B85E70EB96F") @db.UniqueIdentifier
+  create_time    DateTime? @db.DateTime
+  update_time    DateTime? @db.DateTime
+  cc             String?   @db.VarChar(255)
+  content        String?   @db.VarChar(Max)
+  recipient      String?   @db.VarChar(255)
+  subject        String?   @db.VarChar(255)
+  create_user_id String?   @db.VarChar(20)
+  update_user_id String?   @db.VarChar(20)
+}
+
+model Sys_Log {
+  cGuid        String    @id(map: "PK_Sys_Logs") @db.UniqueIdentifier
+  dTimeStamp   DateTime? @db.DateTime
+  cModule      String?   @db.NVarChar(50)
+  cActionType  String?   @db.NVarChar(50)
+  cIP          String?   @db.NVarChar(50)
+  cUserGuid    String?   @db.UniqueIdentifier
+  cUserId      String?   @db.VarChar(20)
+  cUserName    String?   @db.NVarChar(50)
+  cObjectValue String?   @db.NVarChar(255)
+  cDescription String?   @db.NVarChar(255)
+}
+
+model Sys_Login_Log {
+  cGuid       String    @id(map: "PK__Sys_logi__1CE36B855AB0C8E4") @db.UniqueIdentifier
+  browser     String?   @db.VarChar(255)
+  device_type String?   @db.VarChar(255)
+  ip          String?   @db.VarChar(255)
+  login_time  DateTime? @db.DateTime
+  region      String?   @db.VarChar(255)
+  system_name String?   @db.VarChar(255)
+  token       String?   @db.VarChar(Max)
+  userid      String?   @db.VarChar(20)
+}
+
+model Sys_Menu {
+  cGuid       String    @id(map: "PK_Sys_Menu") @db.UniqueIdentifier
+  text        String?   @db.VarChar(50)
+  ability     String?   @db.NVarChar(255)
+  link        String?   @db.VarChar(255)
+  i18n        String?   @db.VarChar(255)
+  icon        String?   @db.VarChar(50)
+  memo        String?   @db.NVarChar(255)
+  status      Int?
+  sort        Int?
+  cParentGuid String?   @db.UniqueIdentifier
+  dAddTime    DateTime? @db.DateTime
+}
+
+model Sys_Org {
+  cGuid           String    @id(map: "PK_Sys_Org") @db.UniqueIdentifier
+  cOrgCode        String?   @db.NVarChar(50)
+  cOrgName        String?   @db.NVarChar(255)
+  cOrgType        String?   @db.NVarChar(50)
+  cParentGuid     String?   @db.UniqueIdentifier
+  cParentOrgCode  String?   @db.NVarChar(20)
+  cParentOrgName  String?   @db.NVarChar(255)
+  cHead           String?   @db.NVarChar(50)
+  cHeadUserGuid   String?   @db.UniqueIdentifier
+  cHeadUserId     String?   @db.VarChar(20)
+  iStatus         Int?
+  cCreateUserGuid String?   @db.UniqueIdentifier
+  cCreateUserId   String?   @db.VarChar(20)
+  cCreateUserName String?   @db.NVarChar(50)
+  dCreateTime     DateTime? @db.DateTime
+  cModifyUserGuid String?   @db.UniqueIdentifier
+  cModifyUserId   String?   @db.VarChar(20)
+  cModifyUserName String?   @db.NVarChar(50)
+  dModifyTime     DateTime? @db.DateTime
+}
+
+model Sys_Role {
+  cGuid        String    @id(map: "PK_Sys_Role") @db.UniqueIdentifier
+  cRoleCode    String?   @db.NVarChar(50)
+  cRoleName    String?   @db.NVarChar(50)
+  cDescription String?   @db.NVarChar(255)
+  dAddTime     DateTime? @db.DateTime
+}
+
+model Sys_RoleMenu {
+  cGuid       String    @id(map: "PK_Sys_RoleMenu") @db.UniqueIdentifier
+  cMenuGuid   String    @db.UniqueIdentifier
+  cRoleGuid   String    @db.UniqueIdentifier
+  bSelect     Boolean
+  text        String?   @db.VarChar(50)
+  ability     String?   @db.NVarChar(255)
+  link        String?   @db.VarChar(255)
+  i18n        String?   @db.VarChar(255)
+  icon        String?   @db.VarChar(50)
+  memo        String?   @db.NVarChar(255)
+  status      Int?
+  sort        Int?
+  cParentGuid String?   @db.UniqueIdentifier
+  dAddTime    DateTime? @db.DateTime
+}
+
+model Sys_User {
+  cGuid        String    @db.UniqueIdentifier
+  userid       String    @db.NVarChar(20)
+  username     String?   @db.NVarChar(50)
+  lastname     String?   @db.NVarChar(50)
+  firstname    String?   @db.NVarChar(50)
+  passwordHash String?   @db.NVarChar(50)
+  salt         String?   @db.UniqueIdentifier
+  avatar       String?   @db.NVarChar(255)
+  email        String?   @db.NVarChar(50)
+  signature    String?   @db.NVarChar(50)
+  title        String?   @db.NVarChar(50)
+  group        String?   @db.NVarChar(50)
+  notifyCount  Int?
+  country      String?   @db.NVarChar(50)
+  address      String?   @db.NVarChar(255)
+  phone        String?   @db.NVarChar(50)
+  dAddTime     DateTime? @db.DateTime
+  role         String?   @db.NVarChar(50)
+
+  @@id([cGuid, userid], map: "PK_User")
+}
