@@ -32,8 +32,8 @@ export const SENTRY_DSN = process.env.SENTRY_DSN || null;
 export const INFLUX_URL = 'https://iad.raopc.com:7086/';
 
 export const INFLUX_TOKEN =
-  'Akk_WhewHbKyTnL_0eNSxOSWlr9YELFSkRpyQThVOHX8pcO2P2fb7iC7uo5TJlMD7psv0Ez7MDIptbJ4c8r7KQ==';
+      'kVAfPlHgzR-ssVptzXffkej9cBxxge4zCOOW7aGl9eCVniMlbnyyctMnnvHKMYLxdPVKL9tBMp3V-CbLyrid1g==';
 
-export const INFLUX_ORG = 'raiad';
+export const INFLUX_ORG = 'trz';
 
-export const INFLUX_BUCKET = 'iadpoc2022';
+export const INFLUX_BUCKET = 'L85PEMS';

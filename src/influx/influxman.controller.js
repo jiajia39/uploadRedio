@@ -16,7 +16,7 @@ const controller = (() => {
 
   /**
    * @swagger
-   * /api/influx/influxman/getDaqValue:
+   * /api/influx/influxman/getLatestData:
    *   get:
    *     security:
    *       - Authorization: []
@@ -25,31 +25,45 @@ const controller = (() => {
    *     produces:
    *       - application/json
    *     parameters:
-   *       - name: tagid
-   *         description: prodkpi's id.
+   *       - name: measurement
+   *         description: Meassurement in Influxdb Bucket.
    *         in: query
    *         type: string
-   *       - name: dStart
-   *         description: prodkpi's id.
+   *       - name: field
+   *         description: Field in Influxdb Meassurement.
+   *         in: query
+   *         type: string
+   *       - name: start
+   *         description: Start time to query, -1h means starting 1 hour before.
    *         in: query
    *         type: date
-   *       - name: dEnd
-   *         description: prodkpi's id.
+   *       - name: interval
+   *         description: Query time interval, 1h means starting 1 hour.
    *         in: query
    *         type: date
+   *       - name: queryType
+   *         description: Mean or Last data to return
    *     responses:
    *       200:
-   *         description: cofcomenus
+   *         description: Influxdb data by query conditions
    *         schema:
    *           type: object
    */
-  router.get('/getDaqValue', async (req, res) => {
-    const tagid = String(req.query.tagid);
-    const dStart = new Date(req.query.dStart);
-    const dEnd = new Date(req.query.dEnd);
-    const data = await service.getDaqValue(tagid, dStart, dEnd);
+  router.get('/getInfluxData', async (req, res) => {
+    const measurement = String(req.query.measurement);
+    const field = String(req.query.field);
+    const start = req.query.start;
+    const interval = req.query.interval || '10s';
+    const queryType = req.query.queryType || 'mean';
+    const data = await service.getInfluxData(measurement, field, start, interval, queryType);
 
-    res.json(data);
+    res.json({
+      Key: field,
+      TimeRange: start,
+      TimeInterval: interval,
+      QueryType: queryType,
+      Values: data,
+    });
   });
 
   return router;

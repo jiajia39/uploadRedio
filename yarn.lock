@@ -1328,7 +1328,12 @@
   dependencies:
     "ip-address" "^5.8.8"
 
-"@influxdata/influxdb-client@^1.29.0":
+"@influxdata/influxdb-client-apis@^1.31.0":
+  "integrity" "sha512-6ALGNLxtfffhICobOdj13Z6vj6gdQVOzVXPoPNd+w7V60zrbGhTqzXHV1KMZ/lzOb6YkRTRODbxz4W/b/7N5hg=="
+  "resolved" "https://registry.npmjs.org/@influxdata/influxdb-client-apis/-/influxdb-client-apis-1.31.0.tgz"
+  "version" "1.31.0"
+
+"@influxdata/influxdb-client@*", "@influxdata/influxdb-client@^1.29.0":
   "integrity" "sha512-9cup31a0S5Px1q5Bj9oyI8d84IWfv6nhldNuL8UNsiFPDD5SPw1QesPL4Oo+rR3Lbzbilt269NJOK5JOkmPyYA=="
   "resolved" "https://registry.npmjs.org/@influxdata/influxdb-client/-/influxdb-client-1.29.0.tgz"
   "version" "1.29.0"
@@ -5886,6 +5891,11 @@
   dependencies:
     "once" "^1.3.0"
     "wrappy" "1"
+
+"influx@^5.0.0-alpha.4":
+  "integrity" "sha512-oQ3HuLG7wXAzBtcasPA93RIVmB3dRAzcjPgepa/VksiIZfu1Sj7g2QPTaFLnvfgLDPxDJUgtI7i5+k5iyKm/lg=="
+  "resolved" "https://registry.npmjs.org/influx/-/influx-5.0.0-alpha.4.tgz"
+  "version" "5.0.0-alpha.4"
 
 "inherits@^2.0.1", "inherits@^2.0.3", "inherits@^2.0.4", "inherits@~2.0.1", "inherits@~2.0.3", "inherits@2":
   "integrity" "sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ=="
