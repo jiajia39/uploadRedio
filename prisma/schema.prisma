@@ -7,163 +7,6 @@ datasource db {
   url      = env("MSSQL_URL")
 }
 
-model Basic_Option {
-  iAutoID    Int       @id(map: "PK_Basic_Option") @default(autoincrement())
-  cType      String?   @db.NVarChar(50)
-  cName      String?   @db.NVarChar(255)
-  cValue     String?   @db.NVarChar(255)
-  cMemo      String?   @db.NVarChar(255)
-  dAddTime   DateTime? @db.DateTime
-  cOperation String?   @db.NVarChar(50)
-}
-
-model TW_BPID {
-  cGuid           String    @id(map: "PK_TW_BPID") @db.UniqueIdentifier
-  cBPID           String?   @db.NVarChar(20)
-  cFunnelName     String?   @db.NVarChar(255)
-  cAccountManager String?   @db.NVarChar(255)
-  cCustomerName   String?   @db.NVarChar(255)
-  cType           String?   @db.NVarChar(20)
-  cBU             String?   @db.NVarChar(50)
-  cDescription    String?   @db.NVarChar(255)
-  cMemo           String?   @db.NVarChar(255)
-  dAddTime        DateTime? @db.DateTime
-  dLastUpdateTime DateTime? @db.DateTime
-  iUpdates        Int?
-  bEnable         Boolean?
-}
-
-model TW_POC {
-  cGuid       String    @id(map: "PK_TW_POC") @db.UniqueIdentifier
-  cPocName    String?   @db.NVarChar(50)
-  cYear       String?   @db.NVarChar(20)
-  cContractID String?   @db.NVarChar(50)
-  cPONumber   String?   @db.NVarChar(50)
-  cBPID       String?   @db.NVarChar(50)
-  cEUName     String?   @db.NVarChar(255)
-  cIONumber   String?   @db.NVarChar(50)
-  cProposalID String?   @db.NVarChar(50)
-  cMemo       String?   @db.NVarChar(255)
-  dAddTime    DateTime? @db.DateTime
-}
-
-model TW_TimesWork {
-  cGuid            String    @id(map: "PK_TW_TimesWork") @db.UniqueIdentifier
-  cUserId          String?   @db.NVarChar(20)
-  cUserName        String?   @db.NVarChar(50)
-  dDate            DateTime? @db.Date
-  cBpidGuid        String?   @db.UniqueIdentifier
-  cBPID            String?   @db.NVarChar(255)
-  cFunnelName      String?   @db.NVarChar(255)
-  cCustomerName    String?   @db.NVarChar(255)
-  cTaskType        String?   @db.NVarChar(50)
-  cTask            String?   @db.NVarChar(50)
-  cTaskDescription String?   @db.NVarChar(255)
-  iHour            Int?
-  bBillable        Boolean?
-  cPocName         String?   @db.NVarChar(50)
-  dAddTime         DateTime? @db.DateTime
-  cMemo            String?   @db.NVarChar(255)
-  dLastUpdateTime  DateTime? @db.DateTime
-  iUpdates         Int?
-}
-
-model Mes_Route {
-  cGuid           String    @id(map: "PK_Mes_Route") @db.UniqueIdentifier
-  cPartNumber     String?   @db.NVarChar(50)
-  cProductName    String?   @db.NVarChar(50)
-  cRouteCode      String?   @db.NVarChar(50)
-  cRouteName      String?   @db.NVarChar(50)
-  cRouteVersion   String?   @db.NVarChar(50)
-  cMemo           String?   @db.NVarChar(50)
-  iStatus         Int?
-  cCreateUserGuid String?   @db.UniqueIdentifier
-  cCreateUserId   String?   @db.VarChar(20)
-  cCreateUserName String?   @db.NVarChar(50)
-  dCreateTime     DateTime? @db.DateTime
-  cModifyUserGuid String?   @db.UniqueIdentifier
-  cModifyUserId   String?   @db.VarChar(20)
-  cModifyUserName String?   @db.NVarChar(50)
-  dModifyTime     DateTime? @db.DateTime
-}
-
-model Mes_RouteDetail {
-  cGuid           String    @id(map: "PK_Mes_RouteDetail") @db.UniqueIdentifier
-  cRouteGuid      String?   @db.UniqueIdentifier
-  iOrder          Int?
-  cOpNumber       String?   @db.NVarChar(50)
-  cOpName         String?   @db.NVarChar(50)
-  cOpDescription  String?   @db.NVarChar(50)
-  iStatus         Int?
-  cCreateUserGuid String?   @db.UniqueIdentifier
-  cCreateUserId   String?   @db.VarChar(20)
-  cCreateUserName String?   @db.NVarChar(50)
-  dCreateTime     DateTime? @db.DateTime
-  cModifyUserGuid String?   @db.UniqueIdentifier
-  cModifyUserId   String?   @db.VarChar(20)
-  cModifyUserName String?   @db.NVarChar(50)
-  dModifyTime     DateTime? @db.DateTime
-}
-
-model Mes_WorkOrder {
-  cGuid           String    @id(map: "PK_Mes_WorkOrder") @db.UniqueIdentifier
-  cWorkOrder      String?   @db.NVarChar(50)
-  cCustomerCode   String?   @db.NVarChar(50)
-  cCustomerName   String?   @db.NVarChar(50)
-  cRouteGuid      String?   @db.UniqueIdentifier
-  cPartNumber     String?   @db.NVarChar(50)
-  cProductName    String?   @db.NVarChar(50)
-  cRouteCode      String?   @db.NVarChar(50)
-  cRouteName      String?   @db.NVarChar(50)
-  cRouteVersion   String?   @db.NVarChar(50)
-  iPriority       Int?
-  iStatus         Int?
-  iPlanQty        Int?
-  iQtyGood        Int?
-  iQtyBad         Int?
-  iQty            Int?
-  dPlanStart      DateTime? @db.DateTime
-  dPlanEnd        DateTime? @db.DateTime
-  dActualStart    DateTime? @db.DateTime
-  dActualEnd      DateTime? @db.DateTime
-  cCreateUserGuid String?   @db.UniqueIdentifier
-  cCreateUserId   String?   @db.VarChar(20)
-  cCreateUserName String?   @db.NVarChar(50)
-  dCreateTime     DateTime? @db.DateTime
-  cModifyUserGuid String?   @db.UniqueIdentifier
-  cModifyUserId   String?   @db.VarChar(20)
-  cModifyUserName String?   @db.NVarChar(50)
-  dModifyTime     DateTime? @db.DateTime
-}
-
-model Mes_WorkOrderDetail {
-  cGuid           String    @id(map: "PK_Mes_WorkOrderDetail") @db.UniqueIdentifier
-  cWorkOrderGuid  String?   @db.UniqueIdentifier
-  cWorkOrder      String?   @db.NVarChar(50)
-  iOrder          Int?
-  cOpNumber       String?   @db.NVarChar(50)
-  cOpName         String?   @db.NVarChar(50)
-  cOpDescription  String?   @db.NVarChar(50)
-  iStatus         Int?
-  iPlanQty        Int?
-  iQtyGood        Int?
-  iQtyBad         Int?
-  iQty            Int?
-  iPercent        Decimal?  @db.Decimal(10, 2)
-  dPlanStart      DateTime? @db.DateTime
-  dPlanEnd        DateTime? @db.DateTime
-  dActualStart    DateTime? @db.DateTime
-  dActualEnd      DateTime? @db.DateTime
-  cCreateUserGuid String?   @db.UniqueIdentifier
-  cCreateUserId   String?   @db.VarChar(20)
-  cCreateUserName String?   @db.NVarChar(50)
-  dCreateTime     DateTime? @db.DateTime
-  cModifyUserGuid String?   @db.UniqueIdentifier
-  cModifyUserId   String?   @db.VarChar(20)
-  cModifyUserName String?   @db.NVarChar(50)
-  dModifyTime     DateTime? @db.DateTime
-}
-
 model Sys_Dictionary {
   cGuid           String    @id(map: "PK_Sys_Dictionary") @db.UniqueIdentifier
   cName           String?   @db.NVarChar(50)
@@ -178,45 +21,6 @@ model Sys_Dictionary {
   cModifyUserId   String?   @db.VarChar(20)
   cModifyUserName String?   @db.NVarChar(50)
   dModifyTime     DateTime? @db.DateTime
-}
-
-model Sys_Job {
-  cGuid          String    @id(map: "PK__Sys_Job__1CE36B85D3DE359B") @db.UniqueIdentifier
-  create_time    DateTime? @db.DateTime
-  update_time    DateTime? @db.DateTime
-  code           String?   @unique(map: "UK1fu1amroa8n5mma3q9tey7bu9") @db.VarChar(255)
-  cron           String?   @db.VarChar(255)
-  handler        String?   @db.VarChar(255)
-  handler_param  String?   @db.VarChar(2000)
-  name           String?   @db.VarChar(255)
-  notify_emails  String?   @db.VarChar(2000)
-  remark         String?   @db.VarChar(2000)
-  status         Boolean?
-  create_user_id String?   @db.VarChar(20)
-  update_user_id String?   @db.VarChar(20)
-}
-
-model Sys_Job_Log {
-  cGuid         String    @id(map: "PK__Sys_Job___1CE36B85C2AE6BCF") @db.UniqueIdentifier
-  end_time      DateTime? @db.DateTime
-  error_info    String?   @db.VarChar(Max)
-  handler_param String?   @db.VarChar(255)
-  result_info   String?   @db.VarChar(2000)
-  start_time    DateTime? @db.DateTime
-  status        Boolean?
-  job_id        String    @db.UniqueIdentifier
-}
-
-model Sys_Job_Mail {
-  cGuid          String    @id(map: "PK__Sys_Job___1CE36B85E70EB96F") @db.UniqueIdentifier
-  create_time    DateTime? @db.DateTime
-  update_time    DateTime? @db.DateTime
-  cc             String?   @db.VarChar(255)
-  content        String?   @db.VarChar(Max)
-  recipient      String?   @db.VarChar(255)
-  subject        String?   @db.VarChar(255)
-  create_user_id String?   @db.VarChar(20)
-  update_user_id String?   @db.VarChar(20)
 }
 
 model Sys_Log {
@@ -326,4 +130,39 @@ model Sys_User {
   role         String?   @db.NVarChar(50)
 
   @@id([cGuid, userid], map: "PK_User")
+}
+
+model Pems_MeterPosition {
+  id         Int          @id(map: "PK_Pems_MeterPosition") @default(autoincrement())
+  cName      String?      @db.VarChar(50)
+  cType      String?      @db.VarChar(50)
+  cDesc      String?      @db.VarChar(50)
+  parentId   Int?
+  dAddTime   DateTime?    @db.DateTime
+  Pems_Meter Pems_Meter[]
+}
+
+model Pems_EnergyFees {
+  id     Int     @id(map: "PK_Pems_EnergyFees")
+  cPrice Float?
+  cType  Bytes?  @db.VarBinary(50)
+  cModel String? @db.VarChar(50)
+}
+
+model Pems_Meter {
+  id                 Int                 @id(map: "PK_Pems_Meter") @default(autoincrement())
+  cName              String?             @db.VarChar(50)
+  cType              String?             @db.VarChar(50)
+  cDesc              String?             @db.NVarChar(Max)
+  cPositionFk        Int?
+  dAddTime           DateTime?           @db.DateTime
+  Pems_MeterPosition Pems_MeterPosition? @relation(fields: [cPositionFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_Meter_Position")
+}
+
+model Pems_MeterValues {
+  id          Int       @id(map: "PK_Pems_MeterValues")
+  cValue      Float?
+  cRecordTime DateTime? @db.DateTime
+  cMerterFk   Int?
+  cRecorder   String?   @db.VarChar(50)
 }

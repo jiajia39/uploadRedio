@@ -10,6 +10,7 @@ import authentication from '~/authentication';
 import fileUploads from '~/file-uploads';
 import realtimeData from '~/realtime-data';
 import influx from '~/influx';
+import pems from '~/pems';
 
 const router = Router();
 enableWs(router);
@@ -33,4 +34,5 @@ router.use(realtimeData.prefix, realtimeData);
 router.use(cofco.prodsummary.prefix, cofco.prodsummary);
 router.use(cofco.prodkpi.prefix, cofco.prodkpi);
 router.use(influx.influxman.prefix, influx.influxman);
+router.use(pems.meterPosition.prefix, pems.meterPosition);
 export default router;

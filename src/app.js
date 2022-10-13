@@ -41,6 +41,7 @@ const options = {
   },
   apis: [
     `${__dirname}/sys/*.js`,
+    `${__dirname}/pems/*.js`,
     `${__dirname}/cofco/*.js`,
     `${__dirname}/influx/*.js`,
     `${__dirname}/file-uploads/*.js`,
