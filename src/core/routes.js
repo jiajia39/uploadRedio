@@ -35,4 +35,5 @@ router.use(cofco.prodsummary.prefix, cofco.prodsummary);
 router.use(cofco.prodkpi.prefix, cofco.prodkpi);
 router.use(influx.influxman.prefix, influx.influxman);
 router.use(pems.meterPosition.prefix, pems.meterPosition);
+router.use(pems.meter.prefix, pems.meter);
 export default router;

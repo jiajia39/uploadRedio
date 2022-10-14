@@ -17,6 +17,8 @@ import winston from '~/core/winston';
 import { authorizeKeyCloak } from './core/jwt';
 import { NODE_ENV, SECRET_KEY, RATE_LIMIT, SENTRY_DSN } from './env';
 
+const AppError = require('./utils/appError');
+
 const app = express();
 enableWs(app);
 
@@ -91,5 +93,11 @@ app.use(function(err, req, res, next) {
     next(err);
   }
 });
+
+// Global Error Handler for 404 Route Not Found Error
+app.all('*', (req, res, next) => {
+  next(new AppError(`Cannot find ${req.originalUrl} on this server`, 404));
+});
+
 
 export default app;
