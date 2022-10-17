@@ -255,23 +255,6 @@ const controller = (() => {
     }
   });
 
-  /**
-   * @swagger
-   * /api/pems/meterPosition/count:
-   *   get:
-   *     security:
-   *       - Authorization: []
-   *     description: Get count for meter positions!
-   *     tags: [pems]
-   *     responses:
-   *       200:
-   *         description: Returns a mysterious string.
-   */
-  router.get('/count', async (req, res) => {
-    const data = await prisma.Pems_MeterPosition.count();
-    res.json({ data, message: 'Data obtained.' });
-  });
-
   return router;
 
 })();

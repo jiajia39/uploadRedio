@@ -82,6 +82,10 @@ if (NODE_ENV === 'production') {
   app.use(Sentry.Handlers.errorHandler());
 }
 
+// Node Cron to schedule the specific job
+const scheduledFunction = require('./schedule/service');
+scheduledFunction.initScheduledJobs();
+
 // 验证token
 // 错误中间件
 // error handler
