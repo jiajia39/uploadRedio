@@ -10,18 +10,10 @@ exports.initScheduledJobs = () => {
   });
   scheduledJobFunction.start();
 
-  const scheduledJobOfPMR  = CronJob.schedule('56 16 * * *', () => {
-    console.log("I'm executed on a schedule!");
-    meterValue.getPemsMeterRecordingAndSave();
-    // Add your custom logic here
-  });
-  scheduledJobOfPMR.start();
+  // const scheduledJobOfPMR  = CronJob.schedule('56 16 * * *', () => {
+  //   console.log("I'm executed on a schedule!");
+  //   meterValue.getPemsMeterRecordingAndSave();
+  //   // Add your custom logic here
+  // });
+  // scheduledJobOfPMR.start();
 };
-
-// exports.initScheduledJobs = () => {
-//   const scheduledJobFunction = CronJob.schedule('56 16 * * *', () => {
-//     console.log("I'm executed on a schedule!!!!!");
-//     meterValue.getPemsMeterRecordingAndSave();
-//   });
-//   scheduledJobFunction.start();
-// };
