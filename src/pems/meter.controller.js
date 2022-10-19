@@ -98,7 +98,7 @@ const controller = (() => {
 
   /**
    * @swagger
-   * /api/pems/meterPosition/pagination:
+   * /api/pems/meter/pagination:
    *   get:
    *     security:
    *       - Authorization: []
@@ -119,17 +119,18 @@ const controller = (() => {
    *         type: number
    *     responses:
    *       200:
-   *         description: meterPosition/pagination
+   *         description: meter/pagination
    *         schema:
    *           type: object
    */
   router.get('/pagination', async (req, res) => {
 
-    const { cPositionFk } = req.query;
+    const { cPositionFk, cDesc } = req.query;
 
     const filter = { AND: {} };
 
     if (cPositionFk) filter.AND = { ...filter.AND, cPositionFk: Number(cPositionFk) };
+    if (cDesc) filter.AND = { ...filter.AND, cDesc: { contains: cDesc} };
 
     const page = Number(req.query.page) || 1;
     const row = Number(req.query.row) || 5;
@@ -155,6 +156,7 @@ const controller = (() => {
 
     if (count != null && count > 0) {
       const rstdata = await prisma.Pems_Meter.findMany({
+        where: filter,
         select,
         skip: (page - 1) * row,
         take: row,

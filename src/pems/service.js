@@ -33,7 +33,7 @@ async function getMeterValueList() {
           cRecordDate: date,
           cMerterFk: Number(eleItem.id),
           cRecordType,
-          cRecorder: 'A',
+          cRecorder: 'Test',
         };
         await prisma.Pems_MeterValues.create({
           data: PemsMeterValuesDate,
