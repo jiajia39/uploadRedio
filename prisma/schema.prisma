@@ -150,19 +150,34 @@ model Pems_EnergyFees {
 }
 
 model Pems_Meter {
-  id                 Int                 @id(map: "PK_Pems_Meter") @default(autoincrement())
-  cName              String?             @db.VarChar(50)
-  cType              String?             @db.VarChar(50)
-  cDesc              String?             @db.NVarChar(Max)
-  cPositionFk        Int?
-  dAddTime           DateTime?           @db.DateTime
-  Pems_MeterPosition Pems_MeterPosition? @relation(fields: [cPositionFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_Meter_Position")
+  id                  Int                   @id(map: "PK_Pems_Meter") @default(autoincrement())
+  cName               String?               @db.VarChar(50)
+  cType               String?               @db.VarChar(50)
+  cDesc               String?               @db.NVarChar(Max)
+  cPositionFk         Int?
+  dAddTime            DateTime?             @db.DateTime
+  Pems_MeterPosition  Pems_MeterPosition?   @relation(fields: [cPositionFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_Meter_Position")
+  Pems_MeterRecording Pems_MeterRecording[]
+  Pems_MeterValues    Pems_MeterValues[]
 }
 
 model Pems_MeterValues {
-  id          Int       @id(map: "PK_Pems_MeterValues")
+  id          Int         @id(map: "PK_Pems_MeterValues") @default(autoincrement())
   cValue      Float?
-  cRecordTime DateTime? @db.DateTime
+  cRecordTime DateTime?   @db.DateTime
+  cRecordDate DateTime?   @db.Date
+  cRecordType String?     @db.VarChar(50)
   cMerterFk   Int?
-  cRecorder   String?   @db.VarChar(50)
+  cRecorder   String?     @db.VarChar(50)
+  Pems_Meter  Pems_Meter? @relation(fields: [cMerterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterValues_Meter")
+}
+
+model Pems_MeterRecording {
+  id          Int        @id(map: "PK_Pems_MeterRecording")
+  dStartTime  DateTime?  @db.DateTime
+  dEndTime    DateTime?  @db.DateTime
+  cRecordDate DateTime?  @db.Date
+  cValue      Float?
+  cMeterFk    Int        @default(autoincrement())
+  Pems_Meter  Pems_Meter @relation(fields: [cMeterFk], references: [id], onUpdate: NoAction, map: "FK_Pems_MeterRecording_MeterFk")
 }

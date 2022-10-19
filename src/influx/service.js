@@ -34,10 +34,11 @@ function getInfluxData(measurement, field, start, interval, queryType) {
       queryApi.queryRows(query, {
         next(row, tableMeta) {
           const o = tableMeta.toObject(row);
+          console.log(o);
           let date = new Date(o._time);
           let dateFormatted = dateFmt('yyyy-MM-dd hh:mm:ss', date);
           result.push({
-            time: dateFormatted,
+            time: o._time,
             value: o._value,
           });
         },
@@ -45,6 +46,10 @@ function getInfluxData(measurement, field, start, interval, queryType) {
           reject(error);
         },
         complete() {
+          //value值按照时间正序排列
+          result.sort(function(a, b) {
+            return b.createTime < a.createTime ? -1 : 1;
+          });
           resolve(result);
         },
       });

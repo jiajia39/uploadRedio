@@ -14,7 +14,7 @@ This seed repository provides the following features:
 - [x] Prisma, Next-generation Node.js and TypeScript ORM [**Prisma**](https://www.prisma.io/docs/concepts/components/prisma-client/crud).
 - [x] Make authenticated requests with [**Passport**](http://passportjs.org/).
 - [x] File upload with [**Multer**](https://github.com/expressjs/multer).
-- [x] Real-time communication with [**WS**](https://github.com/websockets/ws).
+- [x] Real-time communication with [**WS**](https://github.com/es/ws).
 - ---------- **Tools** ----------
 - [x] Next generation JavaScript with [**Babel**](https://github.com/babel/babel).
 - [x] JavaScript static code analyzer with [**ESLint**](https://github.com/eslint/eslint).
