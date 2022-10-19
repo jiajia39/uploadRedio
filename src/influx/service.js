@@ -38,7 +38,7 @@ function getInfluxData(measurement, field, start, interval, queryType) {
           let date = new Date(o._time);
           let dateFormatted = dateFmt('yyyy-MM-dd hh:mm:ss', date);
           result.push({
-            time: o._time,
+            time: dateFormatted,
             value: o._value,
           });
         },
