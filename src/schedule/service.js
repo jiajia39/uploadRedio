@@ -23,7 +23,7 @@ const getMeterPositions = async () => {
 };
 
 exports.initScheduledJobs = () => {
-  const scheduledJobFunction = CronJob.schedule('17 8,13,20 * * *', () => {
+  const scheduledJobFunction = CronJob.schedule('0 8,23 * * *', () => {
     console.log("I'm executed on a schedule!");
     meterValue.getMeterValueList();
     // Add your custom logic here
