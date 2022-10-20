@@ -20,7 +20,7 @@ async function getMeterValueList() {
     let interval = '1h';
     const queryType = 'mean';
     let dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
-    let time = new Date();
+    let time = new Date(Date.now());
     let date = dateFmt(time);
     let cRecordType = isMorOrAft(time);
     influxservice
@@ -125,7 +125,7 @@ function isMorOrAft(date) {
   let state = '';
   const hour = date.getHours();
   console.log(hour);
-  if (hour >= 5 && hour <= 23) {
+  if (hour >= 5 && hour < 23) {
     state = `白天`;
   } else {
     state = `晚上`;
