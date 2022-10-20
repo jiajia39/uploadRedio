@@ -20,8 +20,9 @@ async function getMeterValueList() {
     let interval = '1h';
     const queryType = 'mean';
     let dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
-    let date = dateFmt(dateTime);
-    let cRecordType = isMorOrAft(dateTime);
+    let time = new Date();
+    let date = dateFmt(time);
+    let cRecordType = isMorOrAft(time);
     influxservice
       .getInfluxData(measurement, field, start, interval, queryType)
       .then(async result => {
@@ -71,12 +72,12 @@ function dateFmt(date) {
  */
 function isMorOrAft(date) {
   let state = '';
-  let hour = date.getHours();
-  if (hour >= 0 && hour <= 12) {
-    state = `morning`;
-  }
-  if (hour > 12 && hour <= 24) {
-    state = `night`;
+  const hour = date.getHours();
+  console.log(hour);
+  if (hour >= 5 && hour <= 23) {
+    state = `白天`;
+  } else {
+    state = `晚上`;
   }
   return state;
 }
