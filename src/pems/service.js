@@ -16,7 +16,7 @@ async function getMeterValueList() {
       cType = 'TT';
     }
     const field = eleItem.cName + '.' + cType;
-    let start = '-2h';
+    let start = '-12h';
     let interval = '1h';
     const queryType = 'mean';
     let dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
@@ -28,8 +28,9 @@ async function getMeterValueList() {
       .then(async result => {
         const valueLength = result.length;
         const val = result[valueLength - 1].value;
+        const influxValue = parseFloat(val).toFixed(2);
         const PemsMeterValuesDate = {
-          cValue: parseFloat(val),
+          cValue: parseFloat(influxValue),
           cRecordTime: dateTime,
           cRecordDate: date,
           cMerterFk: Number(eleItem.id),
@@ -43,6 +44,56 @@ async function getMeterValueList() {
   });
 }
 
+async function getPemsMeterRecordingAndSave() {
+  const meters = await prisma.Pems_Meter.findMany();
+  // eslint-disable-next-line no-plusplus
+  for (let j = 0; j < meters.length; j++) {
+    //从meter 中获取 measurement和field 来进行查询influxDb的数据
+    const measurement = meters[j].cName + '-' + meters[j].cDesc;
+    let cType = '';
+    if (meters[j].cType == 'Electricity') {
+      cType = 'EP';
+    }
+    if (meters[j].cType == 'Water' || meters[j].cType == 'Steam') {
+      cType = 'TT';
+    }
+    const field = meters[j].cName + '.' + cType;
+    let start = '-24h';
+    let interval = '1h';
+    const queryType = 'mean';
+    // 查询infulxDb数据
+    influxservice
+      .getInfluxData(measurement, field, start, interval, queryType)
+      .then(async result => {
+        for (let i = 0; i < result.length; i++) {
+          //获取infulxDb的value
+          const value = result[i].value;
+          const influxValue = parseFloat(value).toFixed(2);
+          //结束时间
+          console.log(result[i].time);
+          console.log(new Date(result[i].time));
+          const endTime = new Date(new Date(result[i].time).getTime() + 8 * 60 * 60 * 1000);
+          // 当前时间
+          const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+          //开始时间
+          let startTime = new Date(new Date(result[i].time).getTime() + 8 * 60 * 60 * 1000);
+          startTime = new Date(startTime.setHours(startTime.getHours() - 1));
+          const PemsMeterRecording = {
+            dStartTime: startTime,
+            dEndTime: endTime,
+            cRecordDate: dateTime,
+            cValue: parseFloat(influxValue),
+            cMeterFk: Number(meters[j].id),
+          };
+          console.log(PemsMeterRecording);
+          await prisma.Pems_MeterRecording.create({
+            data: PemsMeterRecording,
+          });
+        }
+      });
+  }
+  console.log('|||||||||||||||||||Execution completed');
+}
 /**
  * 设置当前时间的格式yyyy-mm-dd
  * @param {*} date 日期
@@ -84,6 +135,7 @@ function isMorOrAft(date) {
 
 export default {
   getMeterValueList,
+  getPemsMeterRecordingAndSave,
   isMorOrAft,
   dateFmt,
 };

@@ -5,7 +5,7 @@ let client = null;
 let clientOptions = null;
 // let writeApi = null;
 let queryApi = null;
-const timeout = 30_000; // 30 seconds
+const timeout = 120_000; // 30 seconds
 clientOptions = {
   url: INFLUX_URL,
   // rejectUnauthorized: n.rejectUnauthorized,
@@ -27,14 +27,14 @@ function getInfluxData(measurement, field, start, interval, queryType) {
   |> filter(fn: (r) => r["_field"] == ${field})
   |> aggregateWindow(every: ${intervalFormatted}, fn: ${queryTypeFormatted}, createEmpty: false)`;
 
-  console.log(query);
+  // console.log(query);
 
     try {
       const result = [];
       queryApi.queryRows(query, {
         next(row, tableMeta) {
           const o = tableMeta.toObject(row);
-          console.log(o);
+          // console.log(o);
           let date = new Date(o._time);
           let dateFormatted = dateFmt('yyyy-MM-dd hh:mm:ss', date);
           result.push({
