@@ -5,7 +5,9 @@ import service from './service';
 const controller = (() => {
   const router = Router();
   router.get('/getvalue', function(req, res) {
-    res.json(service.dateFmt(new Date()));
+    const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    console.log(dateTime);
+    res.json(dateTime);
     // console.log( service.isMorOrAft(new Date()));
     // console.log(new Date());
 

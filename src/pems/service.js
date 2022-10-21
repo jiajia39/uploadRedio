@@ -16,19 +16,22 @@ async function getMeterValueList() {
       cType = 'TT';
     }
     const field = eleItem.cName + '.' + cType;
-    let start = '-12h';
+    let start = '-1h';
     let interval = '1h';
-    const queryType = 'mean';
+    const queryType = 'last';
     let dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
     let time = new Date();
-    let date = dateFmt(time);
+    let date = dateFmt(time, '');
     let cRecordType = isMorOrAft(time);
     influxservice
       .getInfluxData(measurement, field, start, interval, queryType)
       .then(async result => {
+        let influxValue = '';
         const valueLength = result.length;
-        const val = result[valueLength - 1].value;
-        const influxValue = parseFloat(val).toFixed(2);
+        if (valueLength != 0) {
+          const val = result[valueLength - 1].value;
+          influxValue = parseFloat(val).toFixed(2);
+        }
         const PemsMeterValuesDate = {
           cValue: parseFloat(influxValue),
           cRecordTime: dateTime,
@@ -65,29 +68,68 @@ async function getPemsMeterRecordingAndSave() {
     influxservice
       .getInfluxData(measurement, field, start, interval, queryType)
       .then(async result => {
-        for (let i = 0; i < result.length - 1; i++) {
+        let list = [];
+        let length = '';
+        if (result.length > 24) {
+          length = result.length - 1;
+        } else {
+          length = result.length;
+        }
+        // 当前时间
+        const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+
+        if (result.length == 0) {
+          let date = this.dateFmt(new Date(), 1);
+          let listRes = this.gimePerHour(date);
+
+          listRes.forEach(gimePerHourTime => {
+            const endTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
+
+            //开始时间
+            let startTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
+            startTime = new Date(startTime.setHours(startTime.getHours() - 1));
+            let influxValue = '';
+            list.push({
+              dStartTime: startTime,
+              dEndTime: endTime,
+              cRecordDate: dateTime,
+              cValue: parseFloat(influxValue),
+              cMeterFk: Number(meters[j].id),
+            });
+          });
+          console.log('_____++++++++++++++++' + list);
+        }
+
+        for (let i = 0; i < length; i++) {
           //获取infulxDb的value
           const value = result[i].value;
           const influxValue = parseFloat(value).toFixed(2);
           //结束时间
-          console.log(result[i].time);
-          console.log(new Date(result[i].time));
+          // console.log(result[i].time);
+          // console.log(new Date(result[i].time));
           const endTime = new Date(new Date(result[i].time).getTime() + 8 * 60 * 60 * 1000);
-          // 当前时间
-          const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
           //开始时间
           let startTime = new Date(new Date(result[i].time).getTime() + 8 * 60 * 60 * 1000);
           startTime = new Date(startTime.setHours(startTime.getHours() - 1));
-          const PemsMeterRecording = {
+          // const PemsMeterRecording = {
+          //   dStartTime: startTime,
+          //   dEndTime: endTime,
+          //   cRecordDate: dateTime,
+          //   cValue: parseFloat(influxValue),
+          //   cMeterFk: Number(meters[j].id),
+          // };
+          list.push({
             dStartTime: startTime,
             dEndTime: endTime,
             cRecordDate: dateTime,
             cValue: parseFloat(influxValue),
             cMeterFk: Number(meters[j].id),
-          };
-          console.log(PemsMeterRecording);
-          await prisma.Pems_MeterRecording.create({
-            data: PemsMeterRecording,
+          });
+          // console.log(PemsMeterRecording);
+        }
+        if (list.length > 0) {
+          await prisma.Pems_MeterRecording.createMany({
+            data: list,
           });
         }
       });
@@ -99,11 +141,13 @@ async function getPemsMeterRecordingAndSave() {
  * @param {*} date 日期
  * @returns yyyy-mm-dd
  */
-function dateFmt(date) {
+function dateFmt(date, hour) {
   let year = date.getFullYear();
   let dateStr = year + '-';
   let month = date.getMonth() + 1;
   let day = date.getDate();
+  let hours = date.getHours();
+  console.log(hours);
   if (month < 10) {
     dateStr = dateStr + '0' + month + '-';
   } else {
@@ -114,9 +158,26 @@ function dateFmt(date) {
   } else {
     dateStr = dateStr + day;
   }
+  if (hour == 1) {
+    dateStr = dateStr + ' ' + hours + ':00:00';
+  }
   return new Date(dateStr);
 }
 
+/**
+ * 获取日期前24小时每个小时的数据
+ * @param {} date 日期
+ * @returns
+ */
+function gimePerHour(date) {
+  let timeList = [];
+  timeList.push(date);
+  for (let i = 0; i < 23; i++) {
+    date = new Date(date.getTime() - 60 * 60 * 1000);
+    timeList.push(date);
+  }
+  return timeList;
+}
 /**
  * 判断当前时间是上午还是下午
  * @param {*} date 日期
@@ -138,4 +199,5 @@ export default {
   getPemsMeterRecordingAndSave,
   isMorOrAft,
   dateFmt,
+  gimePerHour,
 };
