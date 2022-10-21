@@ -6,7 +6,7 @@ variables:
 
 stages:
     - build
-    - deploy
+    # - deploy
 
 build:
     stage: build
@@ -23,17 +23,17 @@ build:
     tags:
         - IADDEV01
 
-deploy:
-    stage: deploy
-    script:
-        - echo 'Killing Current Process on Azure...'
-        - ssh -t -t -i $PUBLIC_KEY raiad@52.131.242.116 "cd $TARGET_FOLDER; sudo pm2 stop server.js"
-        - echo 'Deploying to the Target Server'
-        - ssh -t -t -i $PUBLIC_KEY raiad@52.131.242.116 'sudo find $TARGET_FOLDER* | egrep -v "ecosystem.config.js|uploads|node_modules" | xargs sudo rm -rf'
-        - rsync -aWPu -e "ssh -i $PUBLIC_KEY" dist/* raiad@52.131.242.116:$TARGET_FOLDER
-        - ssh -i $PUBLIC_KEY raiad@52.131.242.116 "cd $TARGET_FOLDER; sudo pm2 start ecosystem.config.js --env production"
-    only:
-        - master
-    tags:
-        - IADHY03
+# deploy:
+#     stage: deploy
+#     script:
+#         - echo 'Killing Current Process on Azure...'
+#         - ssh -t -t -i $PUBLIC_KEY raiad@52.131.242.116 "cd $TARGET_FOLDER; sudo pm2 stop server.js"
+#         - echo 'Deploying to the Target Server'
+#         - ssh -t -t -i $PUBLIC_KEY raiad@52.131.242.116 'cd $TARGET_FOLDER; sudo find $TARGET_FOLDER* | egrep -v "ecosystem.config.js|uploads|node_modules" | xargs sudo rm -rf'
+#         - rsync -aWPu -e "ssh -i $PUBLIC_KEY" dist/* raiad@52.131.242.116:$TARGET_FOLDER
+#         - ssh -i $PUBLIC_KEY raiad@52.131.242.116 "cd $TARGET_FOLDER; sudo pm2 start ecosystem.config.js --env production"
+#     only:
+#         - master
+#     tags:
+#         - IADHY03
 

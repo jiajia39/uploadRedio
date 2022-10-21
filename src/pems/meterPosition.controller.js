@@ -228,12 +228,21 @@ const controller = (() => {
    *           type: object
    */
   router.get('/pagination', async (req, res) => {
+
+    const { parentId, cDesc } = req.query;
+
+    const filter = { AND: {} };
+
+    if (parentId) filter.AND = { ...filter.AND, parentId: Number(parentId) };
+    if (cDesc) filter.AND = { ...filter.AND, cDesc: { contains: cDesc } };
+
     const page = Number(req.query.page) || 1;
     const row = Number(req.query.row) || 5;
     const count = await prisma.Pems_MeterPosition.count();
 
     if (count != null && count > 0) {
       const rstdata = await prisma.Pems_MeterPosition.findMany({
+        where: filter,
         skip: (page - 1) * row,
         take: row,
         orderBy: {
