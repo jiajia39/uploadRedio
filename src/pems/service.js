@@ -20,7 +20,7 @@ async function getMeterValueList() {
     let interval = '1h';
     const queryType = 'mean';
     let dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
-    let time = new Date(Date.now());
+    let time = new Date();
     let date = dateFmt(time);
     let cRecordType = isMorOrAft(time);
     influxservice
@@ -65,7 +65,7 @@ async function getPemsMeterRecordingAndSave() {
     influxservice
       .getInfluxData(measurement, field, start, interval, queryType)
       .then(async result => {
-        for (let i = 0; i < result.length; i++) {
+        for (let i = 0; i < result.length - 1; i++) {
           //获取infulxDb的value
           const value = result[i].value;
           const influxValue = parseFloat(value).toFixed(2);
@@ -126,9 +126,9 @@ function isMorOrAft(date) {
   const hour = date.getHours();
   console.log(hour);
   if (hour >= 5 && hour < 23) {
-    state = `白天`;
+    state = `白班`;
   } else {
-    state = `晚上`;
+    state = `晚班`;
   }
   return state;
 }

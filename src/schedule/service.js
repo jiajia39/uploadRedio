@@ -10,7 +10,8 @@ exports.initScheduledJobs = () => {
   });
   scheduledJobFunction.start();
 
-  const scheduledJobForPMR = CronJob.schedule('0 0 0 * * *', () => {
+  // const scheduledJobForPMR = CronJob.schedule('0 0 0 * * *', () => {
+  const scheduledJobForPMR = CronJob.schedule('0 0 12 * * *', () => {
     console.log("I'm executed on a schedule!!!!!!!!");
     meterValue.getPemsMeterRecordingAndSave();
     // Add your custom logic here
