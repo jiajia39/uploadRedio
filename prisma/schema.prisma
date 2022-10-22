@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
@@ -174,11 +174,11 @@ model Pems_MeterValues {
 }
 
 model Pems_MeterRecording {
-  id          Int        @id(map: "PK_Pems_MeterRecording")
-  dStartTime  DateTime?  @db.DateTime
-  dEndTime    DateTime?  @db.DateTime
-  cRecordDate DateTime?  @db.Date
+  id          Int         @id(map: "PK_Pems_MeterRecording") @default(autoincrement())
+  dStartTime  DateTime?   @db.DateTime
+  dEndTime    DateTime?   @db.DateTime
+  cRecordDate DateTime?   @db.Date
   cValue      Float?
-  cMeterFk    Int        @default(autoincrement())
-  Pems_Meter  Pems_Meter @relation(fields: [cMeterFk], references: [id], onUpdate: NoAction, map: "FK_Pems_MeterRecording_MeterFk")
+  cMeterFk    Int?
+  Pems_Meter  Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterRecording_MeterFk")
 }

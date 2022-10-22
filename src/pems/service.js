@@ -1,7 +1,8 @@
+import { reject } from 'lodash';
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
 
-async function getMeterValueList() {
+async function setMeterValuesandSave() {
   const meters = await prisma.Pems_Meter.findMany();
   console.log('startig iteration.........');
   console.log(meters);
@@ -43,16 +44,114 @@ async function getMeterValueList() {
         await prisma.Pems_MeterValues.create({
           data: PemsMeterValuesDate,
         });
+      })
+      .catch(error => {
+        reject(error);
       });
   });
 }
 
-async function getPemsMeterRecordingAndSave() {
+/**Baseline Version Do not use*/
+// async function setMeterRecordingAndSave_Baseline() {
+//   const meters = await prisma.Pems_Meter.findMany();
+//   console.log('Meter Count:', meters.length);
+//   // eslint-disable-next-line no-plusplus
+//   for (let j = 0; j < meters.length; j++) {
+//     //从meter 中获取 measurement和field 来进行查询influxDb的数据
+//     const measurement = meters[j].cName + '-' + meters[j].cDesc;
+//     console.log(measurement);
+//     let cType = '';
+//     if (meters[j].cType == 'Electricity') {
+//       cType = 'EP';
+//     }
+//     if (meters[j].cType == 'Water' || meters[j].cType == 'Steam') {
+//       cType = 'TT';
+//     }
+//     const field = meters[j].cName + '.' + cType;
+//     let start = '-24h';
+//     let interval = '1h';
+//     const queryType = 'mean';
+//     // 查询infulxDb数据
+//     influxservice
+//       .getInfluxData(measurement, field, start, interval, queryType)
+//       .then(async result => {
+//         let list = [];
+//         let length = 0;
+//         if (result.length > 24) {
+//           length = result.length - 1;
+//         } else {
+//           length = result.length;
+//         }
+//         // 当前时间
+//         const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+//         // console.log(`Length of Results for ${meters[j].id}:  ` + length);
+//         if (result.length === 0) {
+//           console.log(`No Influx Value for ${meters[j].id}`);
+//           let date = this.dateFmt(new Date(), 1);
+//           let listRes = this.gimePerHour(date);
+
+//           listRes.forEach(gimePerHourTime => {
+//             const endTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
+
+//             //开始时间
+//             let startTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
+//             startTime = new Date(startTime.setHours(startTime.getHours() - 1));
+//             list.push({
+//               dStartTime: startTime,
+//               dEndTime: endTime,
+//               cRecordDate: dateTime,
+//               cValue: null,
+//               cMeterFk: Number(meters[j].id),
+//             });
+//           });
+//         }
+
+//         for (let i = 0; i < length; i++) {
+//           //获取infulxDb的value
+//           const value = result[i].value;
+//           const influxValue = parseFloat(value).toFixed(2);
+//           //结束时间
+//           // console.log(result[i].time);
+//           // console.log(new Date(result[i].time));
+//           const endTime = new Date(new Date(result[i].time).getTime() + 8 * 60 * 60 * 1000);
+//           //开始时间
+//           let startTime = new Date(new Date(result[i].time).getTime() + 8 * 60 * 60 * 1000);
+//           startTime = new Date(startTime.setHours(startTime.getHours() - 1));
+//           // const PemsMeterRecording = {
+//           //   dStartTime: startTime,
+//           //   dEndTime: endTime,
+//           //   cRecordDate: dateTime,
+//           //   cValue: parseFloat(influxValue),
+//           //   cMeterFk: Number(meters[j].id),
+//           // };
+//           list.push({
+//             dStartTime: startTime,
+//             dEndTime: endTime,
+//             cRecordDate: dateTime,
+//             cValue: parseFloat(influxValue),
+//             cMeterFk: Number(meters[j].id),
+//           });
+//         }
+//         if (list.length > 0) {
+//           await prisma.Pems_MeterRecording.createMany({
+//                 data: list,
+//           })
+//         }
+//       })
+//       .catch(error => {
+//         reject(error);
+//       })
+//   }
+// }
+
+async function setMeterRecordingAndSave() {
   const meters = await prisma.Pems_Meter.findMany();
+  console.log('Meter Count:', meters.length);
   // eslint-disable-next-line no-plusplus
   for (let j = 0; j < meters.length; j++) {
     //从meter 中获取 measurement和field 来进行查询influxDb的数据
     const measurement = meters[j].cName + '-' + meters[j].cDesc;
+    console.log(measurement);
     let cType = '';
     if (meters[j].cType == 'Electricity') {
       cType = 'EP';
@@ -64,77 +163,67 @@ async function getPemsMeterRecordingAndSave() {
     let start = '-24h';
     let interval = '1h';
     const queryType = 'mean';
+    let list = [];
     // 查询infulxDb数据
-    influxservice
-      .getInfluxData(measurement, field, start, interval, queryType)
-      .then(async result => {
-        let list = [];
-        let length = '';
-        if (result.length > 24) {
-          length = result.length - 1;
-        } else {
-          length = result.length;
-        }
-        // 当前时间
-        const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    const influxData = await influxservice.getInfluxData(
+      measurement,
+      field,
+      start,
+      interval,
+      queryType,
+    );
+    let length = 0;
+    if (influxData.length > 24) {
+      length = influxData.length - 1;
+    } else {
+      length = influxData.length;
+    }
+    // 当前时间
+    const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    if (influxData.length === 0) {
+      console.log(`No Influx Value for ${meters[j].id}`);
+      let date = this.dateFmt(new Date(), 1);
+      let listRes = this.gimePerHour(date);
 
-        if (result.length == 0) {
-          let date = this.dateFmt(new Date(), 1);
-          let listRes = this.gimePerHour(date);
+      listRes.forEach(gimePerHourTime => {
+        const endTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
 
-          listRes.forEach(gimePerHourTime => {
-            const endTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
-
-            //开始时间
-            let startTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
-            startTime = new Date(startTime.setHours(startTime.getHours() - 1));
-            let influxValue = '';
-            list.push({
-              dStartTime: startTime,
-              dEndTime: endTime,
-              cRecordDate: dateTime,
-              cValue: parseFloat(influxValue),
-              cMeterFk: Number(meters[j].id),
-            });
-          });
-          console.log('_____++++++++++++++++' + list);
-        }
-
-        for (let i = 0; i < length; i++) {
-          //获取infulxDb的value
-          const value = result[i].value;
-          const influxValue = parseFloat(value).toFixed(2);
-          //结束时间
-          // console.log(result[i].time);
-          // console.log(new Date(result[i].time));
-          const endTime = new Date(new Date(result[i].time).getTime() + 8 * 60 * 60 * 1000);
-          //开始时间
-          let startTime = new Date(new Date(result[i].time).getTime() + 8 * 60 * 60 * 1000);
-          startTime = new Date(startTime.setHours(startTime.getHours() - 1));
-          // const PemsMeterRecording = {
-          //   dStartTime: startTime,
-          //   dEndTime: endTime,
-          //   cRecordDate: dateTime,
-          //   cValue: parseFloat(influxValue),
-          //   cMeterFk: Number(meters[j].id),
-          // };
-          list.push({
-            dStartTime: startTime,
-            dEndTime: endTime,
-            cRecordDate: dateTime,
-            cValue: parseFloat(influxValue),
-            cMeterFk: Number(meters[j].id),
-          });
-          // console.log(PemsMeterRecording);
-        }
-        if (list.length > 0) {
-          await prisma.Pems_MeterRecording.createMany({
-            data: list,
-          });
-        }
+        //开始时间
+        let startTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
+        startTime = new Date(startTime.setHours(startTime.getHours() - 1));
+        list.push({
+          dStartTime: startTime,
+          dEndTime: endTime,
+          cRecordDate: dateTime,
+          cValue: null,
+          cMeterFk: Number(meters[j].id),
+        });
       });
+    }
+    for (let i = 0; i < length; i++) {
+      //获取infulxDb的value
+      const value = influxData[i].value;
+      const influxValue = parseFloat(value).toFixed(2);
+      //结束时间
+      const endTime = new Date(new Date(influxData[i].time).getTime() + 8 * 60 * 60 * 1000);
+      //开始时间
+      let startTime = new Date(new Date(influxData[i].time).getTime() + 8 * 60 * 60 * 1000);
+      startTime = new Date(startTime.setHours(startTime.getHours() - 1));
+      list.push({
+        dStartTime: startTime,
+        dEndTime: endTime,
+        cRecordDate: dateTime,
+        cValue: parseFloat(influxValue),
+        cMeterFk: Number(meters[j].id),
+      });
+    }
+    if (list.length > 0) {
+      await prisma.Pems_MeterRecording.createMany({
+        data: list,
+      });
+    }
   }
-  console.log('|||||||||||||||||||Execution completed');
+  console.log('Service Invoked');
 }
 /**
  * 设置当前时间的格式yyyy-mm-dd
@@ -147,7 +236,6 @@ function dateFmt(date, hour) {
   let month = date.getMonth() + 1;
   let day = date.getDate();
   let hours = date.getHours();
-  console.log(hours);
   if (month < 10) {
     dateStr = dateStr + '0' + month + '-';
   } else {
@@ -194,9 +282,10 @@ function isMorOrAft(date) {
   return state;
 }
 
+
 export default {
-  getMeterValueList,
-  getPemsMeterRecordingAndSave,
+  setMeterValuesandSave,
+  setMeterRecordingAndSave,
   isMorOrAft,
   dateFmt,
   gimePerHour,
