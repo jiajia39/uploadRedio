@@ -69,6 +69,15 @@ const controller = (() => {
     }
   });
 
+  router.get('/getType', async (req, res) => {
+    // const select = {
+    //   cType: true,
+    // };
+    const rstdata = await prisma.Pems_EnergyFees.groupBy({
+      by: ['cType'],
+    });
+    res.json(rstdata);
+  });
   return router;
 })();
 
