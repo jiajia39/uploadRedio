@@ -146,7 +146,7 @@ model Pems_MeterPosition {
 model Pems_EnergyFees {
   id     Int     @id(map: "PK_Pems_EnergyFees")
   cPrice Float?
-  cType  Bytes?  @db.VarBinary(50)
+  cType  String? @db.VarChar(50)
   cModel String? @db.VarChar(50)
 }
 
