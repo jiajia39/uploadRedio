@@ -17,7 +17,7 @@ const controller = (() => {
 
   router.put('/edit/:id', async (req, res) => {
     const date = {
-      cPrice: req.body.cPrice,
+      cPrice: parseFloat(req.body.cPrice),
       cType: req.body.cType,
       cModel: req.body.cModel,
     };
