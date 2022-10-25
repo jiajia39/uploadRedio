@@ -16,9 +16,14 @@ const controller = (() => {
   });
 
   router.put('/edit/:id', async (req, res) => {
+    const date = {
+      cPrice: req.body.cPrice,
+      cType: req.body.cType,
+      cModel: req.body.cModel,
+    };
     const message = await prisma.Pems_EnergyFees.update({
       where: { id: Number(req.params.id) },
-      data: req.body,
+      data: date,
     }).then(() => 'List updated');
     res.json({ isok: true, message });
   });
