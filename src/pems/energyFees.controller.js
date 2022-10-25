@@ -1,8 +1,27 @@
 import { Router } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import prisma from '../core/prisma';
 
 const controller = (() => {
   const router = Router();
+
+  router.post('/add', async (req, res) => {
+    if (!req.body.cPrice) {
+      res.status(400).json({ message: 'Please pass price.' });
+    }
+    await prisma.Pems_EnergyFees.create({
+      data: req.body,
+    });
+    res.json({ isok: true, message: 'EnergyFees saved' });
+  });
+
+  router.put('/edit/:id', async (req, res) => {
+    const message = await prisma.Pems_EnergyFees.update({
+      where: { id: Number(req.params.id) },
+      data: req.body,
+    }).then(() => 'List updated');
+    res.json({ isok: true, message });
+  });
   /**
    * @swagger
    * /api/pems/meterValues/pagination:

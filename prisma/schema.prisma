@@ -144,7 +144,7 @@ model Pems_MeterPosition {
 }
 
 model Pems_EnergyFees {
-  id     Int     @id(map: "PK_Pems_EnergyFees")
+  id     Int     @id(map: "PK_Pems_EnergyFees") @default(autoincrement())
   cPrice Float?
   cType  String? @db.VarChar(50)
   cModel String? @db.VarChar(50)
