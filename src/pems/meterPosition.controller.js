@@ -3,8 +3,134 @@ import service from './../sys/service';
 import prisma from '../core/prisma';
 
 const controller = (() => {
-    const router = Router();
-    
+  const router = Router();
+  /**
+   * @swagger
+   * /api/pems/MeterPosition/add:
+   *   put:
+   *     security:
+   *       - Authorization: []
+   *     description : add MeterPosition  (新增)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: parentId
+   *         description: MeterPosition's parentId.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: MeterPosition's cType
+   *         in: query
+   *         type: string
+   *       - name: cName
+   *         description: MeterPosition's cName
+   *         in: query
+   *         type: string
+   *       - name: cDesc
+   *         description: MeterPosition's cDesc
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: MeterPosition
+   *         schema:
+   *           type: object
+   */
+  router.post('/add', async (req, res) => {
+    if (!req.body.cName) {
+      res.status(400).json({ message: 'Please pass cName.' });
+    }
+    if (!req.body.cType) {
+      res.status(400).json({ message: 'Please pass cType.' });
+    }
+    if (!req.body.cDesc) {
+      res.status(400).json({ message: 'Please pass cDesc.' });
+    }
+    req.body.dAddTime = new Date();
+    await prisma.Pems_MeterPosition.create({
+      data: req.body,
+    });
+    res.json({ isok: true, message: 'EnergyFees saved' });
+  });
+
+  /**
+   * @swagger
+   * /api/pems/MeterPosition/edit/:id:
+   *   put:
+   *     security:
+   *       - Authorization: []
+   *     description : edit MeterPosition  (编辑)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: parentId
+   *         description: MeterPosition's parentId.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: MeterPosition's cType
+   *         in: query
+   *         type: string
+   *       - name: cName
+   *         description: MeterPosition's cName
+   *         in: query
+   *         type: string
+   *       - name: cDesc
+   *         description: MeterPosition's cDesc
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: MeterPosition
+   *         schema:
+   *           type: object
+   */
+  router.put('/edit/:id', async (req, res) => {
+    if (!req.body.parentId) {
+      req.body.parentId = null;
+    }
+    const date = {
+      parentId: parseInt(req.body.parentId),
+      cName: req.body.cName,
+      cType: req.body.cType,
+      cDesc: req.body.cDesc,
+    };
+    const message = await prisma.Pems_MeterPosition.update({
+      where: { id: Number(req.params.id) },
+      data: date,
+    }).then(() => 'List updated');
+    res.json({ isok: true, message });
+  });
+  /**
+   * @swagger
+   * /api/pems/MeterPosition/delete/:id:
+   *   put:
+   *     security:
+   *       - Authorization: []
+   *     description : delete MeterPosition  (删除)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: id
+   *         description: MeterPosition's id.
+   *         in: query
+   *         type: int
+   *     responses:
+   *       200:
+   *         description: MeterPosition
+   *         schema:
+   *           type: object
+   */
+  router.delete('/delete/:id', async (req, res) => {
+    const message = await prisma.Pems_MeterPosition.delete({
+      where: { id: Number(req.params.id) },
+    }).then(() => 'MeterPosition deleted');
+
+    res.json({ message });
+  });
   /**
    * @swagger
    * /api/pems/meterPosition/getall:
@@ -45,8 +171,8 @@ const controller = (() => {
           cType: true,
           cDesc: true,
           dAddTime: true,
-        }
-      }
+        },
+      },
     };
 
     if (id) filter.OR.push({ id: parseInt(id) });
@@ -143,8 +269,6 @@ const controller = (() => {
     res.json({ treeData, message: 'Data obtained.' });
   });
 
-
-
   /**
    * @swagger
    * /api/pems/meterPosition/item/{id}:
@@ -228,7 +352,6 @@ const controller = (() => {
    *           type: object
    */
   router.get('/pagination', async (req, res) => {
-
     const { parentId, cDesc } = req.query;
 
     const filter = { AND: {} };
@@ -265,7 +388,6 @@ const controller = (() => {
   });
 
   return router;
-
 })();
 
 controller.prefix = '/pems/meterPosition';

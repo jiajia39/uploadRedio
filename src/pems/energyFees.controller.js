@@ -4,7 +4,35 @@ import prisma from '../core/prisma';
 
 const controller = (() => {
   const router = Router();
-
+  /**
+   * @swagger
+   * /api/pems/energyFees/add:
+   *   post:
+   *     security:
+   *       - Authorization: []
+   *     description: add energyFees  (新增)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: cPrice
+   *         description: energyFees's cPrice.
+   *         in: query
+   *         type: float
+   *       - name: cType
+   *         description: energyFees's cType
+   *         in: query
+   *         type: string
+   *       - name: cModel
+   *         description: energyFees's cModel
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: energyFees
+   *         schema:
+   *           type: object
+   */
   router.post('/add', async (req, res) => {
     if (!req.body.cPrice) {
       res.status(400).json({ message: 'Please pass price.' });
@@ -14,7 +42,35 @@ const controller = (() => {
     });
     res.json({ isok: true, message: 'EnergyFees saved' });
   });
-
+  /**
+   * @swagger
+   * /api/pems/energyFees/edit/:id:
+   *   put:
+   *     security:
+   *       - Authorization: []
+   *     description : edit energyFees  (编辑)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: cPrice
+   *         description: energyFees's cPrice.
+   *         in: query
+   *         type: float
+   *       - name: cType
+   *         description: energyFees's cType
+   *         in: query
+   *         type: string
+   *       - name: cModel
+   *         description: energyFees's cModel
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: energyFees
+   *         schema:
+   *           type: object
+   */
   router.put('/edit/:id', async (req, res) => {
     const date = {
       cPrice: parseFloat(req.body.cPrice),
@@ -29,7 +85,7 @@ const controller = (() => {
   });
   /**
    * @swagger
-   * /api/pems/meterValues/pagination:
+   * /api/pems/energyFees/pagination:
    *   get:
    *     security:
    *       - Authorization: []
@@ -92,7 +148,22 @@ const controller = (() => {
       });
     }
   });
-
+  /**
+   * @swagger
+   * /api/pems/energyFees/getType:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: Get the meterValues type(获取meterValues的类型值)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
   router.get('/getType', async (req, res) => {
     // const select = {
     //   cType: true,
