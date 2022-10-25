@@ -6,49 +6,50 @@ async function setMeterValuesandSave() {
   const meters = await prisma.Pems_Meter.findMany();
   console.log('startig iteration.........');
   console.log(meters);
-  meters.forEach(eleItem => {
+  for (let i = 0; i < meters.length; i++) {
     //从meter 中获取 measurement和field 来进行查询influxDb的数据
-    const measurement = eleItem.cName + '-' + eleItem.cDesc;
+    const measurement = meters[i].cName + '-' + meters[i].cDesc;
     let cType = '';
-    if (eleItem.cType == 'Electricity') {
+    if (meters[i].cType == 'Electricity') {
       cType = 'EP';
     }
-    if (eleItem.cType == 'Water' || eleItem.cType == 'Steam') {
+    if (meters[i].cType == 'Water' || meters[i].cType == 'Steam') {
       cType = 'TT';
     }
-    const field = eleItem.cName + '.' + cType;
-    let start = '-1h';
-    let interval = '1h';
+    const field = meters[i].cName + '.' + cType;
+    const start = '-1h';
+    const interval = '1h';
     const queryType = 'last';
-    let dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
-    let time = new Date();
-    let date = dateFmt(time, '');
-    let cRecordType = isMorOrAft(time);
-    influxservice
-      .getInfluxData(measurement, field, start, interval, queryType)
-      .then(async result => {
-        let influxValue = '';
-        const valueLength = result.length;
-        if (valueLength != 0) {
-          const val = result[valueLength - 1].value;
-          influxValue = parseFloat(val).toFixed(2);
-        }
-        const PemsMeterValuesDate = {
-          cValue: parseFloat(influxValue),
-          cRecordTime: dateTime,
-          cRecordDate: date,
-          cMerterFk: Number(eleItem.id),
-          cRecordType,
-          cRecorder: 'Test',
-        };
-        await prisma.Pems_MeterValues.create({
-          data: PemsMeterValuesDate,
-        });
-      })
-      .catch(error => {
-        reject(error);
-      });
-  });
+    const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    const time = new Date();
+    const date = dateFmt(time, '');
+    const cRecordType = isMorOrAft(time);
+    // 查询infulxDb数据
+    const result = await influxservice.getInfluxData(
+      measurement,
+      field,
+      start,
+      interval,
+      queryType,
+    );
+    let influxValue = '';
+    const valueLength = result.length;
+    if (valueLength != 0) {
+      const val = result[valueLength - 1].value;
+      influxValue = parseFloat(val).toFixed(2);
+    }
+    const PemsMeterValuesDate = {
+      cValue: parseFloat(influxValue),
+      cRecordTime: dateTime,
+      cRecordDate: date,
+      cMerterFk: Number(meters[i].id),
+      cRecordType,
+      cRecorder: 'Test',
+    };
+    await prisma.Pems_MeterValues.create({
+      data: PemsMeterValuesDate,
+    });
+  }
 }
 
 /**Baseline Version Do not use*/
@@ -281,7 +282,6 @@ function isMorOrAft(date) {
   }
   return state;
 }
-
 
 export default {
   setMeterValuesandSave,
