@@ -47,6 +47,12 @@ const controller = (() => {
     if (!req.body.cDesc) {
       res.status(400).json({ message: 'Please pass cDesc.' });
     }
+    if (!req.body.parentId) {
+      console.log("____________"+req.body.parentId);
+      req.body.parentId = null;
+    }else{
+      req.body.parentId =Number(req.body.parentId);
+    }
     req.body.dAddTime = new Date();
     await prisma.Pems_MeterPosition.create({
       data: req.body,
@@ -89,10 +95,13 @@ const controller = (() => {
    */
   router.put('/edit/:id', async (req, res) => {
     if (!req.body.parentId) {
+      console.log("____________"+req.body.parentId);
       req.body.parentId = null;
+    }else{
+      req.body.parentId =Number(req.body.parentId);
     }
     const date = {
-      parentId: parseInt(req.body.parentId),
+      parentId:req.body.parentId,
       cName: req.body.cName,
       cType: req.body.cType,
       cDesc: req.body.cDesc,
