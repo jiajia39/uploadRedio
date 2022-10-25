@@ -48,18 +48,16 @@ const controller = (() => {
           id: true,
           cName: true,
           dAddTime: true,
-        }
-      }
-    }
+        },
+      },
+    };
 
     if (id) filter.OR.push({ id: parseInt(id) });
     if (cType) filter.OR.push({ cType });
     if (cPositionFk) filter.OR.push({ cPositionFk: parseInt(cPositionFk) });
 
     if (filter.OR.length < 1) {
-      const data = await prisma.Pems_Meter.findMany(
-        { select, }
-      );
+      const data = await prisma.Pems_Meter.findMany({ select });
       res.json(data);
     } else {
       const data = await prisma.Pems_Meter.findMany({
@@ -124,13 +122,12 @@ const controller = (() => {
    *           type: object
    */
   router.get('/pagination', async (req, res) => {
-
     const { cPositionFk, cDesc } = req.query;
 
     const filter = { AND: {} };
 
     if (cPositionFk) filter.AND = { ...filter.AND, cPositionFk: Number(cPositionFk) };
-    if (cDesc) filter.AND = { ...filter.AND, cDesc: { contains: cDesc} };
+    if (cDesc) filter.AND = { ...filter.AND, cDesc: { contains: cDesc } };
 
     const page = Number(req.query.page) || 1;
     const row = Number(req.query.row) || 5;
@@ -179,6 +176,153 @@ const controller = (() => {
     }
   });
 
+  /**
+   * @swagger
+   * /api/pems/Pems_Meter/add:
+   *   put:
+   *     security:
+   *       - Authorization: []
+   *     description : add Pems_Meter  (新增)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: cPositionFk
+   *         description: Pems_Meter's cPositionFk.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: Pems_Meter's cType
+   *         in: query
+   *         type: string
+   *       - name: cName
+   *         description: Pems_Meter's cName
+   *         in: query
+   *         type: string
+   *       - name: cDesc
+   *         description: Pems_Meter's cDesc
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: Pems_Meter
+   *         schema:
+   *           type: object
+   */
+  router.post('/add', async (req, res) => {
+    if (!req.body.cName) {
+      res.status(400).json({ message: 'Please pass cName.' });
+    }
+    if (!req.body.cType) {
+      res.status(400).json({ message: 'Please pass cType.' });
+    }
+    if (!req.body.cDesc) {
+      res.status(400).json({ message: 'Please pass cDesc.' });
+    }
+    const cPositionFk = req.body.cPositionFk;
+    if (!cPositionFk) {
+      res.status(400).json({ message: 'Please pass cPositionFk.' });
+    } else {
+      const positionFk = await prisma.Pems_MeterPosition.findFirst({
+        where: { id: Number(cPositionFk) },
+      });
+      if (positionFk == null) {
+        res.status(400).json({ message: 'Please pass cPositionFk.' });
+      }
+    }
+    req.body.dAddTime = new Date();
+    await prisma.Pems_Meter.create({
+      data: req.body,
+    });
+    res.json({ isok: true, message: 'EnergyFees saved' });
+  });
+
+  /**
+   * @swagger
+   * /api/pems/Pems_Meter/edit/:id:
+   *   put:
+   *     security:
+   *       - Authorization: []
+   *     description : edit Pems_Meter  (编辑)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: cPositionFk
+   *         description: Pems_Meter's cPositionFk.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: Pems_Meter's cType
+   *         in: query
+   *         type: string
+   *       - name: cName
+   *         description: Pems_Meter's cName
+   *         in: query
+   *         type: string
+   *       - name: cDesc
+   *         description: Pems_Meter's cDesc
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: Pems_Meter
+   *         schema:
+   *           type: object
+   */
+  router.put('/edit/:id', async (req, res) => {
+    const cPositionFk = req.body.cPositionFk;
+    if (cPositionFk) {
+      const positionFk = await prisma.Pems_MeterPosition.findFirst({
+        where: { id: Number(cPositionFk) },
+      });
+      if (positionFk == null) {
+        res.status(400).json({ message: 'Please pass cPositionFk.' });
+      } else {
+        req.body.cPositionFk = Number(req.body.cPositionFk);
+      }
+    }
+    const date = {
+      cName: req.body.cName,
+      cType: req.body.cType,
+      cDesc: req.body.cDesc,
+      cPositionFk: req.body.cPositionFk,
+      dAddTime: new Date(),
+    };
+    const message = await prisma.Pems_Meter.update({
+      where: { id: Number(req.params.id) },
+      data: date,
+    }).then(() => 'List updated');
+    res.json({ isok: true, message });
+  });
+ /**
+   * @swagger
+   * /api/pems/Meter/delete/:id:
+   *   put:
+   *     security:
+   *       - Authorization: []
+   *     description : delete Meter  (删除)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: id
+   *         description: Meter's id.
+   *         in: query
+   *         type: int
+   *     responses:
+   *       200:
+   *         description: Meter
+   *         schema:
+   *           type: object
+   */
+  router.delete('/delete/:id', async (req, res) => {
+    const message = await prisma.Pems_Meter.delete({
+      where: { id: Number(req.params.id) },
+    }).then(() => 'Pems_Meter deleted');
+
+    res.json({ message });
+  });
   return router;
 })();
 
