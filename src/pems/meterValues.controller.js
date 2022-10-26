@@ -9,7 +9,44 @@ const controller = (() => {
     service.setMeterRecordingAndSave();
     res.json(dateTime);
   });
-
+  /**
+   * @swagger
+   * /api/pems/meterValues/statisticalMeterValue:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description:Query and calculate the energy consumption of each shift(根据条件查询value的数据以及计算每个班次耗能情况)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: id
+   *         description: meter's id.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *       - name: cPositionFk
+   *         description: meter's cPositionFk
+   *         in: query
+   *         type: int
+   *       - name: cRecordType
+   *         description: meterValues's cRecordType
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
+  router.get('/statisticalMeterValue', async (req, res) => {
+    const { id, cType, cPositionFk, cRecordType} = req.query;
+    const date = await service.statisticalMeterData(id, cType, cPositionFk, cRecordType);
+    res.json(date);
+  });
   /**
    * @swagger
    * /api/pems/meterValues/getall:
