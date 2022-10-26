@@ -220,9 +220,7 @@ const controller = (() => {
       res.status(400).json({ message: 'Please pass cDesc.' });
     }
     const cPositionFk = req.body.cPositionFk;
-    if (!cPositionFk) {
-      res.status(400).json({ message: 'Please pass cPositionFk.' });
-    } else {
+    if (cPositionFk != null) {
       const positionFk = await prisma.Pems_MeterPosition.findFirst({
         where: { id: Number(cPositionFk) },
       });
