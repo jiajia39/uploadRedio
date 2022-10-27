@@ -46,7 +46,9 @@ const controller = (() => {
     const { id, cType, cPositionFk, cRecordType } = req.query;
     const date = await service.statisticalMeterData(id, cType, cPositionFk, cRecordType);
     if (date.length != 0) {
+      const {totalEnergyConsumption} = date[date.length - 1];
       res.json({
+        totalEnergyConsumption,
         data: date,
         total: date.length,
         message: 'Data obtained.',

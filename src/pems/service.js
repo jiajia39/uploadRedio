@@ -360,6 +360,7 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
   let meterIdList = await getMeterId(id, cType, cPositionFk);
   console.log(meterIdList);
   let statisticalMeter = [];
+  let totalEnergyConsumption = 0.0;
   for (let i = 0; i < meterIdList.length; i++) {
     const meterValueDate = await getMeterValuesData(null, meterIdList[i].id);
     console.log(meterValueDate);
@@ -373,11 +374,26 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
             let value = new Decimal(meterValueDate[i].cValue)
               .sub(new Decimal(meterValueDate[i - 1].cValue))
               .toNumber();
+            totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+              .add(new Decimal(value))
+              .toNumber();
             statisticalMeter.push(
-              Object.assign({}, meterValueDate[i], { energyConsumption: value }),
+              Object.assign(
+                {},
+                meterValueDate[i],
+                { energyConsumption: value },
+                { totalEnergyConsumption: totalEnergyConsumption },
+              ),
             );
           } else {
-            statisticalMeter.push(Object.assign({}, meterValueDate[i], { energyConsumption: '' }));
+            statisticalMeter.push(
+              Object.assign(
+                {},
+                meterValueDate[i],
+                { energyConsumption: '' },
+                { totalEnergyConsumption: totalEnergyConsumption },
+              ),
+            );
           }
         }
         if (meterValueDate[i].cRecordType == '白班') {
@@ -395,16 +411,31 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
                 .sub(new Decimal(meterValueDate[i - 1].cValue))
                 .toNumber();
               console.log(value);
+              totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+                .add(new Decimal(value))
+                .toNumber();
               statisticalMeter.push(
-                Object.assign({}, meterValueDate[i], { energyConsumption: value }),
+                Object.assign(
+                  {},
+                  meterValueDate[i],
+                  { energyConsumption: value },
+                  { totalEnergyConsumption: totalEnergyConsumption },
+                ),
               );
             } else {
               statisticalMeter.push(
-                Object.assign({}, meterValueDate[i], { energyConsumption: '' }),
+                Object.assign({}, meterValueDate[i], { energyConsumption: '' },{ totalEnergyConsumption: totalEnergyConsumption },),
               );
             }
           } else {
-            statisticalMeter.push(Object.assign({}, meterValueDate[i], { energyConsumption: '' }));
+            statisticalMeter.push(
+              Object.assign(
+                {},
+                meterValueDate[i],
+                { energyConsumption: '' },
+                { totalEnergyConsumption: totalEnergyConsumption },
+              ),
+            );
           }
         }
       }
