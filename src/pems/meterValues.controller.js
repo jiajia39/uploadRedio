@@ -15,7 +15,7 @@ const controller = (() => {
    *   get:
    *     security:
    *       - Authorization: []
-   *     description: Query and calculate the energy consumption of each shift(根据条件查询value的数据以及计算每个班次耗能情况)
+   *     description: Calculate the energy consumption of each shift(展示meterValue数据并计算每个班次耗能情况)
    *     tags: [pems]
    *     produces:
    *       - application/json

@@ -1,4 +1,4 @@
-import { reject } from 'lodash';
+import { forEach, reject } from 'lodash';
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
 var Decimal = require('decimal.js');
@@ -227,48 +227,14 @@ async function setMeterRecordingAndSave() {
   }
   console.log('Service Invoked');
 }
+
 /**
- * 根据条件获取meter数据
- * @param {req} req 参数
- * @returns  meter数据
+ * 根据条件查询meter的Id
+ * @param {*} id meterId
+ * @param {*} cType 类型
+ * @param {*} cPositionFk PositionId
+ * @returns meterId
  */
-async function getMeterInfo(id, cType, cPositionFk) {
-  console.log(cType);
-  console.log(cPositionFk);
-  const filter = { AND: [] };
-
-  const select = {
-    id: true,
-    cName: true,
-    cType: true,
-    cDesc: true,
-    dAddTime: true,
-    Pems_MeterPosition: {
-      select: {
-        id: true,
-        cName: true,
-        dAddTime: true,
-      },
-    },
-  };
-
-  if (id) filter.AND.push({ id: parseInt(id) });
-  if (cType) filter.AND.push({ cType });
-  if (cPositionFk) filter.AND.push({ cPositionFk: parseInt(cPositionFk) });
-
-  if (filter.AND.length < 1) {
-    const data = await prisma.Pems_Meter.findMany({ select });
-    return data;
-  } else {
-    const data = await prisma.Pems_Meter.findMany({
-      where: filter,
-      select,
-    });
-    console.log(']]]]]]]]]]]]]]]]]' + data);
-    return data;
-  }
-}
-
 async function getMeterId(id, cType, cPositionFk) {
   const filter = { AND: [] };
   if (id) filter.AND.push({ id: parseInt(id) });
@@ -287,6 +253,67 @@ async function getMeterId(id, cType, cPositionFk) {
     return data;
   }
 }
+/**Baseline Version Do not use*/
+// /**
+//  * 根据meterId和cRecordType 获取meterValue的数据
+//  * @param {*} meterId meterId
+//  * @param {*} cRecordType 班次
+//  * @returns meterValue的数据
+//  */
+// async function getMeterValuesData(cRecordType, meterId) {
+//   const filter = { AND: [] };
+//   if (cRecordType) filter.AND.push({ cRecordType });
+//   const select = {
+//     cRecordTime: true,
+//     cRecordDate: true,
+//     cRecordType: true,
+//     cValue: true,
+//     cMerterFk: true,
+//     Pems_Meter: {
+//       select: {
+//         id: true,
+//         cName: true,
+//       },
+//     },
+//   };
+//   const list = [];
+
+//   if (cRecordType != null) {
+//     list.push({
+//       cMerterFk: meterId,
+//       cRecordType,
+
+//       // cMerterFk: 199,
+//     });
+//   } else {
+//     list.push({
+//       cMerterFk: meterId,
+//       // cMerterFk: 199,
+//     });
+//   }
+//   let rstdata;
+//   if (list.length != 0) {
+//     rstdata = await prisma.Pems_MeterValues.findMany({
+//       where: {
+//         OR: list,
+//       },
+//       select,
+//       orderBy: {
+//         cRecordTime: 'asc',
+//       },
+//     });
+//   } else {
+//     rstdata = await prisma.Pems_MeterValues.findMany({
+//       where: filter,
+//       select,
+//       orderBy: {
+//         cRecordTime: 'asc',
+//       },
+//     });
+//     // console.log('++++++++++++++++++++=------------' + rstdata);
+//   }
+//   return rstdata;
+// }
 
 /**
  * 根据meterId和cRecordType 获取meterValue的数据
@@ -294,9 +321,9 @@ async function getMeterId(id, cType, cPositionFk) {
  * @param {*} cRecordType 班次
  * @returns meterValue的数据
  */
-async function getMeterValuesData(cRecordType, meterId) {
-  const filter = { AND: [] };
-  if (cRecordType) filter.AND.push({ cRecordType });
+async function getMeterValuesData(cRecordType, meterIdList) {
+  // const filter = { AND: [] };
+  // if (cRecordType) filter.AND.push({ cRecordType });
   const select = {
     cRecordTime: true,
     cRecordDate: true,
@@ -311,43 +338,32 @@ async function getMeterValuesData(cRecordType, meterId) {
     },
   };
   const list = [];
+  meterIdList.forEach(meter => {
+    if (cRecordType != null) {
+      list.push({
+        cMerterFk: meter.id,
+        cRecordType,
+      });
+    } else {
+      list.push({
+        cMerterFk: meter.id,
+      });
+    }
+  });
 
-  if (cRecordType != null) {
-    list.push({
-      cMerterFk: meterId,
-      cRecordType,
-
-      // cMerterFk: 199,
-    });
-  } else {
-    list.push({
-      cMerterFk: meterId,
-      // cMerterFk: 199,
-    });
-  }
   let rstdata;
-  if (list.length != 0) {
-    rstdata = await prisma.Pems_MeterValues.findMany({
-      where: {
-        OR: list,
-      },
-      select,
-      orderBy: {
-        cRecordTime: 'asc',
-      },
-    });
-  } else {
-    rstdata = await prisma.Pems_MeterValues.findMany({
-      where: filter,
-      select,
-      orderBy: {
-        cRecordTime: 'asc',
-      },
-    });
-    // console.log('++++++++++++++++++++=------------' + rstdata);
-  }
+  rstdata = await prisma.Pems_MeterValues.findMany({
+    where: {
+      OR: list,
+    },
+    select,
+    orderBy: {
+      cRecordTime: 'asc',
+    },
+  });
   return rstdata;
 }
+
 /**
  * 展示meterValue数据并计算每个班次耗能情况
  * @param {*} id meterId
@@ -358,12 +374,18 @@ async function getMeterValuesData(cRecordType, meterId) {
  */
 async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
   let meterIdList = await getMeterId(id, cType, cPositionFk);
-  console.log(meterIdList);
+  const meterValueDateList = await getMeterValuesData(null, meterIdList);
   let statisticalMeter = [];
   let totalEnergyConsumption = 0.0;
   for (let i = 0; i < meterIdList.length; i++) {
-    const meterValueDate = await getMeterValuesData(null, meterIdList[i].id);
-    console.log(meterValueDate);
+    let meterValueDate = [];
+    if (meterValueDateList != null && meterValueDateList.length > 0) {
+      meterValueDateList.forEach(element => {
+        if (element.cMerterFk == meterIdList[i].id) {
+          meterValueDate.push(element);
+        }
+      });
+    }
     if (meterValueDate != null && meterValueDate.length > 0) {
       for (let i = 0; i < meterValueDate.length; i++) {
         if (meterValueDate[i].cRecordType == '晚班') {
@@ -424,7 +446,12 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
               );
             } else {
               statisticalMeter.push(
-                Object.assign({}, meterValueDate[i], { energyConsumption: '' },{ totalEnergyConsumption: totalEnergyConsumption },),
+                Object.assign(
+                  {},
+                  meterValueDate[i],
+                  { energyConsumption: '' },
+                  { totalEnergyConsumption: totalEnergyConsumption },
+                ),
               );
             }
           } else {
@@ -443,6 +470,104 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
   }
   return statisticalMeter;
 }
+// /**
+//  * 展示meterValue数据并计算每个班次耗能情况
+//  * @param {*} id meterId
+//  * @param {*} cType  类型
+//  * @param {*} cPositionFk  PositionId
+//  * @param {*} cRecordType 班次
+//  * @returns meterValue数据
+//  */
+// async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
+//   let meterIdList = await getMeterId(id, cType, cPositionFk);
+//   let statisticalMeter = [];
+//   let totalEnergyConsumption = 0.0;
+//   for (let i = 0; i < meterIdList.length; i++) {
+//     const meterValueDate = await getMeterValuesData(null, meterIdList[i].id);
+//     if (meterValueDate != null && meterValueDate.length > 0) {
+//       for (let i = 0; i < meterValueDate.length; i++) {
+//         if (meterValueDate[i].cRecordType == '晚班') {
+//           if (
+//             i != 0 &&
+//             meterValueDate[i - 1].cRecordDate.getTime() == meterValueDate[i].cRecordDate.getTime()
+//           ) {
+//             let value = new Decimal(meterValueDate[i].cValue)
+//               .sub(new Decimal(meterValueDate[i - 1].cValue))
+//               .toNumber();
+//             totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+//               .add(new Decimal(value))
+//               .toNumber();
+//             statisticalMeter.push(
+//               Object.assign(
+//                 {},
+//                 meterValueDate[i],
+//                 { energyConsumption: value },
+//                 { totalEnergyConsumption: totalEnergyConsumption },
+//               ),
+//             );
+//           } else {
+//             statisticalMeter.push(
+//               Object.assign(
+//                 {},
+//                 meterValueDate[i],
+//                 { energyConsumption: '' },
+//                 { totalEnergyConsumption: totalEnergyConsumption },
+//               ),
+//             );
+//           }
+//         }
+//         if (meterValueDate[i].cRecordType == '白班') {
+//           if (i != 0) {
+//             console.log(meterValueDate[i].cRecordDate);
+//             //前一天的数据
+//             let date = meterValueDate[i].cRecordDate;
+//             let afterDate = new Date(date.getTime() - 24 * 60 * 60 * 1000);
+//             let cRecordDate = meterValueDate[i - 1].cRecordDate;
+//             if (
+//               cRecordDate.getTime() == afterDate.getTime() &&
+//               meterValueDate[i - 1].cRecordType == '晚班'
+//             ) {
+//               let value = new Decimal(meterValueDate[i].cValue)
+//                 .sub(new Decimal(meterValueDate[i - 1].cValue))
+//                 .toNumber();
+//               console.log(value);
+//               totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+//                 .add(new Decimal(value))
+//                 .toNumber();
+//               statisticalMeter.push(
+//                 Object.assign(
+//                   {},
+//                   meterValueDate[i],
+//                   { energyConsumption: value },
+//                   { totalEnergyConsumption: totalEnergyConsumption },
+//                 ),
+//               );
+//             } else {
+//               statisticalMeter.push(
+//                 Object.assign(
+//                   {},
+//                   meterValueDate[i],
+//                   { energyConsumption: '' },
+//                   { totalEnergyConsumption: totalEnergyConsumption },
+//                 ),
+//               );
+//             }
+//           } else {
+//             statisticalMeter.push(
+//               Object.assign(
+//                 {},
+//                 meterValueDate[i],
+//                 { energyConsumption: '' },
+//                 { totalEnergyConsumption: totalEnergyConsumption },
+//               ),
+//             );
+//           }
+//         }
+//       }
+//     }
+//   }
+//   return statisticalMeter;
+// }
 /**
  * 设置当前时间的格式yyyy-mm-dd
  * @param {*} date 日期
@@ -506,7 +631,6 @@ export default {
   isMorOrAft,
   dateFmt,
   gimePerHour,
-  getMeterInfo,
   statisticalMeterData,
   getMeterValuesData,
   getMeterId,
