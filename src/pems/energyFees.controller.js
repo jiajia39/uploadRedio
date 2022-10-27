@@ -109,10 +109,11 @@ const controller = (() => {
    *           type: object
    */
   router.get('/pagination', async (req, res) => {
+    const { cType } = req.query;
     const filter = { AND: {} };
     const page = Number(req.query.page) || 1;
     const row = Number(req.query.row) || 5;
-
+    if (cType) filter.AND = { ...filter.AND, cType };
     const count = await prisma.Pems_EnergyFees.count({
       where: filter,
     });
