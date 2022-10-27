@@ -391,7 +391,10 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
         if (meterValueDate[i].cRecordType == '晚班') {
           if (
             i != 0 &&
-            meterValueDate[i - 1].cRecordDate.getTime() == meterValueDate[i].cRecordDate.getTime()
+            meterValueDate[i - 1].cRecordDate.getTime() ==
+              meterValueDate[i].cRecordDate.getTime() &&
+            meterValueDate[i].cValue != null &&
+            meterValueDate[i - 1].cValue != null
           ) {
             let value = new Decimal(meterValueDate[i].cValue)
               .sub(new Decimal(meterValueDate[i - 1].cValue))
@@ -399,6 +402,8 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
             totalEnergyConsumption = new Decimal(totalEnergyConsumption)
               .add(new Decimal(value))
               .toNumber();
+            console.log(value);
+            // console.log(meterValueDate[i].Pems_Meter.id);
             statisticalMeter.push(
               Object.assign(
                 {},
@@ -420,14 +425,15 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
         }
         if (meterValueDate[i].cRecordType == '白班') {
           if (i != 0) {
-            console.log(meterValueDate[i].cRecordDate);
             //前一天的数据
             let date = meterValueDate[i].cRecordDate;
             let afterDate = new Date(date.getTime() - 24 * 60 * 60 * 1000);
             let cRecordDate = meterValueDate[i - 1].cRecordDate;
             if (
               cRecordDate.getTime() == afterDate.getTime() &&
-              meterValueDate[i - 1].cRecordType == '晚班'
+              meterValueDate[i - 1].cRecordType == '晚班' &&
+              meterValueDate[i].cValue != null &&
+              meterValueDate[i - 1].cValue != null
             ) {
               let value = new Decimal(meterValueDate[i].cValue)
                 .sub(new Decimal(meterValueDate[i - 1].cValue))
