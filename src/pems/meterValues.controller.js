@@ -15,7 +15,7 @@ const controller = (() => {
    *   get:
    *     security:
    *       - Authorization: []
-   *     description:Query and calculate the energy consumption of each shift(根据条件查询value的数据以及计算每个班次耗能情况)
+   *     description: Query and calculate the energy consumption of each shift(根据条件查询value的数据以及计算每个班次耗能情况)
    *     tags: [pems]
    *     produces:
    *       - application/json
@@ -43,9 +43,21 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterValue', async (req, res) => {
-    const { id, cType, cPositionFk, cRecordType} = req.query;
+    const { id, cType, cPositionFk, cRecordType } = req.query;
     const date = await service.statisticalMeterData(id, cType, cPositionFk, cRecordType);
-    res.json(date);
+    if (date.length != 0) {
+      res.json({
+        data: date,
+        total: date.length,
+        message: 'Data obtained.',
+      });
+    } else {
+      res.json({
+        data: [],
+        total: 0,
+        message: 'Data Empty.',
+      });
+    }
   });
   /**
    * @swagger
