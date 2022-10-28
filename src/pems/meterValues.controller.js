@@ -4,10 +4,26 @@ import prisma from '../core/prisma';
 import service from './service';
 const controller = (() => {
   const router = Router();
-  router.get('/testCronService', async(req, res) =>{
-    let  dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
-    dateTime = await service.statisticalMeterWeek(199,"Electricity",8,null);
-    res.json(dateTime);
+  router.get('/testCronService', async (req, res) => {
+    // let  dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    // dateTime = await service.statisticalMeterWeek(199,"Electricity",8,null);
+    var moment = require('moment');
+    const startDate = moment('2021-8-17');
+    const endDate = moment('2022-10-01');
+    const allYearMonth = []; // 接收所有年份和月份的数组
+    while (endDate > startDate || startDate.format('M') === endDate.format('M')) {
+      let start = startDate.format('YYYY-MM-01');
+      let end = moment(start)
+        .endOf('month')
+        .format('YYYY-MM-DD');
+      allYearMonth.push({
+        start,
+        end,
+      });
+      startDate.add(1, 'month');
+    }
+    console.log('所有年份和月份------>', allYearMonth);
+    res.json(allYearMonth);
   });
   /**
    * @swagger
@@ -62,7 +78,7 @@ const controller = (() => {
     }
   });
 
-    /**
+  /**
    * @swagger
    * /api/pems/meterValues/statisticalMeterWeek:
    *   get:
@@ -95,26 +111,78 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-     router.get('/statisticalMeterWeek', async (req, res) => {
-      const { id, cType, cPositionFk, cRecordType } = req.query;
-      const date = await service.statisticalMeterWeek(id, cType, cPositionFk, cRecordType);
-      if (date.length != 0) {
-        const { totalEnergyConsumption } = date[date.length - 1];
-        res.json({
-          totalEnergyConsumption,
-          data: date,
-          total: date.length,
-          message: 'Data obtained.',
-        });
-      } else {
-        res.json({
-          data: [],
-          total: 0,
-          message: 'Data Empty.',
-        });
-      }
-    });
+  router.get('/statisticalMeterWeek', async (req, res) => {
+    const { id, cType, cPositionFk, cRecordType } = req.query;
+    const date = await service.statisticalMeterWeek(id, cType, cPositionFk, cRecordType);
+    if (date.length != 0) {
+      const { totalEnergyConsumption } = date[date.length - 1];
+      res.json({
+        totalEnergyConsumption,
+        data: date,
+        total: date.length,
+        message: 'Data obtained.',
+      });
+    } else {
+      res.json({
+        data: [],
+        total: 0,
+        message: 'Data Empty.',
+      });
+    }
+  });
 
+  /**
+   * @swagger
+   * /api/pems/meterValues/statisticalMeterMon:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: Calculate monthly energy consumption(计算每月耗能情况)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: id
+   *         description: meter's id.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *       - name: cPositionFk
+   *         description: meter's cPositionFk
+   *         in: query
+   *         type: int
+   *       - name: cRecordType
+   *         description: meterValues's cRecordType
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
+  router.get('/statisticalMeterMon', async (req, res) => {
+    const { id, cType, cPositionFk, cRecordType } = req.query;
+    const date = await service.statisticalMeterMon(id, cType, cPositionFk, cRecordType);
+    if (date.length != 0) {
+      const { totalEnergyConsumption } = date[date.length - 1];
+      res.json({
+        totalEnergyConsumption,
+        data: date,
+        total: date.length,
+        message: 'Data obtained.',
+      });
+    } else {
+      res.json({
+        data: [],
+        total: 0,
+        message: 'Data Empty.',
+      });
+    }
+  });
   /**
    * @swagger
    * /api/pems/meterValues/getall:

@@ -486,17 +486,9 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
  * @param {*} cRecordType 班次
  * @returns meterValue数据
  */
-async function statisticalMeterWeek(id, cType, cPositionFk, cRecordType) {
-  //获取meter的数据
-  let meterIdList = await getMeterId(id, cType, cPositionFk);
-  //获取meterValue的数据
-  const meterValueDateList = await getMeterValuesData(null, meterIdList);
+async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
   let statisticalMeter = [];
-  let startDate = meterValueDateList[0].cRecordDate;
   let totalEnergyConsumption = 0.0;
-  let endDate = meterValueDateList[meterValueDateList.length - 1].cRecordDate;
-  //获取两个日期中 所有周的开始结束时间
-  let timeList = getMonAndSunDay(startDate, endDate);
   //计算每周耗能情况
   if (meterValueDateList != null && meterValueDateList.length > 0) {
     for (let i = 0; i < meterIdList.length; i++) {
@@ -532,158 +524,147 @@ async function statisticalMeterWeek(id, cType, cPositionFk, cRecordType) {
               energyConsumption: '',
             });
           }
-          if (j != 0 && meterValueDate[meterValueDate.length - 1].cValue != null) {
+          //如果 不是第一周的数据 并且 有上周周日晚班的数据，则计算本周的数据-上周周日晚班数据
+          else if (
+            j != 0 &&
+            (new Date(timeList[j - 1].endSun).getTime() ==
+              meterValueDate[1].cRecordDate.getTime() ||
+              new Date(timeList[j - 1].endSun).getTime() ==
+                meterValueDate[0].cRecordDate.getTime()) &&
+            (meterValueDate[1].cRecordType == '晚班' || meterValueDate[0].cRecordType == '晚班')
+          ) {
+            let energyConsumption = '';
             if (
               new Date(timeList[j - 1].endSun).getTime() ==
                 meterValueDate[1].cRecordDate.getTime() &&
               meterValueDate[1].cRecordType == '晚班'
             ) {
-              let energyConsumption;
-              if (meterValueDate[1].cValue != null) {
+              if (
+                meterValueDate[1].cValue != null &&
+                meterValueDate[meterValueDate.length - 1].cValue != null
+              ) {
                 energyConsumption = new Decimal(meterValueDate[meterValueDate.length - 1].cValue)
                   .sub(new Decimal(meterValueDate[1].cValue))
                   .toNumber();
+                if (energyConsumption != null && energyConsumption != 0) {
+                  totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+                    .add(new Decimal(energyConsumption))
+                    .toNumber();
+                }
+                // console.log(energyConsumption);
               } else {
                 energyConsumption = '';
               }
-              totalEnergyConsumption = new Decimal(totalEnergyConsumption)
-                .add(new Decimal(energyConsumption))
-                .toNumber();
-              statisticalMeter.push({
-                date,
-                cname: name,
-                energyConsumption,
-                totalEnergyConsumption,
-              });
-            } else {
-              console.log(meterValueDate[meterValueDate.length - 1].cValue);
-              console.log(meterValueDate[0].cValue);
-              let energyConsumption;
-              if (meterValueDate[0].cValue != null) {
+            }
+            if (
+              new Date(timeList[j - 1].endSun).getTime() ==
+                meterValueDate[0].cRecordDate.getTime() &&
+              meterValueDate[0].cRecordType == '晚班'
+            ) {
+              if (
+                meterValueDate[0].cValue != null &&
+                meterValueDate[meterValueDate.length - 1].cValue != null
+              ) {
                 energyConsumption = new Decimal(meterValueDate[meterValueDate.length - 1].cValue)
                   .sub(new Decimal(meterValueDate[0].cValue))
                   .toNumber();
+                if (energyConsumption != null && energyConsumption != 0) {
+                  totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+                    .add(new Decimal(energyConsumption))
+                    .toNumber();
+                }
+                // console.log(energyConsumption);
+              } else {
+                energyConsumption = '';
+              }
+            }
+            statisticalMeter.push({
+              date,
+              cname: name,
+              energyConsumption,
+              totalEnergyConsumption,
+            });
+          }
+          //如果 是第一周的数据 并且 没有上周周日晚班的数据，当前数据-本周第一次出现的数据
+          else {
+            // console.log("--"+timeList[j].endSun);
+            // console.log("+++"+meterValueDate[0].cRecordDate);
+            let energyConsumption;
+            if (
+              meterValueDate[0].cValue != null &&
+              meterValueDate[meterValueDate.length - 1].cValue != null
+            ) {
+              energyConsumption = new Decimal(meterValueDate[meterValueDate.length - 1].cValue)
+                .sub(new Decimal(meterValueDate[0].cValue))
+                .toNumber();
+              if (energyConsumption != null && energyConsumption != 0) {
                 totalEnergyConsumption = new Decimal(totalEnergyConsumption)
                   .add(new Decimal(energyConsumption))
                   .toNumber();
-              } else {
-                totalEnergyConsumption = '';
               }
-
-              statisticalMeter.push({
-                date,
-                cname: name,
-                energyConsumption,
-                totalEnergyConsumption,
-              });
+              // console.log(name);
+              // console.log(energyConsumption);
+            } else {
+              energyConsumption = '';
             }
+            statisticalMeter.push({
+              date,
+              cname: name,
+              energyConsumption,
+              totalEnergyConsumption,
+            });
           }
         }
       }
     }
   }
-
   return statisticalMeter;
   // }
 }
-// /**
-//  * 展示meterValue数据并计算每个班次耗能情况
-//  * @param {*} id meterId
-//  * @param {*} cType  类型
-//  * @param {*} cPositionFk  PositionId
-//  * @param {*} cRecordType 班次
-//  * @returns meterValue数据
-//  */
-// async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
-//   let meterIdList = await getMeterId(id, cType, cPositionFk);
-//   let statisticalMeter = [];
-//   let totalEnergyConsumption = 0.0;
-//   for (let i = 0; i < meterIdList.length; i++) {
-//     const meterValueDate = await getMeterValuesData(null, meterIdList[i].id);
-//     if (meterValueDate != null && meterValueDate.length > 0) {
-//       for (let i = 0; i < meterValueDate.length; i++) {
-//         if (meterValueDate[i].cRecordType == '晚班') {
-//           if (
-//             i != 0 &&
-//             meterValueDate[i - 1].cRecordDate.getTime() == meterValueDate[i].cRecordDate.getTime()
-//           ) {
-//             let value = new Decimal(meterValueDate[i].cValue)
-//               .sub(new Decimal(meterValueDate[i - 1].cValue))
-//               .toNumber();
-//             totalEnergyConsumption = new Decimal(totalEnergyConsumption)
-//               .add(new Decimal(value))
-//               .toNumber();
-//             statisticalMeter.push(
-//               Object.assign(
-//                 {},
-//                 meterValueDate[i],
-//                 { energyConsumption: value },
-//                 { totalEnergyConsumption: totalEnergyConsumption },
-//               ),
-//             );
-//           } else {
-//             statisticalMeter.push(
-//               Object.assign(
-//                 {},
-//                 meterValueDate[i],
-//                 { energyConsumption: '' },
-//                 { totalEnergyConsumption: totalEnergyConsumption },
-//               ),
-//             );
-//           }
-//         }
-//         if (meterValueDate[i].cRecordType == '白班') {
-//           if (i != 0) {
-//             console.log(meterValueDate[i].cRecordDate);
-//             //前一天的数据
-//             let date = meterValueDate[i].cRecordDate;
-//             let afterDate = new Date(date.getTime() - 24 * 60 * 60 * 1000);
-//             let cRecordDate = meterValueDate[i - 1].cRecordDate;
-//             if (
-//               cRecordDate.getTime() == afterDate.getTime() &&
-//               meterValueDate[i - 1].cRecordType == '晚班'
-//             ) {
-//               let value = new Decimal(meterValueDate[i].cValue)
-//                 .sub(new Decimal(meterValueDate[i - 1].cValue))
-//                 .toNumber();
-//               console.log(value);
-//               totalEnergyConsumption = new Decimal(totalEnergyConsumption)
-//                 .add(new Decimal(value))
-//                 .toNumber();
-//               statisticalMeter.push(
-//                 Object.assign(
-//                   {},
-//                   meterValueDate[i],
-//                   { energyConsumption: value },
-//                   { totalEnergyConsumption: totalEnergyConsumption },
-//                 ),
-//               );
-//             } else {
-//               statisticalMeter.push(
-//                 Object.assign(
-//                   {},
-//                   meterValueDate[i],
-//                   { energyConsumption: '' },
-//                   { totalEnergyConsumption: totalEnergyConsumption },
-//                 ),
-//               );
-//             }
-//           } else {
-//             statisticalMeter.push(
-//               Object.assign(
-//                 {},
-//                 meterValueDate[i],
-//                 { energyConsumption: '' },
-//                 { totalEnergyConsumption: totalEnergyConsumption },
-//               ),
-//             );
-//           }
-//         }
-//       }
-//     }
-//   }
-//   return statisticalMeter;
-// }
+
+async function statisticalMeterWeek(id, cType, cPositionFk, cRecordType) {
+  //获取meter的数据
+  let meterIdList = await getMeterId(id, cType, cPositionFk);
+  //获取meterValue的数据
+  const meterValueDateList = await getMeterValuesData(null, meterIdList);
+
+  let startDate = meterValueDateList[0].cRecordDate;
+  let endDate = meterValueDateList[meterValueDateList.length - 1].cRecordDate;
+  let timeList = getMonAndSunDay(startDate, endDate);
+  // let timeList = getStaAndEndMon(startDate, endDate);
+  return await statisticalMeter(meterIdList, meterValueDateList, timeList);
+}
+
+async function statisticalMeterMon(id, cType, cPositionFk, cRecordType) {
+  //获取meter的数据
+  let meterIdList = await getMeterId(id, cType, cPositionFk);
+  //获取meterValue的数据
+  const meterValueDateList = await getMeterValuesData(null, meterIdList);
+
+  let startDate = meterValueDateList[0].cRecordDate;
+  let endDate = meterValueDateList[meterValueDateList.length - 1].cRecordDate;
+  let timeList = getStaAndEndMon(startDate, endDate);
+  return await statisticalMeter(meterIdList, meterValueDateList, timeList);
+}
+function getStaAndEndMon(startDate, endDate) {
+  var moment = require('moment');
+
+  startDate = moment(startDate);
+  endDate = moment(endDate);
+  const allYearMonth = []; // 接收所有年份和月份的数组
+  while (endDate > startDate || startDate.format('M') === endDate.format('M')) {
+    let start = startDate.format('YYYY-MM-01');
+    let end = moment(start)
+      .endOf('month')
+      .format('YYYY-MM-DD');
+    allYearMonth.push({
+      startTime: start,
+      endSun: end,
+    });
+    startDate.add(1, 'month');
+  }
+  return allYearMonth;
+}
 /**
  * 根据开始结束时间获取每周的周一和周日
  * @param {*} startDate 开始时间
@@ -818,4 +799,5 @@ export default {
   getMeterId,
   getMonAndSunDay,
   statisticalMeterWeek,
+  statisticalMeterMon,
 };
