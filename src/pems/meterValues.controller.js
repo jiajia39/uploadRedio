@@ -4,9 +4,9 @@ import prisma from '../core/prisma';
 import service from './service';
 const controller = (() => {
   const router = Router();
-  router.get('/testCronService', function(req, res) {
-    const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
-    service.setMeterRecordingAndSave();
+  router.get('/testCronService', async(req, res) =>{
+    let  dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    dateTime = await service.statisticalMeterWeek(199,"Electricity",8,null);
     res.json(dateTime);
   });
   /**
@@ -46,7 +46,7 @@ const controller = (() => {
     const { id, cType, cPositionFk, cRecordType } = req.query;
     const date = await service.statisticalMeterData(id, cType, cPositionFk, cRecordType);
     if (date.length != 0) {
-      const {totalEnergyConsumption} = date[date.length - 1];
+      const { totalEnergyConsumption } = date[date.length - 1];
       res.json({
         totalEnergyConsumption,
         data: date,
@@ -61,6 +61,60 @@ const controller = (() => {
       });
     }
   });
+
+    /**
+   * @swagger
+   * /api/pems/meterValues/statisticalMeterWeek:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: Calculate weekly energy consumption(计算每周耗能情况)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: id
+   *         description: meter's id.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *       - name: cPositionFk
+   *         description: meter's cPositionFk
+   *         in: query
+   *         type: int
+   *       - name: cRecordType
+   *         description: meterValues's cRecordType
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
+     router.get('/statisticalMeterWeek', async (req, res) => {
+      const { id, cType, cPositionFk, cRecordType } = req.query;
+      const date = await service.statisticalMeterWeek(id, cType, cPositionFk, cRecordType);
+      if (date.length != 0) {
+        const { totalEnergyConsumption } = date[date.length - 1];
+        res.json({
+          totalEnergyConsumption,
+          data: date,
+          total: date.length,
+          message: 'Data obtained.',
+        });
+      } else {
+        res.json({
+          data: [],
+          total: 0,
+          message: 'Data Empty.',
+        });
+      }
+    });
+
   /**
    * @swagger
    * /api/pems/meterValues/getall:

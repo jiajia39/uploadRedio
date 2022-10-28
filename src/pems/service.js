@@ -476,6 +476,99 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
   }
   return statisticalMeter;
 }
+
+/**
+ * 计算每周耗能情况
+ * @param {*} id meterId
+ * @param {*} cType  类型
+ * @param {*} cPositionFk  PositionId
+ * @param {*} cRecordType 班次
+ * @returns meterValue数据
+ */
+async function statisticalMeterWeek(id, cType, cPositionFk, cRecordType) {
+  //获取meter的数据
+  let meterIdList = await getMeterId(id, cType, cPositionFk);
+  //获取meterValue的数据
+  const meterValueDateList = await getMeterValuesData(null, meterIdList);
+  let statisticalMeter = [];
+  let startDate = meterValueDateList[0].cRecordDate;
+  let totalEnergyConsumption =0.00;
+  let endDate = meterValueDateList[meterValueDateList.length - 1].cRecordDate;
+  //获取两个日期中 所有周的开始结束时间
+  let timeList = getMonAndSunDay(startDate, endDate);
+  //计算每周耗能情况
+  if (meterValueDateList != null && meterValueDateList.length > 0) {
+    for (let i = 0; i < meterIdList.length; i++) {
+      for (let j = 0; j < timeList.length; j++) {
+        let meterValueDate = [];
+        meterValueDateList.forEach(element => {
+          if (j == 0) {
+            if (
+              element.cMerterFk == meterIdList[i].id &&
+              new Date(timeList[j].endSun).getTime() >= element.cRecordDate.getTime()
+            ) {
+              meterValueDate.push(element);
+            }
+          } else {
+            if (
+              element.cMerterFk == meterIdList[i].id &&
+              new Date(timeList[j].endSun).getTime() >= element.cRecordDate.getTime() &&
+              new Date(timeList[j - 1].endSun).getTime() <= element.cRecordDate.getTime()
+            ) {
+              meterValueDate.push(element);
+            }
+          }
+        });
+
+        if (meterValueDate != null && meterValueDate.length > 0) {
+          let name = '';
+          const date = timeList[j].startTime + '---' + timeList[j].endSun;
+          name = meterValueDate[0].Pems_Meter.cName;
+          if (meterValueDate.length == 1) {
+            statisticalMeter.push({
+              date,
+              cname: name,
+              energyConsumption: '',
+            });
+          } else if (
+            j != 0 &&
+            new Date(timeList[j - 1].endSun).getTime() == meterValueDate[1].cRecordDate.getTime() &&
+            meterValueDate[1].cRecordType == '晚班'
+          ) {
+            const energyConsumption = new Decimal(meterValueDate[meterValueDate.length - 1].cValue)
+              .sub(new Decimal(meterValueDate[1].cValue))
+              .toNumber();
+              totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+              .add(new Decimal(energyConsumption))
+              .toNumber();
+            statisticalMeter.push({
+              date,
+              cname: name,
+              energyConsumption,
+              totalEnergyConsumption,
+            });
+          } else {
+            const energyConsumption = new Decimal(meterValueDate[meterValueDate.length - 1].cValue)
+              .sub(new Decimal(meterValueDate[0].cValue))
+              .toNumber();
+              totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+              .add(new Decimal(energyConsumption))
+              .toNumber();
+            statisticalMeter.push({
+              date,
+              cname: name,
+              energyConsumption,
+              totalEnergyConsumption,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return statisticalMeter;
+  // }
+}
 // /**
 //  * 展示meterValue数据并计算每个班次耗能情况
 //  * @param {*} id meterId
@@ -575,6 +668,72 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordType) {
 //   return statisticalMeter;
 // }
 /**
+ * 根据开始结束时间获取每周的周一和周日
+ * @param {*} startDate 开始时间
+ * @param {*} endTime 结束时间
+ */
+function getMonAndSunDay(startDate, endTime) {
+  var moment = require('moment');
+
+  const StartWeekOfday = moment(startDate).format('E');
+  const endWeekOfday = moment(endTime).format('E');
+  //开始时间的周一
+  const endTimeFor = moment(endTime).format('YYYYMMDD');
+  const startMon = moment(startDate)
+    .subtract(StartWeekOfday - 1, 'days')
+    .format('YYYYMMDD');
+  //周日
+  const endSun = moment(endTime)
+    .add(7 - endWeekOfday, 'days')
+    .format('YYYYMMDD');
+  console.log(startMon);
+  console.log(endSun);
+  let arr = [];
+  let i = startMon;
+  while (i <= endSun) {
+    if (i == startMon) {
+      //开始时间的周日
+      const startSun = moment(startDate)
+        .add(7 - StartWeekOfday, 'days')
+        .format('YYYY-MM-DD');
+      arr.push({
+        startTime: moment(startDate).format('YYYY-MM-DD'),
+        endSun: startSun,
+      });
+      // console.log(startTime + '------' + startSun);
+      i = moment(startSun)
+        .add(1, 'days')
+        .format('YYYYMMDD');
+
+      continue;
+    } else {
+      let j = String(i);
+      const startTime = j.slice(0, 4) + '-' + j.slice(4, 6) + '-' + j.slice(6, 8);
+      const start = moment(startTime).format('E');
+      const endSun = moment(startTime)
+        .add(7 - start, 'days')
+        .format('YYYY-MM-DD');
+      i = moment(endSun)
+        .add(1, 'days')
+        .format('YYYYMMDD');
+      if (i > endTimeFor) {
+        arr.push({
+          startTime,
+          endSun: moment(endTime).format('YYYY-MM-DD'),
+        });
+        break;
+      }
+      arr.push({
+        startTime,
+        endSun,
+      });
+
+      console.log(startTime + '------' + endSun);
+    }
+  }
+  return arr;
+}
+/**
  * 设置当前时间的格式yyyy-mm-dd
  * @param {*} date 日期
  * @returns yyyy-mm-dd
@@ -640,4 +799,6 @@ export default {
   statisticalMeterData,
   getMeterValuesData,
   getMeterId,
+  getMonAndSunDay,
+  statisticalMeterWeek,
 };
