@@ -1,3 +1,4 @@
+import e from 'express';
 import { forEach, reject } from 'lodash';
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
@@ -492,7 +493,7 @@ async function statisticalMeterWeek(id, cType, cPositionFk, cRecordType) {
   const meterValueDateList = await getMeterValuesData(null, meterIdList);
   let statisticalMeter = [];
   let startDate = meterValueDateList[0].cRecordDate;
-  let totalEnergyConsumption =0.00;
+  let totalEnergyConsumption = 0.0;
   let endDate = meterValueDateList[meterValueDateList.length - 1].cRecordDate;
   //获取两个日期中 所有周的开始结束时间
   let timeList = getMonAndSunDay(startDate, endDate);
@@ -530,36 +531,52 @@ async function statisticalMeterWeek(id, cType, cPositionFk, cRecordType) {
               cname: name,
               energyConsumption: '',
             });
-          } else if (
-            j != 0 &&
-            new Date(timeList[j - 1].endSun).getTime() == meterValueDate[1].cRecordDate.getTime() &&
-            meterValueDate[1].cRecordType == '晚班'
-          ) {
-            const energyConsumption = new Decimal(meterValueDate[meterValueDate.length - 1].cValue)
-              .sub(new Decimal(meterValueDate[1].cValue))
-              .toNumber();
+          }
+          if (j != 0 && meterValueDate[meterValueDate.length - 1].cValue != null) {
+            if (
+              new Date(timeList[j - 1].endSun).getTime() ==
+                meterValueDate[1].cRecordDate.getTime() &&
+              meterValueDate[1].cRecordType == '晚班'
+            ) {
+              let energyConsumption;
+              if (meterValueDate[1].cValue != null) {
+                energyConsumption = new Decimal(meterValueDate[meterValueDate.length - 1].cValue)
+                  .sub(new Decimal(meterValueDate[1].cValue))
+                  .toNumber();
+              } else {
+                energyConsumption = '';
+              }
               totalEnergyConsumption = new Decimal(totalEnergyConsumption)
-              .add(new Decimal(energyConsumption))
-              .toNumber();
-            statisticalMeter.push({
-              date,
-              cname: name,
-              energyConsumption,
-              totalEnergyConsumption,
-            });
-          } else {
-            const energyConsumption = new Decimal(meterValueDate[meterValueDate.length - 1].cValue)
-              .sub(new Decimal(meterValueDate[0].cValue))
-              .toNumber();
-              totalEnergyConsumption = new Decimal(totalEnergyConsumption)
-              .add(new Decimal(energyConsumption))
-              .toNumber();
-            statisticalMeter.push({
-              date,
-              cname: name,
-              energyConsumption,
-              totalEnergyConsumption,
-            });
+                .add(new Decimal(energyConsumption))
+                .toNumber();
+              statisticalMeter.push({
+                date,
+                cname: name,
+                energyConsumption,
+                totalEnergyConsumption,
+              });
+            } else {
+              console.log(meterValueDate[meterValueDate.length - 1].cValue);
+              console.log(meterValueDate[0].cValue);
+              let energyConsumption;
+              if (meterValueDate[0].cValue != null) {
+                energyConsumption = new Decimal(meterValueDate[meterValueDate.length - 1].cValue)
+                  .sub(new Decimal(meterValueDate[0].cValue))
+                  .toNumber();
+                totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+                  .add(new Decimal(energyConsumption))
+                  .toNumber();
+              } else {
+                totalEnergyConsumption = '';
+              }
+
+              statisticalMeter.push({
+                date,
+                cname: name,
+                energyConsumption,
+                totalEnergyConsumption,
+              });
+            }
           }
         }
       }
