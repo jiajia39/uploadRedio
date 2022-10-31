@@ -148,12 +148,15 @@ const controller = (() => {
       row = 5;
     }
     if (cRecordDate == null) {
-      res.status(200).json({ isok: false, message: '请填写日期' });
+      cRecordDate = new Date();
+    }
+    if (cPositionFk == null) {
+      cPositionFk = Number(8);
     }
     const date = await service.statisticalMeterData(
       id,
       cType,
-      cPositionFk,
+      Number(cPositionFk),
       cRecordDate,
       cRecordType,
     );
@@ -209,8 +212,28 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterWeek', async (req, res) => {
-    const { id, cType, cPositionFk, cRecordType } = req.query;
-    const date = await service.statisticalMeterWeek(id, cType, cPositionFk, cRecordType);
+    var moment = require('moment');
+    let { startWeek, endWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    if (startWeek == null || endWeek == null) {
+      let newDate = new Date();
+      const startWeekOfday = moment(newDate).format('E');
+      //开始时间的周一
+      startWeek = moment(newDate)
+        .subtract(startWeekOfday - 1, 'days')
+        .format('YYYYMMDD');
+      //周日
+      endWeek = moment(newDate)
+        .add(7 - startWeekOfday, 'days')
+        .format('YYYYMMDD');
+    }
+    const date = await service.statisticalMeterWeek(
+      startWeek,
+      endWeek,
+      id,
+      cType,
+      cPositionFk,
+      cRecordType,
+    );
     if (date.length != 0) {
       const { totalEnergyConsumption } = date[date.length - 1];
       res.json({
