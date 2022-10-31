@@ -583,22 +583,31 @@ async function saveReoprtMonHistory() {
       preDate = new Date(moment(preDate).format('YYYY-MM-01'));
       let timeList = await this.getStaAndEndMon(preDate, endDate);
       for (let i = 0; i < timeList.length; i++) {
-        const startMonth = timeList[i].startTime;
-        const endMonth = timeList[i].endSun;
-        let data = await this.statisticalMeterMon(startMonth, endMonth, null, null, null, null);
+        const startMonth = new Date(timeList[i].startTime);
+        const endMonth = new Date(timeList[i].endSun);
+        const filter = { AND: [] };
+        if (startMonth) filter.AND.push({ cDate: { gte: startMonth } });
+        if (endMonth) filter.AND.push({ cDate: { lte: endMonth } });
+        const data = await prisma.Pems_MeterReportHistory_Day.groupBy({
+          by: ['cMeterFk'],
+          where: filter,
+          _sum: {
+            cValue: true,
+          },
+        });
+        // let data = await this.statisticalMeterMon(startMonth, endMonth, null, null, null, null);
+
         if (data != null && data != '' && data.length > 0) {
           let monthList = [];
-          if (data != null && data.length > 0) {
-            for (let i = 0; i < data.length; i++) {
-              monthList.push({
-                cMonthStart: new Date(data[i].startTime),
-                cMonthEnd: new Date(data[i].endTime),
-                cValue: parseFloat(data[i].energyConsumption),
-                cMeterFk: data[i].cMeterFk,
-              });
-            }
-            await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
+          for (let i = 0; i < data.length; i++) {
+            monthList.push({
+              cMonthStart: startMonth,
+              cMonthEnd: endMonth,
+              cValue: parseFloat(data[i]._sum.cValue),
+              cMeterFk: data[i].cMeterFk,
+            });
           }
+          await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
         }
       }
     }
@@ -606,14 +615,26 @@ async function saveReoprtMonHistory() {
     //上月月初
     let startMonth = new Date(moment(endDate).format('YYYY-MM-01'));
 
-    let data = await this.statisticalMeterMon(startMonth, endDate, null, null, null, null);
+    // let data = await this.statisticalMeterMon(startMonth, endDate, null, null, null, null);
+
+    const filter = { AND: [] };
+    if (startMonth) filter.AND.push({ cDate: { gte: startMonth } });
+    if (endDate) filter.AND.push({ cDate: { lte: endDate } });
+    const data = await prisma.Pems_MeterReportHistory_Day.groupBy({
+      by: ['cMeterFk'],
+      where: filter,
+      _sum: {
+        cValue: true,
+      },
+    });
+
     if (data != null && data.length > 0) {
       let monthList = [];
       for (let i = 0; i < data.length; i++) {
         monthList.push({
-          cMonthStart: new Date(data[i].startTime),
-          cMonthEnd: new Date(data[i].endTime),
-          cValue: parseFloat(data[i].energyConsumption),
+          cMonthStart: startMonth,
+          cMonthEnd: endDate,
+          cValue: parseFloat(data[i]._sum.cValue),
           cMeterFk: data[i].cMeterFk,
         });
       }
