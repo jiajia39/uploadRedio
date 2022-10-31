@@ -147,6 +147,9 @@ const controller = (() => {
     if (row == null) {
       row = 5;
     }
+    if (cRecordDate == null) {
+      res.status(200).json({ isok: false, message: '请填写日期' });
+    }
     const date = await service.statisticalMeterData(
       id,
       cType,

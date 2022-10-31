@@ -324,18 +324,25 @@ async function getMeterId(id, cType, cPositionFk) {
  */
 async function getMeterValuesData(cRecordDate, cRecordType, meterIdList) {
   var moment = require('moment');
+  let meterIds = [];
+  meterIdList.forEach(element => {
+    meterIds.push(element.id);
+  });
   const dateStr = moment(new Date()).format('YYYY-MM-DD');
   let dateTime = new Date(dateStr);
   cRecordDate = new Date(cRecordDate) || dateTime;
-  console.log(cRecordDate);
   let preDate = new Date(
     moment(cRecordDate)
       .subtract(1, 'days')
       .format('YYYY-MM-DD'),
   );
-  let dateList = [];
+  const dateList = [];
   dateList.push(cRecordDate);
   dateList.push(preDate);
+
+  const filter = { AND: [] };
+  filter.AND = { ...filter.AND, cRecordDate: { in: dateList } };
+  filter.AND = { ...filter.AND, cMerterFk: { in: meterIds } };
   const select = {
     cRecordTime: true,
     cRecordDate: true,
@@ -349,28 +356,8 @@ async function getMeterValuesData(cRecordDate, cRecordType, meterIdList) {
       },
     },
   };
-  const list = [];
-  meterIdList.forEach(meter => {
-    dateList.forEach(date => {
-      if (cRecordType != null) {
-        list.push({
-          cMerterFk: meter.id,
-          cRecordDate: date,
-          cRecordType,
-        });
-      } else {
-        list.push({
-          cMerterFk: meter.id,
-          cRecordDate: date,
-        });
-      }
-    });
-  });
-
-  let rstdata = await prisma.Pems_MeterValues.findMany({
-    where: {
-      OR: list,
-    },
+  const rstdata = await prisma.Pems_MeterValues.findMany({
+    where: filter,
     select,
     orderBy: {
       cRecordTime: 'asc',
@@ -403,9 +390,6 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
     }
     if (meterValueDate != null && meterValueDate.length > 0) {
       for (let i = 0; i < meterValueDate.length; i++) {
-        console.log(cRecordDate);
-        console.log(new Date(cRecordDate).getTime());
-        console.log(meterValueDate[i].cRecordDate.getTime());
         if (new Date(cRecordDate).getTime() == meterValueDate[i].cRecordDate.getTime()) {
           if (meterValueDate[i].cRecordType == '晚班') {
             if (
@@ -421,8 +405,6 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
               totalEnergyConsumption = new Decimal(totalEnergyConsumption)
                 .add(new Decimal(value))
                 .toNumber();
-              console.log(value);
-              // console.log(meterValueDate[i].Pems_Meter.id);
               statisticalMeter.push(
                 Object.assign(
                   {},
@@ -457,7 +439,6 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
                 let value = new Decimal(meterValueDate[i].cValue)
                   .sub(new Decimal(meterValueDate[i - 1].cValue))
                   .toNumber();
-                console.log(value);
                 totalEnergyConsumption = new Decimal(totalEnergyConsumption)
                   .add(new Decimal(value))
                   .toNumber();
@@ -829,12 +810,15 @@ function getPageDate(dateList, row, page) {
   let fromIndex = 0;
   let toIndex = 0;
   if (page != pageCount) {
-    fromIndex = (page - 1) * row; //从第几个数据开始查
-    toIndex = fromIndex + row;
+    fromIndex = (Number(page) - 1) * Number(row); //从第几个数据开始查
+    toIndex = Number(fromIndex) + Number(row);
   } else {
-    fromIndex = (page - 1) * row;
+    fromIndex = (Number(page) - 1) * Number(row);
     toIndex = count;
   }
+  console.log(fromIndex);
+  console.log(row);
+  console.log(toIndex);
   return dateList.slice(fromIndex, toIndex);
 }
 
