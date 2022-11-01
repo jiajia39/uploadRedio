@@ -366,8 +366,7 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
   let meterIdList = await getMeterId(id, cType, cPositionFk);
 
   const dateStr = moment(new Date()).format('YYYY-MM-DD');
-  let dateTime = new Date(dateStr);
-  cRecordDate = new Date(cRecordDate) || dateTime;
+  cRecordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
   let preDate = new Date(
     moment(cRecordDate)
       .subtract(1, 'days')
@@ -376,7 +375,10 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
   const dateList = [];
   dateList.push(cRecordDate);
   dateList.push(preDate);
+  console.log(cRecordDate + '--' + preDate);
   const meterValueDateList = await getMeterValuesData(dateList, null, meterIdList);
+  console.log(',,,,,,,,,');
+  console.log(meterValueDateList);
   let statisticalMeter = [];
   let totalEnergyConsumption = 0.0;
   for (let i = 0; i < meterIdList.length; i++) {

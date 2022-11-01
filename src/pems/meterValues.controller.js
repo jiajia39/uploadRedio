@@ -64,7 +64,7 @@ const controller = (() => {
     if (row == null) {
       row = 5;
     }
-    if (cRecordDate == null) {
+    if (cRecordDate == null || cRecordDate == '') {
       cRecordDate = new Date();
     }
     if (cType == null && id == null && cPositionFk == null) {
@@ -130,7 +130,6 @@ const controller = (() => {
    */
   router.get('/statisticalMeterWeek', async (req, res) => {
     let { row, page, startWeek, endWeek, id, cType, cPositionFk, cRecordType } = req.query;
-    console.log("'''''''''''''''"+startWeek);
     if (page == null) {
       page = 1;
     }
