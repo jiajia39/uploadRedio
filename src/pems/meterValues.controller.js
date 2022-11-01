@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import influxservice from '../influx/service';
 import prisma from '../core/prisma';
 import service from './service';
 
@@ -68,7 +67,7 @@ const controller = (() => {
     if (cRecordDate == null) {
       cRecordDate = new Date();
     }
-    if (cPositionFk == null) {
+    if (cType == null && id == null && cPositionFk == null) {
       cPositionFk = Number(8);
     }
     const date = await service.statisticalMeterData(
@@ -137,7 +136,7 @@ const controller = (() => {
     if (row == null) {
       row = 5;
     }
-    if (cPositionFk == null) {
+    if (cType == null && id == null && cPositionFk == null) {
       cPositionFk = Number(8);
     }
     if (startWeek == null || endWeek == null) {
@@ -219,7 +218,7 @@ const controller = (() => {
     if (row == null) {
       row = 5;
     }
-    if (cPositionFk == null) {
+    if (cType == null && id == null && cPositionFk == null) {
       cPositionFk = Number(8);
     }
     if (startMonth == null || endMonth == null) {

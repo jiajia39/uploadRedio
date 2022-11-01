@@ -479,7 +479,7 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
 }
 
 /**
- * 计算每周耗能情况
+ * 计算两个日期的耗能情况
  * @param {*} id meterId
  * @param {*} cType  类型
  * @param {*} cPositionFk  PositionId
@@ -496,10 +496,12 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
         let nowDate;
         let preDate;
         let meterValueDate;
+
         meterValueDateList.forEach(element => {
           if (element.cMerterFk == meterIdList[i].id) {
             if (element.cRecordDate.getTime() <= new Date(timeList[j].endSun).getTime()) {
               meterValueDate = element;
+              console.log(element);
               if (element.cValue != null) {
                 nowDate = element.cValue;
               }
@@ -514,11 +516,12 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
         });
         const date = timeList[j].startTime + '---' + timeList[j].endSun;
         let name;
-        let energyConsumption;
+        let energyConsumption = null;
         if (meterValueDate != null) {
           name = meterValueDate.Pems_Meter.cName;
         }
         if (preDate != null && nowDate != null) {
+          console.log(nowDate);
           energyConsumption = new Decimal(nowDate).sub(new Decimal(preDate)).toNumber();
           totalEnergyConsumption = new Decimal(totalEnergyConsumption)
             .add(new Decimal(energyConsumption))
@@ -563,7 +566,7 @@ async function statisticalMeterWeek(startWeek, endWeek, id, cType, cPositionFk, 
   //获取meterValue的数据
   let list = getAllDays(preDate, endDate);
   const meterValueDateList = await getMeterValuesData(list, null, meterIdList);
-  return await statisticalMeter( meterIdList, meterValueDateList, timeList);
+  return await statisticalMeter(meterIdList, meterValueDateList, timeList);
 }
 /**
  * 按月计算meterValue的耗能
@@ -575,19 +578,21 @@ async function statisticalMeterWeek(startWeek, endWeek, id, cType, cPositionFk, 
  * @param {*} cRecordType 班次
  * @returns meterValue的耗能信息
  */
-
 async function statisticalMeterMon(startMonth, endMonth, id, cType, cPositionFk, cRecordType) {
   //获取meter的数据
   let meterIdList = await getMeterId(id, cType, cPositionFk);
-  console.log(meterIdList);
-  //获取meterValue的数据
-  let preDate = new Date(
-    moment(startMonth)
-      .subtract(1, 'days')
-      .format('YYYY-MM-DD'),
-  );
+  //获取开始时间上月1日的日期
+  console.log(startMonth);
+  let preDate = moment(startMonth)
+    .month(moment(startMonth).month() - 1)
+    .startOf('month')
+    .format('YYYY-MM-DD');
+
   let endDate = new Date(moment(endMonth).format('YYYY-MM-DD'));
-  let list = [preDate, endDate];
+  let list = getAllDays(preDate, endDate);
+  console.log('==============');
+  console.log(list);
+  //获取meterValue的数据
   const meterValueDateList = await getMeterValuesData(list, null, meterIdList);
 
   // let startDate = meterValueDateList[0].cRecordDate;
@@ -595,8 +600,14 @@ async function statisticalMeterMon(startMonth, endMonth, id, cType, cPositionFk,
   startMonth = new Date(moment(startMonth).format('YYYY-MM-DD'));
 
   let timeList = getStaAndEndMon(preDate, endDate);
-  return await statisticalMeter( meterIdList, meterValueDateList, timeList);
+  return await statisticalMeter(meterIdList, meterValueDateList, timeList);
 }
+/**
+ * 获取开始结束时间 每个月份的月初、月末
+ * @param {*} startDate 开始时间
+ * @param {*} endDate 结束时间
+ * @returns 日期
+ */
 function getStaAndEndMon(startDate, endDate) {
   startDate = moment(startDate);
   endDate = moment(endDate);
@@ -704,7 +715,12 @@ function dateFmt(date, hour) {
   }
   return new Date(dateStr);
 }
-
+/**
+ * 获取开始结束时间中每天的日期
+ * @param {*} startDate 开始时间
+ * @param {*} endDate 结束时间
+ * @returns 日期
+ */
 function getAllDays(startDate, endDate) {
   let tempTimestamp = moment(startDate).format('YYYYMMDD');
   let endTimestamp = moment(endDate).format('YYYYMMDD');
