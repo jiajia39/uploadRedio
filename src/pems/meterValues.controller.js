@@ -2,109 +2,27 @@ import { Router } from 'express';
 import influxservice from '../influx/service';
 import prisma from '../core/prisma';
 import service from './service';
+
+var moment = require('moment');
 const controller = (() => {
   const router = Router();
   router.get('/testCronService', async (req, res) => {
-    let list = [
-      {
-        id: 199,
-      },
-    ];
-    let getMeterValuesData = await service.getMeterValuesData(1, 5, '2022-10-25', null, list);
-    res.json(getMeterValuesData);
-    // const filter = { AND: {} };
-    // var moment = require('moment');
-    // let meterIdList = [16];
-
-    // var moment = require('moment');
-    // const dateStr = moment(new Date()).format('YYYY-MM-DD');
-
-    // let dateTime = new Date(dateStr);
-
-    // let preDate = new Date(
-    //   moment(dateTime)
-    //     .subtract(1, 'days')
-    //     .format('YYYY-MM-DD'),
-    // );
-    // // let preDate = new Date(moment(dateTime).format('YYYY-MM-DD'));
-
-    // let cRecordDate = '';
-
-    // // const preDate = new Date(cRecordDate);
-    // let dateList = [];
-    // dateList.push(dateTime);
-    // dateList.push(preDate);
-    // // const filter = { AND: [] };
-    // // if (cRecordType) filter.AND.push({ cRecordType });
-    // const select = {
-    //   cRecordTime: true,
-    //   cRecordDate: true,
-    //   cValue: true,
-    //   cMerterFk: true,
-    //   cRecordType: true,
-    //   Pems_Meter: {
-    //     select: {
-    //       id: true,
-    //       cName: true,
-    //     },
-    //   },
-    // };
-    // const list = [];
-    // meterIdList.forEach(meter => {
-    //   dateList.forEach(date => {
-    //     console.log(date);
-    //     list.push({
-    //       cMerterFk: meter,
-    //       cRecordDate: date,
-    //     });
-    //   });
-    // });
-    // console.log(list);
-    // const page = 1;
-    // const row = 5;
-    // const count = await prisma.Pems_MeterValues.count({
-    //   where: {
-    //     OR: list,
-    //   },
-    // });
-    // console.log(count);
-    // let rstdata;
-    // // rstdata = await prisma.Pems_MeterValues.findMany({
-    // //   where: {
-    // //     OR: list,
-    // //   },
-    // //   select,
-    // //   orderBy: {
-    // //     cRecordTime: 'asc',
-    // //   },
-    // // });
-
-    // if (count != null && count > 0) {
-    //   const rstdata = await prisma.Pems_MeterValues.findMany({
-    //     where: {
-    //       OR: list,
-    //     },
-    //     select,
-    //     skip: (page - 1) * row,
-    //     take: row,
-    //     orderBy: {
-    //       cRecordTime: 'asc',
-    //     },
-    //   });
-
-    //   res.json({
-    //     data: rstdata,
-    //     total: count,
-    //     message: 'Data obtained.',
-    //   });
-    // } else {
-    //   res.json({
-    //     data: [],
-    //     total: count,
-    //     message: 'Data Empty.',
-    //   });
-    // }
-    // res.json(rstdata);
+    const startDate = moment('2021-8-17');
+    const endDate = moment('2022-10-01');
+    const allYearMonth = []; // 接收所有年份和月份的数组
+    while (endDate > startDate || startDate.format('M') === endDate.format('M')) {
+      let start = startDate.format('YYYY-MM-01');
+      let end = moment(start)
+        .endOf('month')
+        .format('YYYY-MM-DD');
+      allYearMonth.push({
+        start,
+        end,
+      });
+      startDate.add(1, 'month');
+    }
+    console.log('所有年份和月份------>', allYearMonth);
+    res.json(allYearMonth);
   });
   /**
    * @swagger
@@ -212,8 +130,16 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterWeek', async (req, res) => {
-    var moment = require('moment');
-    let { startWeek, endWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    let { row, page, startWeek, endWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    if (page == null) {
+      page = 1;
+    }
+    if (row == null) {
+      row = 5;
+    }
+    if (cPositionFk == null) {
+      cPositionFk = Number(8);
+    }
     if (startWeek == null || endWeek == null) {
       let newDate = new Date();
       const startWeekOfday = moment(newDate).format('E');
@@ -235,10 +161,11 @@ const controller = (() => {
       cRecordType,
     );
     if (date.length != 0) {
+      let pageList = service.getPageDate(date, row, page);
       const { totalEnergyConsumption } = date[date.length - 1];
       res.json({
         totalEnergyConsumption,
-        data: date,
+        data: pageList,
         total: date.length,
         message: 'Data obtained.',
       });
@@ -285,8 +212,32 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterMon', async (req, res) => {
-    const { id, cType, cPositionFk, cRecordType } = req.query;
-    const date = await service.statisticalMeterMon(id, cType, cPositionFk, cRecordType);
+    let { row, page, startMonth, endMonth, id, cType, cPositionFk, cRecordType } = req.query;
+    if (page == null) {
+      page = 1;
+    }
+    if (row == null) {
+      row = 5;
+    }
+    if (cPositionFk == null) {
+      cPositionFk = Number(8);
+    }
+    if (startMonth == null || endMonth == null) {
+      let startDate = new Date();
+      startDate = moment(startDate);
+      startMonth = startDate.format('YYYY-MM-01');
+      endMonth = moment(startDate)
+        .endOf('month')
+        .format('YYYY-MM-DD');
+    }
+    const date = await service.statisticalMeterMon(
+      startMonth,
+      endMonth,
+      id,
+      cType,
+      cPositionFk,
+      cRecordType,
+    );
     if (date.length != 0) {
       const { totalEnergyConsumption } = date[date.length - 1];
       res.json({
