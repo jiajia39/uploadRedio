@@ -582,7 +582,6 @@ async function statisticalMeterMon(startMonth, endMonth, id, cType, cPositionFk,
   //获取meter的数据
   let meterIdList = await getMeterId(id, cType, cPositionFk);
   //获取开始时间上月1日的日期
-  console.log(startMonth);
   let preDate = moment(startMonth)
     .month(moment(startMonth).month() - 1)
     .startOf('month')
@@ -631,8 +630,6 @@ function getStaAndEndMon(startDate, endDate) {
  * @param {*} endTime 结束时间
  */
 function getMonAndSunDay(startDate, endTime) {
-  console.log(startDate);
-  console.log(endTime);
   const StartWeekOfday = moment(startDate).format('E');
   const endWeekOfday = moment(endTime).format('E');
   //开始时间的周一
@@ -644,8 +641,6 @@ function getMonAndSunDay(startDate, endTime) {
   const endSun = moment(endTime)
     .add(7 - endWeekOfday, 'days')
     .format('YYYYMMDD');
-  // console.log(startMon);
-  // console.log(endSun);
   let arr = [];
   let i = startMon;
   while (i <= endSun) {
@@ -658,7 +653,6 @@ function getMonAndSunDay(startDate, endTime) {
         startTime: moment(startDate).format('YYYY-MM-DD'),
         endSun: startSun,
       });
-      // console.log(startTime + '------' + startSun);
       i = moment(startSun)
         .add(1, 'days')
         .format('YYYYMMDD');
@@ -755,7 +749,6 @@ function gimePerHour(date) {
 function isMorOrAft(date) {
   let state = '';
   const hour = date.getHours();
-  console.log(hour);
   if (hour >= 5 && hour < 23) {
     state = `白班`;
   } else {

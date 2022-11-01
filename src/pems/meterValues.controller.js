@@ -130,6 +130,7 @@ const controller = (() => {
    */
   router.get('/statisticalMeterWeek', async (req, res) => {
     let { row, page, startWeek, endWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    console.log("'''''''''''''''"+startWeek);
     if (page == null) {
       page = 1;
     }
@@ -139,7 +140,7 @@ const controller = (() => {
     if (cType == null && id == null && cPositionFk == null) {
       cPositionFk = Number(8);
     }
-    if (startWeek == null || endWeek == null) {
+    if (startWeek == null || startWeek == '' || endWeek == null || endWeek == '') {
       let newDate = new Date();
       const startWeekOfday = moment(newDate).format('E');
       //开始时间的周一
@@ -151,6 +152,7 @@ const controller = (() => {
         .add(7 - startWeekOfday, 'days')
         .format('YYYYMMDD');
     }
+
     const date = await service.statisticalMeterWeek(
       startWeek,
       endWeek,
@@ -221,7 +223,7 @@ const controller = (() => {
     if (cType == null && id == null && cPositionFk == null) {
       cPositionFk = Number(8);
     }
-    if (startMonth == null || endMonth == null) {
+    if (startMonth == null || startMonth == '' || endMonth == null || endMonth == '') {
       let startDate = new Date();
       startDate = moment(startDate);
       startMonth = startDate.format('YYYY-MM-01');
