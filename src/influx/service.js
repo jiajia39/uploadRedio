@@ -27,8 +27,6 @@ function getInfluxData(measurement, field, start, interval, queryType) {
   |> filter(fn: (r) => r["_field"] == ${field})
   |> aggregateWindow(every: ${intervalFormatted}, fn: ${queryTypeFormatted}, createEmpty: false)`;
 
-  // console.log(query);
-
     try {
       const result = [];
       queryApi.queryRows(query, {
@@ -59,6 +57,48 @@ function getInfluxData(measurement, field, start, interval, queryType) {
   })
 };
 
+function getInfluxDifferenceData(measurement, field, start, interval, queryType) {
+  const startFormatted = fluxDuration(`${start}`);
+  const intervalFormatted = fluxDuration(`${interval}`);
+  const queryTypeFormatted = fluxExpression(`${queryType}`);
+  return new Promise(function(resolve, reject) {
+    const query = flux`from(bucket: ${INFLUX_BUCKET})
+  |> range(start: ${startFormatted})
+  |> filter(fn: (r) => r["_measurement"] == ${measurement})
+  |> filter(fn: (r) => r["_field"] == ${field})
+  |> aggregateWindow(every: ${intervalFormatted}, fn: ${queryTypeFormatted}, createEmpty: false)
+  |> difference()`;
+
+    console.log(query);
+    try {
+      const result = [];
+      queryApi.queryRows(query, {
+        next(row, tableMeta) {
+          const o = tableMeta.toObject(row);
+          let date = new Date(o._time);
+          let dateFormatted = dateFmt('yyyy-MM-dd hh:mm:ss', date);
+          result.push({
+            time: dateFormatted,
+            value: o._value,
+          });
+        },
+        error(error) {
+          reject(error);
+        },
+        complete() {
+          //value值按照时间正序排列
+          result.sort(function(a, b) {
+            return b.createTime < a.createTime ? -1 : 1;
+          });
+          resolve(result);
+        },
+      });
+    } catch (error) {
+      reject(error);
+    }
+  }); 
+}
+
 function dateFmt(fmt, date) {
   var o = {
     'M+': date.getMonth() + 1, //月份
@@ -82,4 +122,5 @@ function dateFmt(fmt, date) {
 
 export default {
   getInfluxData,
+  getInfluxDifferenceData,
 };
