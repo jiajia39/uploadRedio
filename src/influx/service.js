@@ -59,12 +59,14 @@ function getInfluxData(measurement, field, start, interval, queryType) {
 
 function getInfluxDifferenceData(measurement, field, start, end, interval, queryType) {
   let startFormatted, endFormatted;
-  if(start.charAt(0) === '-' && end.charAt(0) === '-') {
-     startFormatted = fluxDuration(`${start}`);
-     endFormatted = fluxDuration(`${end}`);
+  let startStr = start.toString();
+  let endStr = end.toString();
+  if (startStr.charAt(0) === '-' && endStr.charAt(0) === '-') {
+    startFormatted = fluxDuration(`${start}`);
+    endFormatted = fluxDuration(`${end}`);
   } else {
-     startFormatted = fluxDateTime(`${start}`);
-     endFormatted = fluxDateTime(`${end}`);
+    startFormatted = fluxDateTime(`${start}`);
+    endFormatted = fluxDateTime(`${end}`);
   }
   const intervalFormatted = fluxDuration(`${interval}`);
   const queryTypeFormatted = fluxExpression(`${queryType}`);
