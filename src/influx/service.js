@@ -1,4 +1,11 @@
-import { InfluxDB, Point, flux, fluxDuration, fluxDateTime, fluxExpression } from '@influxdata/influxdb-client';
+import {
+  InfluxDB,
+  Point,
+  flux,
+  fluxDuration,
+  fluxDateTime,
+  fluxExpression,
+} from '@influxdata/influxdb-client';
 import { INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET } from '~/env';
 
 let client = null;
@@ -18,7 +25,7 @@ queryApi = client.getQueryApi(INFLUX_ORG);
 
 function getInfluxData(measurement, field, start, interval, queryType) {
   const startFormatted = fluxDuration(`${start}`);
-  const intervalFormatted = fluxDuration(`${interval}`)
+  const intervalFormatted = fluxDuration(`${interval}`);
   const queryTypeFormatted = fluxExpression(`${queryType}`);
   return new Promise(function(resolve, reject) {
     const query = flux`from(bucket: ${INFLUX_BUCKET})
@@ -54,14 +61,12 @@ function getInfluxData(measurement, field, start, interval, queryType) {
     } catch (error) {
       reject(error);
     }
-  })
-};
+  });
+}
 
 function getInfluxDifferenceData(measurement, field, start, end, interval, queryType) {
   let startFormatted, endFormatted;
-  let startStr = start.toString();
-  let endStr = end.toString();
-  if (startStr.charAt(0) === '-' && endStr.charAt(0) === '-') {
+  if (start.charAt(0) === '-' && end.charAt(0) === '-') {
     startFormatted = fluxDuration(`${start}`);
     endFormatted = fluxDuration(`${end}`);
   } else {
@@ -90,6 +95,7 @@ function getInfluxDifferenceData(measurement, field, start, end, interval, query
           result.push({
             time: dateFormatted,
             value: o._value,
+            date: o._time,
           });
         },
         error(error) {
@@ -106,7 +112,7 @@ function getInfluxDifferenceData(measurement, field, start, end, interval, query
     } catch (error) {
       reject(error);
     }
-  }); 
+  });
 }
 
 function dateFmt(fmt, date) {
@@ -128,7 +134,7 @@ function dateFmt(fmt, date) {
         RegExp.$1.length == 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length),
       );
   return fmt;
-} 
+}
 
 export default {
   getInfluxData,

@@ -190,7 +190,7 @@ model Pems_MeterReporting_Day {
   id         Int         @id(map: "PK_dbo.Pems_MeterReporting_Day") @default(autoincrement())
   cValue     Float?
   cMeterFk   Int?
-  cDate      String?     @db.VarChar(50)
+  cDate      DateTime?   @db.Date
   Pems_Meter Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Fk_MeterReporting_Meter")
 }
 
@@ -199,6 +199,7 @@ model Pems_MeterReporting_Month {
   cValue     Float?
   cMeterFk   Int?
   cMonth     String?     @db.VarChar(50)
+  cDesc      String?     @db.VarChar(500)
   Pems_Meter Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterReporting_Month_Meter")
 }
 
@@ -207,5 +208,6 @@ model Pems_MeterReporting_Week {
   cValue     Float?
   cMeterFk   Int?
   cWeek      String?     @db.VarChar(100)
+  cDesc      String?     @db.VarChar(500)
   Pems_Meter Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterReporting_Week_Meter")
 }
