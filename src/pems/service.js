@@ -230,95 +230,6 @@ async function setMeterRecordingAndSave() {
   console.log('Service Invoked');
 }
 /**
- * 组合并保存ReportingDay的数据
- * @param {*} start 开始时间
- * @param {*} end 结束时间
- * @param {*} interval 间隔
- */
-async function saveReportingDay(start, end, interval) {
-  console.log(start);
-  const startDate = new Date(
-    moment(start)
-      // .subtract(1, 'days')
-      .format('YYYY-MM-DD 00:00:00.000Z'),
-  ).toISOString();
-
-  let endDate = new Date(
-    moment()
-      .add(1, 'days')
-      .format('YYYY-MM-DD 00:00:00.000Z'),
-  ).toISOString();
-  console.log(startDate);
-  console.log(endDate);
-  const meters = await prisma.Pems_Meter.findMany();
-  if (start.getTime() == new Date(moment().format('YYYY-MM-DD')).getTime()) {
-    start = new Date(
-      moment()
-        .subtract(1, 'days')
-        .format('YYYY-MM-DD'),
-    );
-  }
-  let dateRange = await getAllDays(start, end);
-  let list = [];
-  for (let i = 0; i < 1; i++) {
-    //从meter 中获取 measurement和field 来进行查询influxDb的数据
-    const measurement = meters[i].cName + '-' + meters[i].cDesc;
-    let cType = '';
-    if (meters[i].cType == 'Electricity' || meters[i].cType == '电表') {
-      cType = 'EP';
-    }
-    if (
-      meters[i].cType == 'Water' ||
-      meters[i].cType == 'Steam' ||
-      meters[i].cType == '水表' ||
-      meters[i].cType == '位置1'
-    ) {
-      cType = 'TT';
-    }
-    const field = meters[i].cName + '.' + cType;
-    // const interval = '24h';
-
-    const queryType = 'last';
-    // 查询infulxDb数据
-
-    const result = await influxservice.getInfluxDifferenceData(
-      measurement,
-      field,
-      startDate,
-      endDate,
-      interval,
-      queryType,
-    );
-    dateRange.forEach(date => {
-      if (date.getTime() < new Date(moment().format('YYYY-MM-DD')).getTime()) {
-        let value = null;
-        if (result != null && result.length > 0) {
-          //根据日期获取对应的数据
-          result.forEach(element => {
-            let dateTime = new Date(
-              moment(element.date)
-                .subtract(2, 'days')
-                .format('YYYY-MM-DD 08:00:00.000Z'),
-            );
-            if (date.getTime() == dateTime.getTime()) {
-              value = parseFloat(element.value).toFixed(2);
-            }
-          });
-        }
-        list.push({
-          cValue: parseFloat(value),
-          cMeterFk: Number(meters[i].id),
-          cDate: date,
-        });
-      }
-    });
-  }
-  console.log(list);
-  await prisma.Pems_MeterReporting_Day.createMany({
-    data: list,
-  });
-}
-/**
  * 根据条件查询meter的Id
  * @param {*} id meterId
  * @param {*} cType 类型
@@ -641,7 +552,7 @@ async function statisticalMeterWeek(startWeek, endWeek, id, cType, cPositionFk, 
   );
   let endDate = new Date(moment(endWeek).format('YYYY-MM-DD'));
   startWeek = new Date(moment(startWeek).format('YYYY-MM-DD'));
-  let timeList = getMonAndSunDay(preDate, endDate);
+  let timeList = getMonAndSunDayList(preDate, endDate);
   // let list = [preDate, endDate];
   //获取meterValue的数据
   let list = getAllDays(preDate, endDate);
@@ -709,7 +620,7 @@ function getStaAndEndMon(startDate, endDate) {
  * @param {*} startDate 开始时间
  * @param {*} endTime 结束时间
  */
-function getMonAndSunDay(startDate, endTime) {
+function getMonAndSunDayList(startDate, endTime) {
   const StartWeekOfday = moment(startDate).format('E');
   const endWeekOfday = moment(endTime).format('E');
   //开始时间的周一
@@ -762,6 +673,25 @@ function getMonAndSunDay(startDate, endTime) {
     }
   }
   return arr;
+}
+
+/**
+ * 获取某天的周一和周日
+ * @param {*} date 时间
+ */
+function getMonAndSunDay(date) {
+  let list = [];
+  const weekOfday = moment(date).format('E');
+  //开始时间的周一
+  const startMon = moment(date)
+    .subtract(weekOfday - 1, 'days')
+    .format('YYYY-MM-DD');
+  //周日
+  const endSun = moment(date)
+    .add(7 - weekOfday, 'days')
+    .format('YYYY-MM-DD');
+  list.push({ startMon, endSun });
+  return list;
 }
 /**
  * 设置当前时间的格式yyyy-mm-dd
@@ -876,9 +806,9 @@ export default {
   statisticalMeterData,
   getMeterValuesData,
   getMeterId,
+  getMonAndSunDayList,
   getMonAndSunDay,
   statisticalMeterWeek,
   statisticalMeterMon,
   getPageDate,
-  saveReportingDay,
 };

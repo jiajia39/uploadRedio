@@ -129,7 +129,8 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterWeek', async (req, res) => {
-    let { row, page, startWeek, endWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    let { row, page, startWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    let endWeek;
     if (page == null) {
       page = 1;
     }
@@ -139,18 +140,14 @@ const controller = (() => {
     if (cType == null && id == null && cPositionFk == null) {
       cPositionFk = Number(8);
     }
-    if (startWeek == null || startWeek == '' || endWeek == null || endWeek == '') {
-      let newDate = new Date();
-      const startWeekOfday = moment(newDate).format('E');
-      //开始时间的周一
-      startWeek = moment(newDate)
-        .subtract(startWeekOfday - 1, 'days')
-        .format('YYYYMMDD');
-      //周日
-      endWeek = moment(newDate)
-        .add(7 - startWeekOfday, 'days')
-        .format('YYYYMMDD');
+    if (startWeek == null || startWeek == '') {
+      startWeek = new Date();
     }
+    console.log(startWeek);
+    let list = await service.getMonAndSunDay(startWeek);
+    console.log(list);
+    startWeek = list[0].startMon;
+    endWeek = list[0].endSun;
 
     const date = await service.statisticalMeterWeek(
       startWeek,
@@ -212,7 +209,7 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterMon', async (req, res) => {
-    let { row, page, startMonth, endMonth, id, cType, cPositionFk, cRecordType } = req.query;
+    let { row, page, startMonth, id, cType, cPositionFk, cRecordType } = req.query;
     if (page == null) {
       page = 1;
     }
@@ -222,14 +219,14 @@ const controller = (() => {
     if (cType == null && id == null && cPositionFk == null) {
       cPositionFk = Number(8);
     }
-    if (startMonth == null || startMonth == '' || endMonth == null || endMonth == '') {
-      let startDate = new Date();
-      startDate = moment(startDate);
-      startMonth = startDate.format('YYYY-MM-01');
-      endMonth = moment(startDate)
-        .endOf('month')
-        .format('YYYY-MM-DD');
+    if (startMonth == null || startMonth == '') {
+      startMonth = new Date();
     }
+    let startDate = moment(startMonth);
+    startMonth = startDate.format('YYYY-MM-01');
+    let endMonth = moment(startDate)
+      .endOf('month')
+      .format('YYYY-MM-DD');
     const date = await service.statisticalMeterMon(
       startMonth,
       endMonth,

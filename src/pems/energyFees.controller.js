@@ -109,11 +109,21 @@ const controller = (() => {
    *           type: object
    */
   router.get('/pagination', async (req, res) => {
-    const { cType } = req.query;
+    const { cType, cType1, cType2 } = req.query;
     const filter = { AND: {} };
     const page = Number(req.query.page) || 1;
     const row = Number(req.query.row) || 5;
-    if (cType) filter.AND = { ...filter.AND, cType };
+    let type = [];
+    if (cType != null && cType != '') {
+      type.push(cType);
+    }
+    if (cType1 != null && cType1 != '') {
+      type.push(cType1);
+    }
+    if (cType2 != null && cType2 != '') {
+      type.push(cType2);
+    }
+    if (cType) filter.AND = { ...filter.AND, cType: { in: type } };
     const count = await prisma.Pems_EnergyFees.count({
       where: filter,
     });
