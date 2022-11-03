@@ -209,7 +209,7 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterMon', async (req, res) => {
-    let { row, page, startMonth, endMonth, id, cType, cPositionFk, cRecordType } = req.query;
+    let { row, page, startMonth, id, cType, cPositionFk, cRecordType } = req.query;
     if (page == null) {
       page = 1;
     }
@@ -219,14 +219,14 @@ const controller = (() => {
     if (cType == null && id == null && cPositionFk == null) {
       cPositionFk = Number(8);
     }
-    if (startMonth == null || startMonth == '' || endMonth == null || endMonth == '') {
-      let startDate = new Date();
-      startDate = moment(startDate);
-      startMonth = startDate.format('YYYY-MM-01');
-      endMonth = moment(startDate)
-        .endOf('month')
-        .format('YYYY-MM-DD');
+    if (startMonth == null || startMonth == '') {
+      startMonth = new Date();
     }
+    let startDate = moment(startMonth);
+    startMonth = startDate.format('YYYY-MM-01');
+    let endMonth = moment(startDate)
+      .endOf('month')
+      .format('YYYY-MM-DD');
     const date = await service.statisticalMeterMon(
       startMonth,
       endMonth,
