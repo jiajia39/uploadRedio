@@ -211,3 +211,19 @@ model Pems_MeterReporting_Week {
   cDesc      String?     @db.VarChar(500)
   Pems_Meter Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterReporting_Week_Meter")
 }
+
+model Pems_Cron {
+  id        Int       @id(map: "PK_Pems_Cron") @default(autoincrement())
+  cInterval String?   @db.VarChar(50)
+  cTime     String?   @db.VarChar(50)
+  cService  String?   @db.VarChar(50)
+  cDesc     String?   @db.VarChar(50)
+  cAddTime  DateTime? @db.DateTime
+}
+
+model Pems_Shift {
+  id         Int     @id(map: "PK_Pems_Shift")
+  cDesc      String? @db.VarChar(50)
+  cStartTime String? @db.VarChar(50)
+  cEndTime   String? @db.VarChar(50)
+}
