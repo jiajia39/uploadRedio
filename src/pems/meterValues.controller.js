@@ -129,7 +129,8 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterWeek', async (req, res) => {
-    let { row, page, startWeek, endWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    let { row, page, startWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    let endWeek;
     if (page == null) {
       page = 1;
     }
@@ -139,18 +140,14 @@ const controller = (() => {
     if (cType == null && id == null && cPositionFk == null) {
       cPositionFk = Number(8);
     }
-    if (startWeek == null || startWeek == '' || endWeek == null || endWeek == '') {
-      let newDate = new Date();
-      const startWeekOfday = moment(newDate).format('E');
-      //开始时间的周一
-      startWeek = moment(newDate)
-        .subtract(startWeekOfday - 1, 'days')
-        .format('YYYYMMDD');
-      //周日
-      endWeek = moment(newDate)
-        .add(7 - startWeekOfday, 'days')
-        .format('YYYYMMDD');
+    if (startWeek == null || startWeek == '') {
+      startWeek = new Date();
     }
+    console.log(startWeek);
+    let list = await service.getMonAndSunDay(startWeek);
+    console.log(list);
+    startWeek = list[0].startMon;
+    endWeek = list[0].endSun;
 
     const date = await service.statisticalMeterWeek(
       startWeek,
