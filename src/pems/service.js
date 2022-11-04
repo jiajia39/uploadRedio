@@ -492,7 +492,7 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
           if (element.cMerterFk == meterIdList[i].id) {
             if (element.cRecordDate.getTime() <= new Date(timeList[j].endSun).getTime()) {
               meterValueDate = element;
-              console.log(element);
+              // console.log(element);
               if (element.cValue != null) {
                 nowDate = element.cValue;
               }
@@ -505,14 +505,17 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
             }
           }
         });
+        console.log('==' + preDate);
         const date = timeList[j].startTime + '---' + timeList[j].endSun;
         let name;
+        let desc;
         let energyConsumption = null;
         if (meterValueDate != null) {
           name = meterValueDate.Pems_Meter.cName;
+          desc = meterValueDate.Pems_Meter.cDesc;
         }
+        console.log(',,' + nowDate);
         if (preDate != null && nowDate != null) {
-          console.log(nowDate);
           energyConsumption = new Decimal(nowDate).sub(new Decimal(preDate)).toNumber();
           totalEnergyConsumption = new Decimal(totalEnergyConsumption)
             .add(new Decimal(energyConsumption))
@@ -520,6 +523,7 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
         }
         statisticalMeter.push({
           date,
+          cDesc: desc,
           cname: name,
           energyConsumption,
           totalEnergyConsumption,
@@ -547,7 +551,7 @@ async function statisticalMeterWeek(startWeek, endWeek, id, cType, cPositionFk, 
   }
   let preDate = new Date(
     moment(startWeek)
-      .subtract(1, 'days')
+      .subtract(7, 'days')
       .format('YYYY-MM-DD'),
   );
   let endDate = new Date(moment(endWeek).format('YYYY-MM-DD'));
