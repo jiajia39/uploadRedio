@@ -490,6 +490,7 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
 
         meterValueDateList.forEach(element => {
           if (element.cMerterFk == meterIdList[i].id) {
+            console.log(timeList[j].endSun);
             if (element.cRecordDate.getTime() <= new Date(timeList[j].endSun).getTime()) {
               meterValueDate = element;
               // console.log(element);
@@ -497,6 +498,7 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
                 nowDate = element.cValue;
               }
             }
+            console.log(timeList[j-1].endSun);
             if (
               element.cRecordDate.getTime() <= new Date(timeList[j - 1].endSun).getTime() &&
               element.cValue != null

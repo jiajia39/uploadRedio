@@ -38,6 +38,6 @@ router.use(pems.meterPosition.prefix, pems.meterPosition);
 router.use(pems.meter.prefix, pems.meter);
 router.use(pems.meterValues.prefix, pems.meterValues);
 router.use(pems.energyFees.prefix, pems.energyFees);
-router.use(pems.reporting.prefix, pems.reporting);
+// router.use(pems.reporting.prefix, pems.reporting);
 router.use(pems.shift.prefix, pems.shift);
 export default router;
