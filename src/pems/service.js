@@ -378,7 +378,6 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
     dateList.push(preDate);
   }
   const meterValueDateList = await getMeterValuesData(dateList, null, meterIdList);
-  console.log(meterValueDateList);
   let statisticalMeter = [];
   let totalEnergyConsumption = 0.0;
   for (let i = 0; i < meterIdList.length; i++) {
@@ -489,10 +488,8 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
         let meterValueDate;
         meterValueDateList.forEach(element => {
           if (element.cMerterFk == meterIdList[i].id) {
-            console.log(timeList[j].endSun);
             if (element.cRecordDate.getTime() <= new Date(timeList[j].endSun).getTime()) {
               meterValueDate = element;
-              // console.log(element);
               if (element.cValue != null) {
                 nowDate = element.cValue;
               }
@@ -505,7 +502,6 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
             }
           }
         });
-        console.log('==' + preDate);
         const date = timeList[j].startTime + '---' + timeList[j].endSun;
         let name;
         let desc;
@@ -514,7 +510,6 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
           name = meterValueDate.Pems_Meter.cName;
           desc = meterValueDate.Pems_Meter.cDesc;
         }
-        console.log(',,' + nowDate);
         if (preDate != null && nowDate != null) {
           energyConsumption = new Decimal(nowDate).sub(new Decimal(preDate)).toNumber();
           totalEnergyConsumption = new Decimal(totalEnergyConsumption)
@@ -797,9 +792,6 @@ function getPageDate(dateList, row, page) {
     fromIndex = (Number(page) - 1) * Number(row);
     toIndex = count;
   }
-  console.log(fromIndex);
-  console.log(row);
-  console.log(toIndex);
   return dateList.slice(fromIndex, toIndex);
 }
 

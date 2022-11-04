@@ -137,13 +137,12 @@ const controller = (() => {
     if (row == null) {
       row = 5;
     }
-    if (cType == null && id == null && cPositionFk == null) {
+    if (cPositionFk == null && cPositionFk == '') {
       cPositionFk = Number(8);
     }
     if (startWeek == null || startWeek == '') {
       startWeek = new Date();
     }
-    console.log(startWeek);
     let list = await service.getMonAndSunDay(startWeek);
     console.log(list);
     startWeek = list[0].startMon;
@@ -231,10 +230,10 @@ const controller = (() => {
       .endOf('month')
       .format('YYYY-MM-DD');
 
-      let now = new Date(moment().format('YYYY-MM-DD'));
-      if (now.getTime() < new Date(endMonth).getTime()) {
-        endMonth = now;
-      }
+    let now = new Date(moment().format('YYYY-MM-DD'));
+    if (now.getTime() < new Date(endMonth).getTime()) {
+      endMonth = now;
+    }
     const date = await service.statisticalMeterMon(
       startMonth,
       endMonth,
@@ -243,7 +242,7 @@ const controller = (() => {
       cPositionFk,
       cRecordType,
     );
-    if (date.length != 0) {
+    if (date != null && date != '' && date.length != 0) {
       const { totalEnergyConsumption } = date[date.length - 1];
       res.json({
         totalEnergyConsumption,

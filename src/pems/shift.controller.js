@@ -80,14 +80,14 @@ const controller = (() => {
     if (cDesc) filter.OR.push({ cDesc });
 
     if (filter.OR.length < 1) {
-      const data = await prisma.Pems_Shift.findMany({ select });
-      res.json(data);
+      const date = await prisma.Pems_Shift.findMany({ select });
+      res.json({ data: date });
     } else {
-      const data = await prisma.Pems_Shift.findMany({
+      const date = await prisma.Pems_Shift.findMany({
         where: filter,
         select,
       });
-      res.json(data);
+      res.json({ data: date });
     }
   });
 
