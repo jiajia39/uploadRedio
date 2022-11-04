@@ -72,16 +72,18 @@ const controller = (() => {
    *           type: object
    */
   router.put('/edit/:id', async (req, res) => {
-    const date = {
+    const data = {
       cPrice: parseFloat(req.body.cPrice),
       cType: req.body.cType,
+      cStartTime: req.body.cStartTime,
+      cEndTime: req.body.cEndTime,
       cModel: req.body.cModel,
     };
     const message = await prisma.Pems_EnergyFees.update({
       where: { id: Number(req.params.id) },
-      data: date,
+      data: data,
     }).then(() => 'List updated');
-    res.json({ isok: true, message });
+    res.json({ isok: true, updatedData: data, message });
   });
   /**
    * @swagger
@@ -89,22 +91,22 @@ const controller = (() => {
    *   get:
    *     security:
    *       - Authorization: []
-   *     description: Pagination query(根据条件获取meterValues的分页数据)
+   *     description: Pagination query(根据条件获取energyfee的分页数据)
    *     tags: [pems]
    *     produces:
    *       - application/json
    *     parameters:
    *       - name: cRecordType
-   *         description: meterValues's cRecordType.
+   *         description: energyfee's cRecordType.
    *         in: query
    *         type: String
    *       - name: cMerterFk
-   *         description: meterValues's cMerterFk
+   *         description: energyfee's cMerterFk
    *         in: query
    *         type: int
    *     responses:
    *       200:
-   *         description: meterValues
+   *         description: Get Energy Fees Pagination
    *         schema:
    *           type: object
    */
@@ -132,6 +134,8 @@ const controller = (() => {
       id: true,
       cPrice: true,
       cType: true,
+      cStartTime: true,
+      cEndTime: true,
       cModel: true,
     };
 
