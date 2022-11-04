@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import e, { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import prisma from '../core/prisma';
 
@@ -111,21 +111,24 @@ const controller = (() => {
    *           type: object
    */
   router.get('/pagination', async (req, res) => {
-    const { cType, cType1, cType2 } = req.query;
     const filter = { AND: {} };
+    let cType = [];
+    let type = req.query.cType;
+    if (type != null && type != '') {
+      if (type.includes(',')) {
+        const text1 = type.substring(0, 2);
+        const text2 = type.substring(3, 5);
+        cType.push(text1, text2);
+        if (type.length > 5) {
+          cType.push(type.substring(6, 8));
+        }
+      } else {
+        cType.push(type);
+      }
+      if (cType) filter.AND = { ...filter.AND, cType: { in: cType } };
+    }
     const page = Number(req.query.page) || 1;
     const row = Number(req.query.row) || 5;
-    let type = [];
-    if (cType != null && cType != '') {
-      type.push(cType);
-    }
-    if (cType1 != null && cType1 != '') {
-      type.push(cType1);
-    }
-    if (cType2 != null && cType2 != '') {
-      type.push(cType2);
-    }
-    if (cType) filter.AND = { ...filter.AND, cType: { in: type } };
     const count = await prisma.Pems_EnergyFees.count({
       where: filter,
     });
