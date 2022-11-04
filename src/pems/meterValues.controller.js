@@ -148,7 +148,10 @@ const controller = (() => {
     console.log(list);
     startWeek = list[0].startMon;
     endWeek = list[0].endSun;
-
+    let now = new Date(moment().format('YYYY-MM-DD'));
+    if (now.getTime() < new Date(endWeek).getTime()) {
+      endWeek = now;
+    }
     const date = await service.statisticalMeterWeek(
       startWeek,
       endWeek,
@@ -227,6 +230,11 @@ const controller = (() => {
     let endMonth = moment(startDate)
       .endOf('month')
       .format('YYYY-MM-DD');
+
+      let now = new Date(moment().format('YYYY-MM-DD'));
+      if (now.getTime() < new Date(endMonth).getTime()) {
+        endMonth = now;
+      }
     const date = await service.statisticalMeterMon(
       startMonth,
       endMonth,

@@ -487,7 +487,6 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
         let nowDate;
         let preDate;
         let meterValueDate;
-
         meterValueDateList.forEach(element => {
           if (element.cMerterFk == meterIdList[i].id) {
             console.log(timeList[j].endSun);
@@ -498,7 +497,6 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
                 nowDate = element.cValue;
               }
             }
-            console.log(timeList[j-1].endSun);
             if (
               element.cRecordDate.getTime() <= new Date(timeList[j - 1].endSun).getTime() &&
               element.cValue != null
@@ -551,17 +549,18 @@ async function statisticalMeterWeek(startWeek, endWeek, id, cType, cPositionFk, 
   if (meterIdList == null || meterIdList.length == 0) {
     return null;
   }
+  //获取上周周日的日期
   let preDate = new Date(
     moment(startWeek)
-      .subtract(7, 'days')
+      .subtract(1, 'days')
       .format('YYYY-MM-DD'),
   );
   let endDate = new Date(moment(endWeek).format('YYYY-MM-DD'));
   startWeek = new Date(moment(startWeek).format('YYYY-MM-DD'));
   let timeList = getMonAndSunDayList(preDate, endDate);
-  // let list = [preDate, endDate];
+  let list = [preDate, endDate];
   //获取meterValue的数据
-  let list = getAllDays(preDate, endDate);
+  // let list = getAllDays(preDate, endDate);
   const meterValueDateList = await getMeterValuesData(list, null, meterIdList);
   return await statisticalMeter(meterIdList, meterValueDateList, timeList);
 }
@@ -578,16 +577,17 @@ async function statisticalMeterWeek(startWeek, endWeek, id, cType, cPositionFk, 
 async function statisticalMeterMon(startMonth, endMonth, id, cType, cPositionFk, cRecordType) {
   //获取meter的数据
   let meterIdList = await getMeterId(id, cType, cPositionFk);
-  //获取开始时间上月1日的日期
-  let preDate = moment(startMonth)
-    .month(moment(startMonth).month() - 1)
-    .startOf('month')
-    .format('YYYY-MM-DD');
+  //获取开始时间上月月末的日期
+  let preDate = new Date(
+    moment(startMonth)
+      .month(moment(startMonth).month() - 1)
+      .endOf('month')
+      .format('YYYY-MM-DD'),
+  );
 
   let endDate = new Date(moment(endMonth).format('YYYY-MM-DD'));
-  let list = getAllDays(preDate, endDate);
-  console.log('==============');
-  console.log(list);
+  // let list = getAllDays(preDate, endDate);
+  let list = [preDate, endDate];
   //获取meterValue的数据
   const meterValueDateList = await getMeterValuesData(list, null, meterIdList);
 
