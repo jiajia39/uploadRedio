@@ -493,7 +493,7 @@ const controller = (() => {
     let startDate = moment(startMonth);
     //月初
     startMonth = new Date(startDate.format('YYYY-MM-01'));
-
+    console.log(startMonth);
     let meterIdList = await service.getMeterId(id, cType, cPositionFk);
     page = Number(page) || 1;
     row = Number(row) || 5;
@@ -529,21 +529,23 @@ const controller = (() => {
     const count = await prisma.Pems_MeterReporting_Month.count({
       where: filter,
     });
+    let total;
     let totalEnergyConsumption = null;
-    if (cType != null && cType != '') {
-      total = await prisma.Pems_MeterReporting_Month.aggregate({
-        where: filter,
-        _sum: {
-          cValue: true,
-        },
-      });
-      totalEnergyConsumption = total._sum.cValue;
-    }
+    // if (cType != null && cType != '') {
+    total = await prisma.Pems_MeterReporting_Month.aggregate({
+      where: filter,
+      _sum: {
+        cValue: true,
+      },
+    });
+    totalEnergyConsumption = total._sum.cValue;
+    // }
 
     if (rstdata != null && rstdata != '' && rstdata.length != 0) {
+      console.log(rstdata);
       rstdata.forEach(element => {
-        const start = moment(element.cWeekStart).format('YYYY-MM-DD');
-        const end = moment(element.cWeekEnd).format('YYYY-MM-DD');
+        const start = moment(element.cMonthStart).format('YYYY-MM-DD');
+        const end = moment(element.cMonthEnd).format('YYYY-MM-DD');
         let date = start + '---' + end;
         element.cMonthStart = date;
       });
