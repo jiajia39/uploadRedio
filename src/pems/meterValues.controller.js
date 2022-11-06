@@ -5,6 +5,8 @@ import service from './service';
 var moment = require('moment');
 const controller = (() => {
   const router = Router();
+
+  // Test Cron Purpose
   router.get('/testCronService', async (req, res) => {
     const startDate = moment('2021-8-17');
     const endDate = moment('2022-10-01');
@@ -23,6 +25,14 @@ const controller = (() => {
     console.log('所有年份和月份------>', allYearMonth);
     res.json(allYearMonth);
   });
+
+  // Controller for GET Debug Test
+  router.get('/getTest', async (req, res) => {
+    let meterIds = await service.getMeterId(null, null, 8);
+    let data = await service.getMeterValuesData(null, null, meterIds);
+    res.json(data);
+  })
+  
   /**
    * @swagger
    * /api/pems/meterValues/statisticalMeterValue:

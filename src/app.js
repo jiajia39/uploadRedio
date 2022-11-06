@@ -18,6 +18,7 @@ import { authorizeKeyCloak } from './core/jwt';
 import { NODE_ENV, SECRET_KEY, RATE_LIMIT, SENTRY_DSN } from './env';
 
 const AppError = require('./utils/appError');
+const globalErrorHandler = require('./error/error.controller');
 
 const app = express();
 enableWs(app);
@@ -102,6 +103,6 @@ app.use(function(err, req, res, next) {
 app.all('*', (req, res, next) => {
   next(new AppError(`Cannot find ${req.originalUrl} on this server`, 404));
 });
-
+app.use(globalErrorHandler);
 
 export default app;
