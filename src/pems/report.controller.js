@@ -373,6 +373,9 @@ const controller = (() => {
    */
   router.get('/statisticalMeterWeek', async (req, res) => {
     let { row, page, startWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    if (startWeek == null || startWeek == '') {
+      startWeek = new Date();
+    }
     const weekOfday = moment(startWeek).format('E');
     //开始时间的周一
     const cRecordDate = new Date(
@@ -542,7 +545,7 @@ const controller = (() => {
         const start = moment(element.cWeekStart).format('YYYY-MM-DD');
         const end = moment(element.cWeekEnd).format('YYYY-MM-DD');
         let date = start + '---' + end;
-        element.cMonthStart  = date;
+        element.cMonthStart = date;
       });
       res.json({
         totalEnergyConsumption,
