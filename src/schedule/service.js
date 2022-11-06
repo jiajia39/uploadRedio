@@ -16,4 +16,38 @@ exports.initScheduledJobs = () => {
     // Add your custom logic here
   });
   scheduledJobForPMR.start();
+
+  const scheduledJobForSaveDay = CronJob.schedule('0 10 0 * * *', () => {
+    console.log("I'm executed on a schedule!!!!!!!!");
+    meterValue.saveReportDay();
+    // Add your custom logic here
+  });
+  scheduledJobForSaveDay.start();
+  const scheduledJobForSaveWeekHistory = CronJob.schedule('0 20 0 * * MON', () => {
+    console.log("I'm executed on a schedule!!!!!!!!");
+    meterValue.saveReoprtWeekHistory();
+    // Add your custom logic here
+  });
+  scheduledJobForSaveWeekHistory.start();
+
+  const scheduledJobForSaveCurrentWeek = CronJob.schedule('0 15 0 * * *', () => {
+    console.log("I'm executed on a schedule!!!!!!!!");
+    meterValue.saveReoprtCurrentWeek();
+    // Add your custom logic here
+  });
+  scheduledJobForSaveCurrentWeek.start();
+
+  const scheduledJobForSaveMonHistory = CronJob.schedule('0 20 0 * * MON', () => {
+    console.log("I'm executed on a schedule!!!!!!!!");
+    meterValue.saveReoprtMonHistory();
+    // Add your custom logic here
+  });
+  scheduledJobForSaveMonHistory.start();
+
+  const scheduledJobForSaveCurrentMon = CronJob.schedule('0 15 0 * * *', () => {
+    console.log("I'm executed on a schedule!!!!!!!!");
+    meterValue.saveReoprtCurrentMon();
+    // Add your custom logic here
+  });
+  scheduledJobForSaveCurrentMon.start();
 };

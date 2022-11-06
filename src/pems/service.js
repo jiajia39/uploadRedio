@@ -213,7 +213,239 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cPo
   const date = { rstdata, data, count };
   return date;
 }
+/**
+ * 保存每天耗能
+ */
+async function saveReportDay() {
+  const report = await prisma.Pems_MeterReporting_Day.findMany();
+  let list;
+  const now = new Date(moment().format('YYYY-MM-DD'));
+  if (report == null || report == '') {
+    list = await statisticalMeterData(null, null, null, null, null);
+  } else {
+    let preDate = new Date(
+      moment()
+        .subtract(1, 'days')
+        .format('YYYY-MM-DD'),
+    );
+    await prisma.Pems_MeterReporting_Day.deleteMany({
+      where: { cDate: preDate },
+    });
+    list = await statisticalMeterData(null, null, null, preDate, null);
+  }
+  const dayList = [];
+  if (list != null && list.length > 0) {
+    for (let i = 0; i < list.length; i++) {
+      const recordDate = new Date(list[i].cRecordDate).getTime();
+      if (recordDate >= now.getTime()) {
+        continue;
+      }
+      dayList.push({
+        cValue: parseFloat(list[i].energyConsumption),
+        cMeterFk: list[i].cMeterFk,
+        cDate: list[i].cRecordDate,
+      });
+    }
+  }
+  await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
+}
+/**
+ * 保存历史每周耗能
+ */
+async function saveReoprtWeekHistory() {
+  let report = await prisma.Pems_MeterReporting_Week.findMany();
+  let list = [];
+  let now = new Date(moment().format('YYYY-MM-DD'));
+  if (report == null || report == '') {
+    let meterValue = await prisma.Pems_MeterValues.findMany({
+      orderBy: {
+        cRecordDate: 'asc',
+      },
+    });
+    if (meterValue != null && meterValue.length > 0) {
+      let preDate = meterValue[0].cRecordDate;
+      let weekOfDay = new Date().getDay();
+      //上周周日
+      let endDate = moment()
+        .subtract(weekOfDay, 'days')
+        .format('YYYY-MM-DD');
+      console.log(endDate);
+      let timeList = await this.getMonAndSunDayList(preDate, endDate);
+      for (let i = 0; i < timeList.length; i++) {
+        const startWeek = timeList[i].startTime;
+        const endWeek = timeList[i].endSun;
+        let data = await this.statisticalMeterWeek(startWeek, endWeek, null, null, null, null);
+        if (data != null && data.length > 0) {
+          let weekList = [];
+          if (data != null && data.length > 0) {
+            for (let i = 0; i < data.length; i++) {
+              weekList.push({
+                cWeekStart: new Date(data[i].startTime),
+                cWeekEnd: new Date(data[i].endTime),
+                cValue: parseFloat(data[i].energyConsumption),
+                cMeterFk: data[i].cMeterFk,
+              });
+            }
+            await prisma.Pems_MeterReporting_Week.createMany({ data: weekList });
+          }
+        }
+      }
+    }
+  } else {
+    let weekOfDay = new Date().getDay();
+    //上周周一
+    let startWeek = moment()
+      .subtract(weekOfDay + 6, 'days')
+      .format('YYYY-MM-DD');
+    //上周周日
+    let endWeek = moment()
+      .subtract(weekOfDay, 'days')
+      .format('YYYY-MM-DD');
+    await prisma.Pems_MeterReporting_Week.deleteMany({
+      where: { cWeekStart: new Date(startWeek) },
+    });
+    let data = await this.statisticalMeterWeek(startWeek, endWeek, null, null, null, null);
+    console.log(startWeek + '--' + endWeek);
+    if (data != null && data.length > 0) {
+      let weekList = [];
+      for (let i = 0; i < data.length; i++) {
+        weekList.push({
+          cWeekStart: new Date(data[i].startTime),
+          cWeekEnd: new Date(data[i].endTime),
+          cValue: parseFloat(data[i].energyConsumption),
+          cMeterFk: data[i].cMeterFk,
+        });
+      }
+      await prisma.Pems_MeterReporting_Week.createMany({ data: weekList });
+    }
+  }
+}
 
+/**
+ * 保存当周耗能
+ */
+async function saveReoprtCurrentWeek() {
+  const weekOfday = moment().format('E');
+  const startMon = moment()
+    .subtract(weekOfday - 1, 'days')
+    .format('YYYY-MM-DD');
+  const endSun = moment()
+    .add(7 - weekOfday, 'days')
+    .format('YYYY-MM-DD');
+  const now = new Date(moment().format('YYYY-MM-DD'));
+  let list = [];
+  await prisma.Pems_MeterReporting_Week.deleteMany({
+    where: { cWeekStart: new Date(startMon) },
+  });
+  let data = await this.statisticalMeterWeek(startMon, now, null, null, null, null);
+  console.log(startMon + '--' + endSun);
+  if (data != null && data.length > 0) {
+    let weekList = [];
+    for (let i = 0; i < data.length; i++) {
+      weekList.push({
+        cWeekStart: new Date(data[i].startTime),
+        cWeekEnd: new Date(data[i].endTime),
+        cValue: parseFloat(data[i].energyConsumption),
+        cMeterFk: data[i].cMeterFk,
+      });
+    }
+    await prisma.Pems_MeterReporting_Week.createMany({
+      data: weekList,
+    });
+  }
+}
+
+/**
+ * 保存历史月份耗能
+ */
+async function saveReoprtMonHistory() {
+  let start = new Date(moment().format('YYYY-MM-01'));
+  //上月月末
+  let endDate = new Date(
+    moment(start)
+      .subtract(1, 'days')
+      .format('YYYY-MM-DD'),
+  );
+
+  let report = await prisma.Pems_MeterReporting_Month.findMany();
+  console.log('111111111111111');
+  console.log(report);
+  let list = [];
+  let now = new Date(moment().format('YYYY-MM-DD'));
+  if (report == null || report == '') {
+    let meterValue = await prisma.Pems_MeterValues.findMany({
+      orderBy: {
+        cRecordDate: 'asc',
+      },
+    });
+    if (meterValue != null && meterValue.length > 0) {
+      let preDate = meterValue[0].cRecordDate;
+      preDate = new Date(moment(preDate).format('YYYY-MM-01'));
+      let timeList = await this.getStaAndEndMon(preDate, endDate);
+      for (let i = 0; i < timeList.length; i++) {
+        const startMonth = timeList[i].startTime;
+        const endMonth = timeList[i].endSun;
+        let data = await this.statisticalMeterMon(startMonth, endMonth, null, null, null, null);
+        if (data != null && data != '' && data.length > 0) {
+          let monthList = [];
+          if (data != null && data.length > 0) {
+            for (let i = 0; i < data.length; i++) {
+              monthList.push({
+                cMonthStart: new Date(data[i].startTime),
+                cMonthEnd: new Date(data[i].endTime),
+                cValue: parseFloat(data[i].energyConsumption),
+                cMeterFk: data[i].cMeterFk,
+              });
+            }
+            await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
+          }
+        }
+      }
+    }
+  } else {
+    //上月月初
+    let startMonth = new Date(moment(endDate).format('YYYY-MM-01'));
+    await prisma.Pems_MeterReporting_Month.deleteMany({
+      where: { cMonthStart: new Date(startMonth) },
+    });
+    let data = await this.statisticalMeterMon(startMonth, endDate, null, null, null, null);
+    if (data != null && data.length > 0) {
+      let monthList = [];
+      for (let i = 0; i < data.length; i++) {
+        monthList.push({
+          cMonthStart: new Date(data[i].startTime),
+          cMonthEnd: new Date(data[i].endTime),
+          cValue: parseFloat(data[i].energyConsumption),
+          cMeterFk: data[i].cMeterFk,
+        });
+      }
+      await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
+    }
+  }
+}
+/**
+ * 保存当前月份耗能
+ */
+async function saveReoprtCurrentMon() {
+  const start = new Date(moment().format('YYYY-MM-01'));
+  const end = new Date(moment().format('YYYY-MM-DD'));
+  await prisma.Pems_MeterReporting_Month.deleteMany({
+    where: { cMonthStart: new Date(start) },
+  });
+  const data = await this.statisticalMeterMon(start, end, null, null, null, null);
+  if (data != null && data.length > 0) {
+    let monthList = [];
+    for (let i = 0; i < data.length; i++) {
+      monthList.push({
+        cMonthStart: new Date(data[i].startTime),
+        cMonthEnd: new Date(data[i].endTime),
+        cValue: parseFloat(data[i].energyConsumption),
+        cMeterFk: data[i].cMeterFk,
+      });
+    }
+    await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
+  }
+}
 /**
  * 根据meterId和cRecordType 获取meterValue的数据
  * @param {*} meterId meterId
@@ -715,4 +947,9 @@ export default {
   getPageDate,
   getMeterReportingDayData,
   getStaAndEndMon,
+  saveReportDay,
+  saveReoprtWeekHistory,
+  saveReoprtCurrentWeek,
+  saveReoprtMonHistory,
+  saveReoprtCurrentMon,
 };
