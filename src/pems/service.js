@@ -167,7 +167,7 @@ async function getMeterId(id, cType, cPositionFk) {
  * @param {*} cRecordType 班次
  * @returns meterValue的数据
  */
-async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cPositionFk) {
+async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cType) {
   let meterIds = [];
   meterIdList.forEach(element => {
     meterIds.push(element.id);
@@ -202,7 +202,7 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cPo
     where: filter,
   });
   let data = null;
-  if (cPositionFk != null && cPositionFk != '') {
+  if (cType != null && cType != '') {
     data = await prisma.Pems_MeterReporting_Day.aggregate({
       where: filter,
       _sum: {
@@ -228,9 +228,7 @@ async function saveReportDay() {
         .subtract(1, 'days')
         .format('YYYY-MM-DD'),
     );
-    await prisma.Pems_MeterReporting_Day.deleteMany({
-      where: { cDate: preDate },
-    });
+
     list = await statisticalMeterData(null, null, null, preDate, null);
   }
   const dayList = [];
@@ -247,7 +245,12 @@ async function saveReportDay() {
       });
     }
   }
-  await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
+  if (dayList != null && dayList != '' && dayList.length > 0) {
+    await prisma.Pems_MeterReporting_Day.deleteMany({
+      where: { cDate: preDate },
+    });
+    await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
+  }
 }
 /**
  * 保存历史每周耗能
@@ -301,9 +304,7 @@ async function saveReoprtWeekHistory() {
     let endWeek = moment()
       .subtract(weekOfDay, 'days')
       .format('YYYY-MM-DD');
-    await prisma.Pems_MeterReporting_Week.deleteMany({
-      where: { cWeekStart: new Date(startWeek) },
-    });
+
     let data = await this.statisticalMeterWeek(startWeek, endWeek, null, null, null, null);
     console.log(startWeek + '--' + endWeek);
     if (data != null && data.length > 0) {
@@ -316,7 +317,12 @@ async function saveReoprtWeekHistory() {
           cMeterFk: data[i].cMeterFk,
         });
       }
-      await prisma.Pems_MeterReporting_Week.createMany({ data: weekList });
+      if (weekList != null && weekList != '' && weekList.length > 0) {
+        await prisma.Pems_MeterReporting_Week.deleteMany({
+          where: { cWeekStart: new Date(startWeek) },
+        });
+        await prisma.Pems_MeterReporting_Week.createMany({ data: weekList });
+      }
     }
   }
 }
@@ -325,7 +331,7 @@ async function saveReoprtWeekHistory() {
  * 保存当周耗能
  */
 async function saveReoprtCurrentWeek() {
-  const weekOfday = moment().format('E');
+  let weekOfday = moment().format('E');
   const startMon = moment()
     .subtract(weekOfday - 1, 'days')
     .format('YYYY-MM-DD');
@@ -333,25 +339,74 @@ async function saveReoprtCurrentWeek() {
     .add(7 - weekOfday, 'days')
     .format('YYYY-MM-DD');
   const now = new Date(moment().format('YYYY-MM-DD'));
-  let list = [];
-  await prisma.Pems_MeterReporting_Week.deleteMany({
-    where: { cWeekStart: new Date(startMon) },
-  });
-  let data = await this.statisticalMeterWeek(startMon, now, null, null, null, null);
-  console.log(startMon + '--' + endSun);
-  if (data != null && data.length > 0) {
-    let weekList = [];
-    for (let i = 0; i < data.length; i++) {
-      weekList.push({
-        cWeekStart: new Date(data[i].startTime),
-        cWeekEnd: new Date(data[i].endTime),
-        cValue: parseFloat(data[i].energyConsumption),
-        cMeterFk: data[i].cMeterFk,
+  //判断是否是周日
+  if (moment().weekday() == 1) {
+    // //获取上周周日
+    let preEndWeek = new Date(
+      moment(startMon)
+        .subtract(1, 'days')
+        .format('YYYY-MM-DD'),
+    );
+    weekOfday = moment(preEndWeek).format('E');
+    //获取上周周一
+    let preStartWeek = new Date(
+      moment(preEndWeek)
+        .subtract(weekOfday - 1, 'days')
+        .format('YYYY-MM-DD'),
+    );
+
+    let data = await this.statisticalMeterWeek(preStartWeek, preEndWeek, null, null, null, null);
+    if (data != null && data.length > 0) {
+      let weekList = [];
+      for (let i = 0; i < data.length; i++) {
+        weekList.push({
+          cWeekStart: new Date(data[i].startTime),
+          cWeekEnd: new Date(preEndWeek),
+          cValue: parseFloat(data[i].energyConsumption),
+          cMeterFk: data[i].cMeterFk,
+        });
+        weekList.push({
+          cWeekStart: new Date(now),
+          cWeekEnd: new Date(endSun),
+          cValue: parseFloat(0),
+          cMeterFk: data[i].cMeterFk,
+        });
+      }
+      if (weekList != null && weekList != '' && weekList.length > 0) {
+        await prisma.Pems_MeterReporting_Week.deleteMany({
+          where: { cWeekStart: new Date(preStartWeek) },
+        });
+      }
+      await prisma.Pems_MeterReporting_Week.createMany({
+        data: weekList,
       });
     }
-    await prisma.Pems_MeterReporting_Week.createMany({
-      data: weekList,
-    });
+  } else {
+    const preDay = new Date(
+      moment()
+        .subtract(1, 'day')
+        .format('YYYY-MM-DD'),
+    );
+    const data = await this.statisticalMeterWeek(startMon, preDay, null, null, null, null);
+    if (data != null && data.length > 0) {
+      let weekList = [];
+      for (let i = 0; i < data.length; i++) {
+        weekList.push({
+          cWeekStart: new Date(data[i].startTime),
+          cWeekEnd: new Date(endSun),
+          cValue: parseFloat(data[i].energyConsumption),
+          cMeterFk: data[i].cMeterFk,
+        });
+      }
+      if (weekList != null && weekList != '' && weekList.length > 0) {
+        await prisma.Pems_MeterReporting_Week.deleteMany({
+          where: { cWeekStart: new Date(startMon) },
+        });
+      }
+      await prisma.Pems_MeterReporting_Week.createMany({
+        data: weekList,
+      });
+    }
   }
 }
 
@@ -405,9 +460,7 @@ async function saveReoprtMonHistory() {
   } else {
     //上月月初
     let startMonth = new Date(moment(endDate).format('YYYY-MM-01'));
-    await prisma.Pems_MeterReporting_Month.deleteMany({
-      where: { cMonthStart: new Date(startMonth) },
-    });
+
     let data = await this.statisticalMeterMon(startMonth, endDate, null, null, null, null);
     if (data != null && data.length > 0) {
       let monthList = [];
@@ -419,7 +472,12 @@ async function saveReoprtMonHistory() {
           cMeterFk: data[i].cMeterFk,
         });
       }
-      await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
+      if (monthList != null && monthList != '' && monthList.length > 0) {
+        await prisma.Pems_MeterReporting_Month.deleteMany({
+          where: { cMonthStart: new Date(startMonth) },
+        });
+        await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
+      }
     }
   }
 }
@@ -427,23 +485,73 @@ async function saveReoprtMonHistory() {
  * 保存当前月份耗能
  */
 async function saveReoprtCurrentMon() {
-  const start = new Date(moment().format('YYYY-MM-01'));
-  const end = new Date(moment().format('YYYY-MM-DD'));
-  await prisma.Pems_MeterReporting_Month.deleteMany({
-    where: { cMonthStart: new Date(start) },
-  });
-  const data = await this.statisticalMeterMon(start, end, null, null, null, null);
-  if (data != null && data.length > 0) {
-    let monthList = [];
-    for (let i = 0; i < data.length; i++) {
+  const newFor = new Date(moment().format('YYYY-MM-01'));
+  let now = new Date();
+  let prdDate = new Date(
+    moment()
+      .subtract(1, 'day')
+      .format('YYYY-MM-DD'),
+  );
+  let day = now.getDate();
+  let monthList = [];
+  if (Number(day) == 1) {
+    //当前时间是月初 1号时，添加1号的数据月数据，并更新上月月末的数据
+    //获取开始时间上月月末的日期
+    let preDateEnd = new Date(
+      moment()
+        .month(moment().month() - 1)
+        .endOf('month')
+        .format('YYYY-MM-DD'),
+    );
+    const preMonSta = new Date(moment(preDateEnd).format('YYYY-MM-01'));
+    const data = await this.statisticalMeterMon(preDateEnd, preMonSta, null, null, null, null);
+    if (data != null && data.length > 0) {
+      const start = new Date(moment().format('YYYY-MM-01'));
+      const end = new Date(
+        moment()
+          .endOf('month')
+          .format('YYYY-MM-DD'),
+      );
+      for (let i = 0; i < data.length; i++) {
+        monthList.push({
+          cMonthStart: new Date(data[i].startTime),
+          cMonthEnd: new Date(data[i].endTime),
+          cValue: parseFloat(data[i].energyConsumption),
+          cMeterFk: data[i].cMeterFk,
+        });
+      }
       monthList.push({
-        cMonthStart: new Date(data[i].startTime),
-        cMonthEnd: new Date(data[i].endTime),
-        cValue: parseFloat(data[i].energyConsumption),
+        cMonthStart: start,
+        cMonthEnd: end,
+        cValue: parseFloat(null),
         cMeterFk: data[i].cMeterFk,
       });
     }
-    await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
+    if (monthList != null && monthList != '' && monthList.length > 0) {
+      await prisma.Pems_MeterReporting_Month.deleteMany({
+        where: { cMonthStart: new Date(preMonSta) },
+      });
+      await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
+    }
+  } else {
+    const data = await this.statisticalMeterMon(newFor, prdDate, null, null, null, null);
+    if (data != null && data.length > 0) {
+      //不是1号
+      for (let i = 0; i < data.length; i++) {
+        monthList.push({
+          cMonthStart: new Date(data[i].startTime),
+          cMonthEnd: new Date(data[i].endTime),
+          cValue: parseFloat(data[i].energyConsumption),
+          cMeterFk: data[i].cMeterFk,
+        });
+      }
+    }
+    if (monthList != null && monthList != '' && monthList.length > 0) {
+      await prisma.Pems_MeterReporting_Month.deleteMany({
+        where: { cMonthStart: new Date(newFor) },
+      });
+      await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
+    }
   }
 }
 /**
@@ -708,6 +816,7 @@ async function statisticalMeterWeek(startWeek, endWeek, id, cType, cPositionFk, 
 async function statisticalMeterMon(startMonth, endMonth, id, cType, cPositionFk, cRecordType) {
   //获取meter的数据
   let meterIdList = await getMeterId(id, cType, cPositionFk);
+
   //获取开始时间上月月末的日期
   let preDate = new Date(
     moment(startMonth)
@@ -721,7 +830,8 @@ async function statisticalMeterMon(startMonth, endMonth, id, cType, cPositionFk,
   let list = [preDate, endDate];
   //获取meterValue的数据
   const meterValueDateList = await getMeterValuesData(list, null, meterIdList);
-
+  console.log('-----');
+  console.log(meterValueDateList);
   // let startDate = meterValueDateList[0].cRecordDate;
   // let endDate = meterValueDateList[meterValueDateList.length - 1].cRecordDate;
   startMonth = new Date(moment(startMonth).format('YYYY-MM-DD'));

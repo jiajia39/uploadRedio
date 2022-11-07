@@ -37,14 +37,14 @@ exports.initScheduledJobs = () => {
   });
   scheduledJobForSaveCurrentWeek.start();
 
-  const scheduledJobForSaveMonHistory = CronJob.schedule('0 20 0 * * MON', () => {
+  const scheduledJobForSaveMonHistory = CronJob.schedule('0 30 0 1 * *', () => {
     console.log("I'm executed on a schedule!!!!!!!!");
     meterValue.saveReoprtMonHistory();
     // Add your custom logic here
   });
   scheduledJobForSaveMonHistory.start();
 
-  const scheduledJobForSaveCurrentMon = CronJob.schedule('0 15 0 * * *', () => {
+  const scheduledJobForSaveCurrentMon = CronJob.schedule('0 25 0 * * *', () => {
     console.log("I'm executed on a schedule!!!!!!!!");
     meterValue.saveReoprtCurrentMon();
     // Add your custom logic here
