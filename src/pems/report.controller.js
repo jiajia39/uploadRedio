@@ -327,6 +327,244 @@ const controller = (() => {
       }
     }
   });
+
+  /**
+   * @swagger
+   * /api/pems/meterValues/statisticalMeterWeek:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: Calculate weekly energy consumption(计算每周耗能情况)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: id
+   *         description: meter's id.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *       - name: cPositionFk
+   *         description: meter's cPositionFk
+   *         in: query
+   *         type: int
+   *       - name: cRecordType
+   *         description: meterValues's cRecordType
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
+  router.get('/statisticalMeterWeek', async (req, res) => {
+    let { row, page, startWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    const weekOfday = moment(startWeek).format('E');
+    //开始时间的周一
+    const cRecordDate = new Date(
+      moment(startWeek)
+        .subtract(weekOfday - 1, 'days')
+        .format('YYYY-MM-DD'),
+    );
+    let meterIdList = await service.getMeterId(id, cType, cPositionFk);
+    let endWeek;
+    if (page == null) {
+      page = 1;
+    }
+    if (row == null) {
+      row = 5;
+    }
+    let meterIds = [];
+    meterIdList.forEach(element => {
+      meterIds.push(element.id);
+    });
+    const filter = { AND: [] };
+    if (cRecordDate) filter.AND = { ...filter.AND, cWeekStart: { in: cRecordDate } };
+    filter.AND = { ...filter.AND, cMeterFk: { in: meterIds } };
+    const select = {
+      cValue: true,
+      cMeterFk: true,
+      cWeekStart: true,
+      cWeekEnd: true,
+      Pems_Meter: {
+        select: {
+          id: true,
+          cName: true,
+          cDesc: true,
+        },
+      },
+    };
+    const rstdata = await prisma.Pems_MeterReporting_Week.findMany({
+      where: filter,
+      select,
+      skip: (page - 1) * row,
+      take: row,
+      orderBy: {
+        cMeterFk: 'asc',
+      },
+    });
+    const count = await prisma.Pems_MeterReporting_Week.count({
+      where: filter,
+    });
+
+    let totalEnergyConsumption = await prisma.Pems_MeterReporting_Week.aggregate({
+      where: filter,
+      _sum: {
+        cValue: true,
+      },
+    });
+
+    if (rstdata != null && rstdata != '' && rstdata.length != 0) {
+      // let data = [];
+      // rstdata.forEach(element => {
+      //   const start = moment(element.cWeekStart).format('YYYY-MM-DD');
+      //   const end = moment(element.cWeekEnd).format('YYYY-MM-DD');
+      //   let date = start + '---' + end;
+      //   data.push({
+      //     date,
+      //     cName: element.Pems_Meter.cName,
+      //     cDesc: element.Pems_Meter.cDesc,
+      //     cMeterFk: element.cMeterFk,
+      //     energyConsumption: element.cValue,
+      //   });
+      // });
+      res.json({
+        totalEnergyConsumption: totalEnergyConsumption._sum.cValue,
+        data: rstdata,
+        total: count,
+        message: 'Data obtained.',
+      });
+    } else {
+      res.json({
+        data: [],
+        total: 0,
+        message: 'Data Empty.',
+      });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/pems/meterValues/statisticalMeterWeek:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: Calculate weekly energy consumption(计算每周耗能情况)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: id
+   *         description: meter's id.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *       - name: cPositionFk
+   *         description: meter's cPositionFk
+   *         in: query
+   *         type: int
+   *       - name: cRecordType
+   *         description: meterValues's cRecordType
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
+  router.get('/statisticalMeterMon', async (req, res) => {
+    let { row, page, startMonth, id, cType, cPositionFk, cRecordType } = req.query;
+    if (startMonth == null || startMonth == '') {
+      startMonth = new Date();
+    }
+    let startDate = moment(startMonth);
+    //月初
+    startMonth = new Date(startDate.format('YYYY-MM-01'));
+
+    let meterIdList = await service.getMeterId(id, cType, cPositionFk);
+    if (page == null) {
+      page = 1;
+    }
+    if (row == null) {
+      row = 5;
+    }
+    let meterIds = [];
+    meterIdList.forEach(element => {
+      meterIds.push(element.id);
+    });
+    const filter = { AND: [] };
+    if (startMonth) filter.AND = { ...filter.AND, cMonthStart: { in: startMonth } };
+    filter.AND = { ...filter.AND, cMeterFk: { in: meterIds } };
+    const select = {
+      cValue: true,
+      cMeterFk: true,
+      cMonthStart: true,
+      cMonthEnd: true,
+      Pems_Meter: {
+        select: {
+          id: true,
+          cName: true,
+          cDesc: true,
+        },
+      },
+    };
+    const rstdata = await prisma.Pems_MeterReporting_Month.findMany({
+      where: filter,
+      select,
+      skip: (page - 1) * row,
+      take: row,
+      orderBy: {
+        cMeterFk: 'asc',
+      },
+    });
+    const count = await prisma.Pems_MeterReporting_Month.count({
+      where: filter,
+    });
+
+    let totalEnergyConsumption = await prisma.Pems_MeterReporting_Month.aggregate({
+      where: filter,
+      _sum: {
+        cValue: true,
+      },
+    });
+
+    if (rstdata != null && rstdata != '' && rstdata.length != 0) {
+      // let data = [];
+      // rstdata.forEach(element => {
+      //   const start = moment(element.cWeekStart).format('YYYY-MM-DD');
+      //   const end = moment(element.cWeekEnd).format('YYYY-MM-DD');
+      //   let date = start + '---' + end;
+      //   data.push({
+      //     date,
+      //     cName: element.Pems_Meter.cName,
+      //     cDesc: element.Pems_Meter.cDesc,
+      //     cMeterFk: element.cMeterFk,
+      //     energyConsumption: element.cValue,
+      //   });
+      // });
+      res.json({
+        totalEnergyConsumption: totalEnergyConsumption._sum.cValue,
+        data: rstdata,
+        total: count,
+        message: 'Data obtained.',
+      });
+    } else {
+      res.json({
+        data: [],
+        total: 0,
+        message: 'Data Empty.',
+      });
+    }
+  });
+
   return router;
 })();
 
