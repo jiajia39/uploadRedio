@@ -37,101 +37,95 @@ const controller = (() => {
     res.json(list);
   });
 
-  //   @swagger
-  //   apipemsmeterValuesstatisticalMeterValue
-  //     get
-  //       security
-  //         - Authorization []
-  //       description Calculate the energy consumption of each shift(展示meterValue数据并计算每个班次耗能情况)
-  //       tags [pems]
-  //       produces
-  //         - applicationjson
-  //       parameters
-  //         - name id
-  //           description meter's id.
-  //           in query
-  //           type int
-  //         - name cType
-  //           description meter's cType
-  //           in query
-  //           type string
-  //         - name cPositionFk
-  //           description meter's cPositionFk
-  //           in query
-  //           type int
-  //         - name cRecordType
-  //           description meterValues's cRecordType
-  //           in query
-  //           type string
-  //       responses
-  //         200
-  //           description meterValues
-  //           schema
-  //             type object
+  /**
+   * @swagger
+   * /api/pems/meterValues/statisticalMeterValue:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: Calculate the energy consumption of each shift(展示meterValue数据并计算每个班次耗能情况)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: id
+   *         description: meter's id.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *       - name: cPositionFk
+   *         description: meter's cPositionFk
+   *         in: query
+   *         type: int
+   *       - name: cRecordType
+   *         description: meterValues's cRecordType
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
+  router.get('/statisticalMeterValue', async (req, res) => {
+    let { page, row, cRecordDate, id, cType, cPositionFk, cRecordType } = req.query;
+    if (page == null) {
+      page = 1;
+    }
+    if (row == null) {
+      row = 5;
+    }
+    let now = new Date(moment().format('YYYY-MM-DD'));
+    cRecordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
 
-  // router.get('statisticalMeterValue', async (req, res) = {
-  //   let { page, row, cRecordDate, id, cType, cPositionFk } = req.query;
-
-  //   let now = new Date(moment().format('YYYY-MM-DD'));
-  //   let reportingDayData;
-  //   if (cRecordDate != null && cRecordDate != '') {
-  //     let cRecordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
-  //     if (cRecordDate.getTime() != now.getTime()) {
-  //       获取meterId
-  //       let meterId = await service.getMeterId(id, cType, cPositionFk);
-  //       根据meterId获取meterValue的数据
-  //       reportingDayData = service.getMeterReportingDayData(page, row, cRecordDate, null, meterId);
-  //     } else {
-  //       reportingDayData = await service.getNowMeterValue(id, cType, cPositionFk);
-  //     }
-  //   } else {
-  //     reportingDayData = await service.getNowMeterValue(id, cType, cPositionFk);
-  //   }
-  //   res.json(reportingDayData);
-  // });
-
-  // router.get('saveweek', async (req, res) = {
-  //   let date;
-  //   let report = await prisma.Pems_MeterReporting_Week.findMany();
-
-  //   const StartWeekOfday = moment().format('E');
-
-  //   周一
-  //   const endDate = moment()
-  //     .subtract(StartWeekOfday - 1, 'days')
-  //     .format('YYYYMMDD');
-  //   上周周日
-  //   let preDate = new Date(
-  //     moment(endDate)
-  //       .subtract(1, 'days')
-  //       .format('YYYY-MM-DD'),
-  //   );
-  //   let startDate;
-  //   if (report == null  report == '') {
-  //     let recordDateList = await prisma.Pems_MeterValues().groupBy({
-  //       by ['cRecordDate'],
-  //       orderBy {
-  //         cRecordDate 'asc',
-  //       },
-  //     });
-  //     if (recordDateList != null && recordDateList.length  0) {
-  //       startDate = recordDateList[0].cRecordDate;
-  //     } else {
-  //       startDate = preDate;
-  //     }
-  //   } else {
-  //     startDate = preDate;
-  //   }
-  //   let weekList = service.getMonAndSunDay(startDate, endDate);
-  //   if (weekList != null && weekList != '') {
-  //     weekList.forEach(element = {
-  //       element.startTime;
-  //       element.endSun;
-  //     });
-  //   }
-  //   await service.saveReportingDay(startDate, endDate);
-  //   res.json(date);
-  // });
+    if (cRecordDate == null || cRecordDate == '' || now.getTime() == cRecordDate.getTime()) {
+      cRecordDate = new Date();
+      const date = await service.statisticalMeterData(
+        id,
+        cType,
+        Number(cPositionFk),
+        cRecordDate,
+        cRecordType,
+      );
+      if (date != null && date.length != 0) {
+        let pageList = service.getPageDate(date, row, page);
+        const { totalEnergyConsumption } = date[date.length - 1];
+        res.json({
+          totalEnergyConsumption,
+          data: pageList,
+          total: date.length,
+          message: 'Data obtained.',
+        });
+      } else {
+        res.json({
+          data: [],
+          total: 0,
+          message: 'Data Empty.',
+        });
+      }
+    } else {
+      let meterIdList = await service.getMeterId(id, cType, cPositionFk);
+      let meterReport = await service.getMeterReportingDayData(page, row, cRecordDate, meterIdList);
+      if (meterReport.rstdata != null && meterReport.rstdata.length > 0) {
+        let statisticalMeter = [];
+        meterReport.rstdata.forEach(element => {
+          let energyConsumption = element.cValue;
+          console.log(element.cValue);
+          statisticalMeter.push(Object.assign({}, element, { energyConsumption }));
+        });
+        res.json({
+          totalEnergyConsumption: parseFloat(meterReport.data._sum.cValue).toFixed(2),
+          data: statisticalMeter,
+          total: meterReport.count,
+          message: 'Data obtained.',
+        });
+      }
+      console.log(meterReport);
+    }
+  });
   return router;
 })();
 

@@ -167,6 +167,57 @@ async function getMeterId(id, cType, cPositionFk) {
  * @param {*} cRecordType 班次
  * @returns meterValue的数据
  */
+async function getMeterReportingDayData(page, row, cRecordDate, meterIdList) {
+  let meterIds = [];
+  meterIdList.forEach(element => {
+    meterIds.push(element.id);
+  });
+  const filter = { AND: [] };
+  if (cRecordDate) filter.AND = { ...filter.AND, cDate: { in: cRecordDate } };
+  filter.AND = { ...filter.AND, cMeterFk: { in: meterIds } };
+  page = Number(page) || 1;
+  row = Number(row) || 5;
+  const select = {
+    cValue: true,
+    cMeterFk: true,
+    cDate: true,
+    Pems_Meter: {
+      select: {
+        id: true,
+        cName: true,
+        cDesc: true,
+      },
+    },
+  };
+  const rstdata = await prisma.Pems_MeterReporting_Day.findMany({
+    where: filter,
+    select,
+    skip: (page - 1) * row,
+    take: row,
+    orderBy: {
+      cMeterFk: 'asc',
+    },
+  });
+  const count = await prisma.Pems_MeterReporting_Day.count({
+    where: filter,
+  });
+
+  const data = await prisma.Pems_MeterReporting_Day.aggregate({
+    where: filter,
+    _sum: {
+      cValue: true,
+    },
+  });
+  const date = { rstdata, data, count };
+  return date;
+}
+
+/**
+ * 根据meterId和cRecordType 获取meterValue的数据
+ * @param {*} meterId meterId
+ * @param {*} cRecordType 班次
+ * @returns meterValue的数据
+ */
 async function getMeterValuesData(cRecordDate, cRecordType, meterIdList) {
   let meterIds = [];
   meterIdList.forEach(element => {
@@ -655,4 +706,5 @@ export default {
   statisticalMeterWeek,
   statisticalMeterMon,
   getPageDate,
+  getMeterReportingDayData,
 };
