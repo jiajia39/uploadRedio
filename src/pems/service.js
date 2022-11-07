@@ -45,7 +45,7 @@ async function setMeterValuesandSave() {
       cValue: parseFloat(influxValue),
       cRecordTime: dateTime,
       cRecordDate: date,
-      cMerterFk: Number(meters[i].id),
+      cMeterFk: Number(meters[i].id),
       cRecordType,
       cRecorder: 'Test',
     };
@@ -225,13 +225,13 @@ async function getMeterValuesData(cRecordDate, cRecordType, meterIdList) {
   });
   const filter = { AND: [] };
   if (cRecordDate) filter.AND = { ...filter.AND, cRecordDate: { in: cRecordDate } };
-  filter.AND = { ...filter.AND, cMerterFk: { in: meterIds } };
+  filter.AND = { ...filter.AND, cMeterFk: { in: meterIds } };
   const select = {
     cRecordTime: true,
     cRecordDate: true,
     cRecordType: true,
     cValue: true,
-    cMerterFk: true,
+    cMeterFk: true,
     Pems_Meter: {
       select: {
         id: true,
@@ -281,7 +281,7 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
     let meterValueDate = [];
     if (meterValueDateList != null && meterValueDateList.length > 0) {
       meterValueDateList.forEach(element => {
-        if (element.cMerterFk == meterIdList[i].id) {
+        if (element.cMeterFk == meterIdList[i].id) {
           meterValueDate.push(element);
         }
       });
@@ -384,7 +384,7 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
         let preDate;
         let meterValueDate;
         meterValueDateList.forEach(element => {
-          if (element.cMerterFk == meterIdList[i].id) {
+          if (element.cMeterFk == meterIdList[i].id) {
             if (element.cRecordDate.getTime() <= new Date(timeList[j].endSun).getTime()) {
               meterValueDate = element;
               if (element.cValue != null) {
@@ -402,10 +402,12 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
         const date = timeList[j].startTime + '---' + timeList[j].endSun;
         let name;
         let desc;
+        let meterFk;
         let energyConsumption = null;
         if (meterValueDate != null) {
           name = meterValueDate.Pems_Meter.cName;
           desc = meterValueDate.Pems_Meter.cDesc;
+          meterFk = meterValueDate.Pems_Meter.id;
         }
         if (preDate != null && nowDate != null) {
           energyConsumption = new Decimal(nowDate).sub(new Decimal(preDate)).toNumber();
@@ -414,6 +416,9 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
             .toNumber();
         }
         statisticalMeter.push({
+          startTime: timeList[j].startTime,
+          endTime: timeList[j].endSun,
+          cMeterFk: meterFk,
           date,
           cDesc: desc,
           cname: name,
@@ -707,4 +712,5 @@ export default {
   statisticalMeterMon,
   getPageDate,
   getMeterReportingDayData,
+  getStaAndEndMon,
 };

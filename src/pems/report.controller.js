@@ -37,6 +37,182 @@ const controller = (() => {
     res.json(list);
   });
 
+  router.get('/save/week/history', async (req, res) => {
+    let report = await prisma.Pems_MeterReporting_Week.findMany();
+    let list = [];
+    let now = new Date(moment().format('YYYY-MM-DD'));
+    if (report == null || report == '') {
+      let meterValue = await prisma.Pems_MeterValues.findMany({
+        orderBy: {
+          cRecordDate: 'asc',
+        },
+      });
+      if (meterValue != null && meterValue.length > 0) {
+        let preDate = meterValue[0].cRecordDate;
+        let weekOfDay = new Date().getDay();
+        //上周周日
+        let endDate = moment()
+          .subtract(weekOfDay, 'days')
+          .format('YYYY-MM-DD');
+        console.log(endDate);
+        let timeList = await service.getMonAndSunDayList(preDate, endDate);
+        for (let i = 0; i < timeList.length; i++) {
+          const startWeek = timeList[i].startTime;
+          const endWeek = timeList[i].endSun;
+          let data = await service.statisticalMeterWeek(startWeek, endWeek, null, null, null, null);
+          if (data != null && data.length > 0) {
+            let weekList = [];
+            if (data != null && data.length > 0) {
+              for (let i = 0; i < data.length; i++) {
+                weekList.push({
+                  cWeekStart: new Date(data[i].startTime),
+                  cWeekEnd: new Date(data[i].endTime),
+                  cValue: parseFloat(data[i].energyConsumption),
+                  cMeterFk: data[i].cMeterFk,
+                });
+              }
+              await prisma.Pems_MeterReporting_Week.createMany({ data: weekList });
+            }
+          }
+        }
+      }
+    } else {
+      let weekOfDay = new Date().getDay();
+      //上周周一
+      let startWeek = moment()
+        .subtract(weekOfDay + 6, 'days')
+        .format('YYYY-MM-DD');
+      // list = await service.statisticalMeterData(null, null, null, preDate, null);
+      //上周周日
+      let endWeek = moment()
+        .subtract(weekOfDay, 'days')
+        .format('YYYY-MM-DD');
+      let data = await service.statisticalMeterWeek(startWeek, endWeek, null, null, null, null);
+      console.log(startWeek + '--' + endWeek);
+      if (data != null && data.length > 0) {
+        let weekList = [];
+        for (let i = 0; i < data.length; i++) {
+          weekList.push({
+            cWeekStart: new Date(data[i].startTime),
+            cWeekEnd: new Date(data[i].endTime),
+            cValue: parseFloat(data[i].energyConsumption),
+            cMeterFk: data[i].cMeterFk,
+          });
+        }
+        await prisma.Pems_MeterReporting_Week.createMany({ data: weekList });
+      }
+    }
+    res.json({ isok: true, message: 'ReportingWeek saved' });
+    // await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
+    // res.json(list);
+  });
+
+  router.get('/save/Current/week', async (req, res) => {
+    //
+    const weekOfday = moment().format('E');
+    const startMon = moment()
+      .subtract(weekOfday - 1, 'days')
+      .format('YYYY-MM-DD');
+    const endSun = moment()
+      .add(7 - weekOfday, 'days')
+      .format('YYYY-MM-DD');
+    const now = new Date(moment().format('YYYY-MM-DD'));
+    let list = [];
+    await prisma.Pems_MeterReporting_Week.deleteMany({
+      where: { cWeekStart: new Date(startMon) },
+    });
+    let data = await service.statisticalMeterWeek(startMon, now, null, null, null, null);
+    console.log(startMon + '--' + endSun);
+    if (data != null && data.length > 0) {
+      let weekList = [];
+      for (let i = 0; i < data.length; i++) {
+        weekList.push({
+          cWeekStart: new Date(data[i].startTime),
+          cWeekEnd: new Date(data[i].endTime),
+          cValue: parseFloat(data[i].energyConsumption),
+          cMeterFk: data[i].cMeterFk,
+        });
+      }
+      await prisma.Pems_MeterReporting_Week.createMany({
+        data: weekList,
+      });
+    }
+    res.json({ isok: true, message: 'ReportingWeek saved' });
+  });
+
+  router.get('/save/month/history', async (req, res) => {
+    let start = new Date(moment().format('YYYY-MM-01'));
+    //上月月末
+    let endDate = new Date(
+      moment(start)
+        .subtract(1, 'days')
+        .format('YYYY-MM-DD'),
+    );
+
+    let report = await prisma.Pems_MeterReporting_Month.findMany();
+    console.log("111111111111111");
+    console.log(report);
+    let list = [];
+    let now = new Date(moment().format('YYYY-MM-DD'));
+    if (report == null || report == '') {
+      let meterValue = await prisma.Pems_MeterValues.findMany({
+        orderBy: {
+          cRecordDate: 'asc',
+        },
+      });
+      if (meterValue != null && meterValue.length > 0) {
+        let preDate = meterValue[0].cRecordDate;
+        preDate = new Date(moment(preDate).format('YYYY-MM-01'));
+        let timeList = await service.getStaAndEndMon(preDate, endDate);
+        for (let i = 0; i < timeList.length; i++) {
+          const startMonth = timeList[i].startTime;
+          const endMonth = timeList[i].endSun;
+          let data = await service.statisticalMeterWeek(
+            startMonth,
+            endMonth,
+            null,
+            null,
+            null,
+            null,
+          );
+          if (data != null && data.length > 0) {
+            let monthList = [];
+            if (data != null && data.length > 0) {
+              for (let i = 0; i < data.length; i++) {
+                monthList.push({
+                  cMonthStart: new Date(data[i].startTime),
+                  cMonthEnd: new Date(data[i].endTime),
+                  cValue: parseFloat(data[i].energyConsumption),
+                  cMeterFk: data[i].cMeterFk,
+                });
+              }
+              await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
+            }
+          }
+        }
+      }
+    } else {
+      //上月月初
+      let startMonth = new Date(moment(endDate).format('YYYY-MM-01'));
+      let data = await service.statisticalMeterWeek(startMonth, endDate, null, null, null, null);
+      console.log(data.length);
+      if (data != null && data.length > 0) {
+        let monthList = [];
+        for (let i = 0; i < data.length; i++) {
+          monthList.push({
+            cWeekStart: new Date(data[i].startTime),
+            cWeekEnd: new Date(data[i].endTime),
+            cValue: parseFloat(data[i].energyConsumption),
+            cMeterFk: data[i].cMeterFk,
+          });
+        }
+        await prisma.Pems_MeterReporting_Week.createMany({ data: monthList });
+      }
+    }
+    res.json({ isok: true, message: 'ReportingWeek saved' });
+    // await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
+    // res.json(list);
+  });
   /**
    * @swagger
    * /api/pems/meterValues/statisticalMeterValue:
@@ -123,7 +299,6 @@ const controller = (() => {
           message: 'Data obtained.',
         });
       }
-      console.log(meterReport);
     }
   });
   return router;

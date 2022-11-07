@@ -173,9 +173,9 @@ model Pems_MeterValues {
   cRecordTime DateTime?   @db.DateTime
   cRecordDate DateTime?   @db.Date
   cRecordType String?     @db.VarChar(50)
-  cMerterFk   Int?
+  cMeterFk    Int?
   cRecorder   String?     @db.VarChar(50)
-  Pems_Meter  Pems_Meter? @relation(fields: [cMerterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterValues_Meter")
+  Pems_Meter  Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterValues_Meter")
 }
 
 model Pems_MeterRecording {
@@ -197,20 +197,20 @@ model Pems_MeterReporting_Day {
 }
 
 model Pems_MeterReporting_Month {
-  id         Int         @id(map: "PK_Pems_MeterReporting_Month") @default(autoincrement())
-  cValue     Float?
-  cMeterFk   Int?
-  cMonth     String?     @db.VarChar(50)
-  cDesc      String?     @db.VarChar(500)
-  Pems_Meter Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterReporting_Month_Meter")
+  id          Int         @id(map: "PK_Pems_MeterReporting_Month") @default(autoincrement())
+  cValue      Float?
+  cMeterFk    Int?
+  cMonthStart DateTime?   @db.Date
+  cMonthEnd   DateTime?   @db.Date
+  Pems_Meter  Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterReporting_Month_Meter")
 }
 
 model Pems_MeterReporting_Week {
   id         Int         @id(map: "PK_Pems_MeterReporting_Week") @default(autoincrement())
   cValue     Float?
   cMeterFk   Int?
-  cWeek      String?     @db.VarChar(100)
-  cDesc      String?     @db.VarChar(500)
+  cWeekStart DateTime?   @db.Date
+  cWeekEnd   DateTime?   @db.Date
   Pems_Meter Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterReporting_Week_Meter")
 }
 
