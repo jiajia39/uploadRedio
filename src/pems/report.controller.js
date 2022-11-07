@@ -416,30 +416,26 @@ const controller = (() => {
     const count = await prisma.Pems_MeterReporting_Week.count({
       where: filter,
     });
-
-    let totalEnergyConsumption = await prisma.Pems_MeterReporting_Week.aggregate({
-      where: filter,
-      _sum: {
-        cValue: true,
-      },
-    });
-
+    let totalEnergyConsumption = null;
+    if (cType != null && cType != '') {
+      const total = await prisma.Pems_MeterReporting_Week.aggregate({
+        where: filter,
+        _sum: {
+          cValue: true,
+        },
+      });
+      totalEnergyConsumption = total._sum.cValue;
+    }
+    console.log(rstdata.length);
     if (rstdata != null && rstdata != '' && rstdata.length != 0) {
-      // let data = [];
-      // rstdata.forEach(element => {
-      //   const start = moment(element.cWeekStart).format('YYYY-MM-DD');
-      //   const end = moment(element.cWeekEnd).format('YYYY-MM-DD');
-      //   let date = start + '---' + end;
-      //   data.push({
-      //     date,
-      //     cName: element.Pems_Meter.cName,
-      //     cDesc: element.Pems_Meter.cDesc,
-      //     cMeterFk: element.cMeterFk,
-      //     energyConsumption: element.cValue,
-      //   });
-      // });
+      rstdata.forEach(element => {
+        const start = moment(element.cWeekStart).format('YYYY-MM-DD');
+        const end = moment(element.cWeekEnd).format('YYYY-MM-DD');
+        let date = start + '---' + end;
+        element.cWeekStart = date;
+      });
       res.json({
-        totalEnergyConsumption: totalEnergyConsumption._sum.cValue,
+        totalEnergyConsumption,
         data: rstdata,
         total: count,
         message: 'Data obtained.',
@@ -487,7 +483,7 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterMon', async (req, res) => {
-    let { row, page, startMonth, id, cType, cPositionFk, cRecordType } = req.query;
+    let { row, page, startMonth, id, cType, cPositionFk } = req.query;
     if (startMonth == null || startMonth == '') {
       startMonth = new Date();
     }
@@ -530,30 +526,26 @@ const controller = (() => {
     const count = await prisma.Pems_MeterReporting_Month.count({
       where: filter,
     });
-
-    let totalEnergyConsumption = await prisma.Pems_MeterReporting_Month.aggregate({
-      where: filter,
-      _sum: {
-        cValue: true,
-      },
-    });
+    let totalEnergyConsumption = null;
+    if (cType != null && cType != '') {
+      total = await prisma.Pems_MeterReporting_Month.aggregate({
+        where: filter,
+        _sum: {
+          cValue: true,
+        },
+      });
+      totalEnergyConsumption = total._sum.cValue;
+    }
 
     if (rstdata != null && rstdata != '' && rstdata.length != 0) {
-      // let data = [];
-      // rstdata.forEach(element => {
-      //   const start = moment(element.cWeekStart).format('YYYY-MM-DD');
-      //   const end = moment(element.cWeekEnd).format('YYYY-MM-DD');
-      //   let date = start + '---' + end;
-      //   data.push({
-      //     date,
-      //     cName: element.Pems_Meter.cName,
-      //     cDesc: element.Pems_Meter.cDesc,
-      //     cMeterFk: element.cMeterFk,
-      //     energyConsumption: element.cValue,
-      //   });
-      // });
+      rstdata.forEach(element => {
+        const start = moment(element.cWeekStart).format('YYYY-MM-DD');
+        const end = moment(element.cWeekEnd).format('YYYY-MM-DD');
+        let date = start + '---' + end;
+        element.cMonthStart  = date;
+      });
       res.json({
-        totalEnergyConsumption: totalEnergyConsumption._sum.cValue,
+        totalEnergyConsumption,
         data: rstdata,
         total: count,
         message: 'Data obtained.',
