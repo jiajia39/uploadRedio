@@ -167,7 +167,7 @@ async function getMeterId(id, cType, cPositionFk) {
  * @param {*} cRecordType 班次
  * @returns meterValue的数据
  */
-async function getMeterReportingDayData(page, row, cRecordDate, meterIdList) {
+async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cPositionFk) {
   let meterIds = [];
   meterIdList.forEach(element => {
     meterIds.push(element.id);
@@ -201,13 +201,15 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList) {
   const count = await prisma.Pems_MeterReporting_Day.count({
     where: filter,
   });
-
-  const data = await prisma.Pems_MeterReporting_Day.aggregate({
-    where: filter,
-    _sum: {
-      cValue: true,
-    },
-  });
+  let data = null;
+  if (cPositionFk != null && cPositionFk != '') {
+    data = await prisma.Pems_MeterReporting_Day.aggregate({
+      where: filter,
+      _sum: {
+        cValue: true,
+      },
+    });
+  }
   const date = { rstdata, data, count };
   return date;
 }

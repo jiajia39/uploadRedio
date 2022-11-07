@@ -310,7 +310,17 @@ const controller = (() => {
       }
     } else {
       let meterIdList = await service.getMeterId(id, cType, cPositionFk);
-      let meterReport = await service.getMeterReportingDayData(page, row, cRecordDate, meterIdList);
+      let meterReport = await service.getMeterReportingDayData(
+        page,
+        row,
+        cRecordDate,
+        meterIdList,
+        cPositionFk,
+      );
+      let total;
+      if (meterReport.data != null) {
+        total = parseFloat(meterReport.data._sum.cValue).toFixed(2);
+      }
       if (meterReport.rstdata != null && meterReport.rstdata.length > 0) {
         let statisticalMeter = [];
         meterReport.rstdata.forEach(element => {
@@ -319,7 +329,7 @@ const controller = (() => {
           statisticalMeter.push(Object.assign({}, element, { energyConsumption }));
         });
         res.json({
-          totalEnergyConsumption: parseFloat(meterReport.data._sum.cValue).toFixed(2),
+          totalEnergyConsumption: Number(total),
           data: statisticalMeter,
           total: meterReport.count,
           message: 'Data obtained.',
@@ -372,12 +382,8 @@ const controller = (() => {
     );
     let meterIdList = await service.getMeterId(id, cType, cPositionFk);
     let endWeek;
-    if (page == null) {
-      page = 1;
-    }
-    if (row == null) {
-      row = 5;
-    }
+    page = Number(page) || 1;
+    row = Number(row) || 5;
     let meterIds = [];
     meterIdList.forEach(element => {
       meterIds.push(element.id);
@@ -490,12 +496,8 @@ const controller = (() => {
     startMonth = new Date(startDate.format('YYYY-MM-01'));
 
     let meterIdList = await service.getMeterId(id, cType, cPositionFk);
-    if (page == null) {
-      page = 1;
-    }
-    if (row == null) {
-      row = 5;
-    }
+    page = Number(page) || 1;
+    row = Number(row) || 5;
     let meterIds = [];
     meterIdList.forEach(element => {
       meterIds.push(element.id);
