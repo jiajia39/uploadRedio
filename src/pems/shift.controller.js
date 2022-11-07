@@ -26,9 +26,7 @@ const controller = (() => {
    */
   router.put('/edit/:id', async (req, res) => {
     let startTime = req.body.cStartTime;
-    let startHour = parseInt(startTime);
-    let endHour = startHour + 12;
-    let endTime = endHour + ':00';
+    let endTime = req.body.cEndTime;
     const data = {
       cStartTime: startTime,
       cEndTime: endTime,
