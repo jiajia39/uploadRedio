@@ -64,24 +64,21 @@ function getInfluxData(measurement, field, start, interval, queryType) {
   });
 }
 
-function getInfluxDifferenceData(measurement, field, start, end, interval, queryType) {
-  let startFormatted, endFormatted;
-  if (start.charAt(0) === '-' && end.charAt(0) === '-') {
+function getInfluxDifferenceData(measurement, field, start, interval, queryType) {
+  let startFormatted;
+  if (start.charAt(0) === '-') {
     startFormatted = fluxDuration(`${start}`);
-    endFormatted = fluxDuration(`${end}`);
   } else {
     startFormatted = fluxDateTime(`${start}`);
-    endFormatted = fluxDateTime(`${end}`);
   }
   const intervalFormatted = fluxDuration(`${interval}`);
   const queryTypeFormatted = fluxExpression(`${queryType}`);
-  const offsetFormatted = fluxDuration('-8h');
   return new Promise(function(resolve, reject) {
     const query = flux`from(bucket: ${INFLUX_BUCKET})
-  |> range(start: ${startFormatted}, stop: ${endFormatted})
+  |> range(start: ${startFormatted})
   |> filter(fn: (r) => r["_measurement"] == ${measurement})
   |> filter(fn: (r) => r["_field"] == ${field})
-  |> aggregateWindow(every: ${intervalFormatted}, offset: ${offsetFormatted}, fn: ${queryTypeFormatted}, createEmpty: false)
+  |> aggregateWindow(every: ${intervalFormatted}, fn: ${queryTypeFormatted}, createEmpty: false)
   |> difference()`;
 
     console.log(query);
@@ -95,7 +92,6 @@ function getInfluxDifferenceData(measurement, field, start, end, interval, query
           result.push({
             time: dateFormatted,
             value: o._value,
-            date: o._time,
           });
         },
         error(error) {

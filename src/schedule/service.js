@@ -2,6 +2,9 @@ import meterValue from '../pems/service';
 
 const CronJob = require('node-cron');
 
+/**
+ * Automatically Recording Meter Values Every Shift
+ */
 exports.initScheduledJobs = () => {
   const scheduledJobFunction = CronJob.schedule('0 0 5,23 * * * ', () => {
     console.log("I'm executed on a schedule!");
@@ -10,42 +13,59 @@ exports.initScheduledJobs = () => {
   });
   scheduledJobFunction.start();
 
-  const scheduledJobForPMR = CronJob.schedule('0 0 0 * * *', () => {
-    console.log("I'm executed on a schedule!!!!!!!!");
-    meterValue.setMeterRecordingAndSave();
-    // Add your custom logic here
-  });
-  scheduledJobForPMR.start();
+  // Meter Recording per Day to Store Meter's Hourly Data
+  // const scheduledJobForPMR = CronJob.schedule('0 0 0 * * *', () => {
+  //   console.log("I'm executed on a schedule!!!!!!!!");
+  //   meterValue.setMeterRecordingAndSave();
+  //   // Add your custom logic here
+  // });
+  // scheduledJobForPMR.start();
 
+  /**
+   * Automatically Recording Meter Daily Consumption
+  */
   const scheduledJobForSaveDay = CronJob.schedule('0 10 0 * * *', () => {
-    console.log("I'm executed on a schedule!!!!!!!!");
+    console.log('Automatically Recording Meter Daily Consumption');
     meterValue.saveReportDay();
     // Add your custom logic here
   });
   scheduledJobForSaveDay.start();
+
+  /**
+   * Automatically Recording Meter Weekly Consumption for History Week
+  */
   const scheduledJobForSaveWeekHistory = CronJob.schedule('0 20 0 * * MON', () => {
-    console.log("I'm executed on a schedule!!!!!!!!");
+    console.log('Automatically Recording Meter Weekly Consumption for History Week');
     meterValue.saveReoprtWeekHistory();
     // Add your custom logic here
   });
   scheduledJobForSaveWeekHistory.start();
 
+  /**
+   * Automatically Recording Meter Weekly Consumption for Current Week
+  */
   const scheduledJobForSaveCurrentWeek = CronJob.schedule('0 15 0 * * *', () => {
-    console.log("I'm executed on a schedule!!!!!!!!");
+    console.log('Automatically Recording Meter Weekly Consumption for Current Week');
     meterValue.saveReoprtCurrentWeek();
     // Add your custom logic here
   });
   scheduledJobForSaveCurrentWeek.start();
 
+  /**
+   * Automatically Recording Meter Monthly Consumption for History Month
+  */
   const scheduledJobForSaveMonHistory = CronJob.schedule('0 30 0 1 * *', () => {
-    console.log("I'm executed on a schedule!!!!!!!!");
+    console.log('Automatically Recording Meter Monthly Consumption for History Month');
     meterValue.saveReoprtMonHistory();
     // Add your custom logic here
   });
   scheduledJobForSaveMonHistory.start();
 
+  /**
+   * Automatically Recording Meter Monthly Consumption for Current Month
+  */
   const scheduledJobForSaveCurrentMon = CronJob.schedule('0 25 0 * * *', () => {
-    console.log("I'm executed on a schedule!!!!!!!!");
+    console.log('Automatically Recording Meter Monthly Consumption for Current Month');
     meterValue.saveReoprtCurrentMon();
     // Add your custom logic here
   });

@@ -105,10 +105,9 @@ const controller = (() => {
     const measurement = String(req.query.measurement);
     const field = String(req.query.field);
     const start = req.query.start;
-    const end = req.query.end;
     const interval = req.query.interval || '10s';
     const queryType = req.query.queryType || 'mean';
-    const data = await service.getInfluxDifferenceData(measurement, field, start, end, interval, queryType);
+    const data = await service.getInfluxDifferenceData(measurement, field, start, interval, queryType);
 
     res.json({
       Key: field,
