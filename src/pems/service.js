@@ -350,7 +350,7 @@ async function saveReoprtCurrentWeek() {
   const now = new Date(moment().format('YYYY-MM-DD'));
   //判断是否是周一
   if (moment().weekday() == 1) {
-    let weekList;
+    let weekList = [];
     const meterIds = await getMeterId(null, null, null);
     if (meterIds != null && meterIds != '' && meterIds.length > 0) {
       meterIds.forEach(meterId => {
@@ -394,39 +394,26 @@ async function saveReoprtCurrentWeek() {
       select,
     });
     if (rstdata != null && rstdata != '' && rstdata.length > 0) {
-      for (let i = 0; i <= rstdata.length; i++) {
+      for (let i = 0; i < rstdata.length; i++) {
         let element = rstdata[i];
-        const measurement = element.Pems_Meter.cName + '-' + element.Pems_Meter.cDesc;
-        let cType = '';
-        if (element.Pems_Meter.cType == 'Electricity' || element.Pems_Meter.cType == '电表') {
-          cType = 'EP';
-        }
-        if (
-          element.Pems_Meter.cType == 'Water' ||
-          element.Pems_Meter.cType == 'Steam' ||
-          element.Pems_Meter.cType == '水表'
-        ) {
-          cType = 'TT';
-        }
-        console.log('------');
-        console.log(element.Pems_Meter);
-        const field = element.Pems_Meter.cName + '.' + cType;
-        const start = preDate;
-        const interval = '24h';
-        const queryType = 'last';
-        // 查询infulxDb数据
-        const result = await influxservice.getInfluxDifferenceData(
-          measurement,
-          field,
-          start,
-          interval,
-          queryType,
-        );
+        let result = await getInfluxDifferenceData(preDate, element);
         if (result != null && result != null && result.length > 0) {
-          const value = parseFloat(result[0].value).toFixed(2);
-          const energyConsumption = new Decimal(element.cValue).add(new Decimal(value)).toNumber();
-          console.log(element.cValue);
-          console.log(value);
+          let { value } = result[0];
+          let cvalue;
+          let energyConsumption;
+          if (cvalue == null || cvalue == '') {
+            if (value == null || value == '') {
+              energyConsumption = null;
+            } else {
+              cvalue = 0;
+              value = parseFloat(value).toFixed(2);
+
+              energyConsumption = new Decimal(cvalue).add(new Decimal(value)).toNumber();
+            }
+          } else {
+            value = parseFloat(value).toFixed(2);
+            energyConsumption = new Decimal(cvalue).add(new Decimal(value)).toNumber();
+          }
           rstdata[i].cValue = energyConsumption;
         }
         const data = {
@@ -443,6 +430,38 @@ async function saveReoprtCurrentWeek() {
     }
   }
 }
+/**
+ * 获取某天的耗能
+ * @param {*} preDate 日期
+ * @param {*} meter meter的信息
+ */
+async function getInfluxDifferenceData(preDate, element) {
+  const measurement = element.Pems_Meter.cName + '-' + element.Pems_Meter.cDesc;
+  let cType = '';
+  if (element.Pems_Meter.cType == 'Electricity' || element.Pems_Meter.cType == '电表') {
+    cType = 'EP';
+  }
+  if (
+    element.Pems_Meter.cType == 'Water' ||
+    element.Pems_Meter.cType == 'Steam' ||
+    element.Pems_Meter.cType == '水表'
+  ) {
+    cType = 'TT';
+  }
+  const field = element.Pems_Meter.cName + '.' + cType;
+  const start = preDate;
+  const interval = '24h';
+  const queryType = 'last';
+  // 查询infulxDb数据
+  const result = await influxservice.getInfluxDifferenceData(
+    measurement,
+    field,
+    start,
+    interval,
+    queryType,
+  );
+  return result;
+}
 
 /**
  * 保存历史月份耗能
@@ -457,8 +476,6 @@ async function saveReoprtMonHistory() {
   );
 
   let report = await prisma.Pems_MeterReporting_Month.findMany();
-  console.log('111111111111111');
-  console.log(report);
   let list = [];
   let now = new Date(moment().format('YYYY-MM-DD'));
   if (report == null || report == '') {
@@ -520,71 +537,92 @@ async function saveReoprtMonHistory() {
  */
 async function saveReoprtCurrentMon() {
   const newFor = new Date(moment().format('YYYY-MM-01'));
-  let now = new Date();
-  let prdDate = new Date(
+  const end = new Date(
     moment()
-      .subtract(1, 'day')
+      .endOf('month')
       .format('YYYY-MM-DD'),
   );
+  let now = new Date();
   let day = now.getDate();
   let monthList = [];
   if (Number(day) == 1) {
     //当前时间是月初 1号时，添加1号的数据月数据，并更新上月月末的数据
     //获取开始时间上月月末的日期
-    let preDateEnd = new Date(
-      moment()
-        .month(moment().month() - 1)
-        .endOf('month')
-        .format('YYYY-MM-DD'),
-    );
-    const preMonSta = new Date(moment(preDateEnd).format('YYYY-MM-01'));
-    const data = await this.statisticalMeterMon(preDateEnd, preMonSta, null, null, null, null);
-    if (data != null && data.length > 0) {
-      const start = new Date(moment().format('YYYY-MM-01'));
-      const end = new Date(
-        moment()
-          .endOf('month')
-          .format('YYYY-MM-DD'),
-      );
-      for (let i = 0; i < data.length; i++) {
+    let weekList = [];
+    const meterIds = await getMeterId(null, null, null);
+    if (meterIds != null && meterIds != '' && meterIds.length > 0) {
+      meterIds.forEach(meterId => {
         monthList.push({
-          cMonthStart: new Date(data[i].startTime),
-          cMonthEnd: new Date(data[i].endTime),
-          cValue: parseFloat(data[i].energyConsumption),
-          cMeterFk: data[i].cMeterFk,
+          cMonthStart: new Date(newFor),
+          cMonthEnd: new Date(end),
+          cValue: parseFloat(null),
+          cMeterFk: meterId.id,
         });
-      }
-      monthList.push({
-        cMonthStart: start,
-        cMonthEnd: end,
-        cValue: parseFloat(null),
-        cMeterFk: data[i].cMeterFk,
       });
-    }
-    if (monthList != null && monthList != '' && monthList.length > 0) {
-      await prisma.Pems_MeterReporting_Month.deleteMany({
-        where: { cMonthStart: new Date(preMonSta) },
+      await prisma.Pems_MeterReporting_Month.createMany({
+        data: weekList,
       });
-      await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
     }
   } else {
-    const data = await this.statisticalMeterMon(newFor, prdDate, null, null, null, null);
-    if (data != null && data.length > 0) {
-      //不是1号
-      for (let i = 0; i < data.length; i++) {
-        monthList.push({
-          cMonthStart: new Date(data[i].startTime),
-          cMonthEnd: new Date(data[i].endTime),
-          cValue: parseFloat(data[i].energyConsumption),
-          cMeterFk: data[i].cMeterFk,
+    let preDate = new Date(
+      moment()
+        .subtract(2, 'days')
+        .format('YYYY-MM-DD 00:00:00'),
+    ).toISOString();
+    const filter = { AND: [] };
+    if (newFor) filter.AND = { ...filter.AND, cWeekStart: new Date(newFor) };
+    const select = {
+      id: true,
+      cMonthStart: true,
+      cMonthEnd: true,
+      cValue: true,
+      cMeterFk: true,
+      Pems_Meter: {
+        select: {
+          id: true,
+          cName: true,
+          cDesc: true,
+          cType: true,
+        },
+      },
+    };
+    const rstdata = await prisma.Pems_MeterReporting_Month.findMany({
+      where: filter,
+      select,
+    });
+    if (rstdata != null && rstdata != '' && rstdata.length > 0) {
+      for (let i = 0; i < rstdata.length; i++) {
+        let result = await getInfluxDifferenceData(preDate, rstdata[i]);
+        if (result != null && result != null && result.length > 0) {
+          let { value } = result[0];
+          let energyConsumption;
+          let cvalue = rstdata[i].cValue;
+          if (cvalue == null || cvalue == '') {
+            if (value == null || value == '') {
+              energyConsumption = null;
+            } else {
+              cvalue = 0;
+              value = parseFloat(value).toFixed(2);
+              energyConsumption = new Decimal(cvalue).add(new Decimal(value)).toNumber();
+            }
+          } else {
+            value = parseFloat(value).toFixed(2);
+            energyConsumption = new Decimal(cvalue).add(new Decimal(value)).toNumber();
+          }
+
+          rstdata[i].cValue = energyConsumption;
+        }
+        const data = {
+          cValue: parseFloat(rstdata[i].cValue),
+          cMeterFk: Number(rstdata[i].cMeterFk),
+          cMonthStart: rstdata[i].cMonthStart,
+          cMonthEnd: rstdata[i].cMonthEnd,
+        };
+        await prisma.Pems_MeterReporting_Month.update({
+          where: { id: Number(rstdata[i].id) },
+          data,
         });
       }
-    }
-    if (monthList != null && monthList != '' && monthList.length > 0) {
-      await prisma.Pems_MeterReporting_Month.deleteMany({
-        where: { cMonthStart: new Date(newFor) },
-      });
-      await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
     }
   }
 }
@@ -735,8 +773,15 @@ async function getAfterCalculationValues(
       .add(new Decimal(energyConsumption))
       .toNumber();
   }
+  let cDate = meterValueDate[i].cRecordDate;
   statisticalMeter.push(
-    Object.assign({}, meterValueDate[i], { energyConsumption }, { totalEnergyConsumption }),
+    Object.assign(
+      {},
+      meterValueDate[i],
+      { cDate },
+      { energyConsumption },
+      { totalEnergyConsumption },
+    ),
   );
   return statisticalMeter;
 }

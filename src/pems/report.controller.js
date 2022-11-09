@@ -28,85 +28,19 @@ const controller = (() => {
         }
         dayList.push({
           cValue: parseFloat(list[i].energyConsumption),
-          cMeterFk: list[i].cMerterFk,
+          cMeterFk: list[i].cMeterFk,
           cDate: list[i].cRecordDate,
         });
       }
     }
+    console.log(dayList);
     await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
     res.json(list);
   });
 
   router.get('/save/week/history', async (req, res) => {
-    let report = await prisma.Pems_MeterReporting_Week.findMany();
-    let list = [];
-    let now = new Date(moment().format('YYYY-MM-DD'));
-    if (report == null || report == '') {
-      let meterValue = await prisma.Pems_MeterValues.findMany({
-        orderBy: {
-          cRecordDate: 'asc',
-        },
-      });
-      if (meterValue != null && meterValue.length > 0) {
-        let preDate = meterValue[0].cRecordDate;
-        let weekOfDay = new Date().getDay();
-        //上周周日
-        let endDate = moment()
-          .subtract(weekOfDay, 'days')
-          .format('YYYY-MM-DD');
-        console.log(endDate);
-        let timeList = await service.getMonAndSunDayList(preDate, endDate);
-        for (let i = 0; i < timeList.length; i++) {
-          const startWeek = timeList[i].startTime;
-          const endWeek = timeList[i].endSun;
-          let data = await service.statisticalMeterWeek(startWeek, endWeek, null, null, null, null);
-          if (data != null && data.length > 0) {
-            let weekList = [];
-            if (data != null && data.length > 0) {
-              for (let i = 0; i < data.length; i++) {
-                weekList.push({
-                  cWeekStart: new Date(data[i].startTime),
-                  cWeekEnd: new Date(data[i].endTime),
-                  cValue: parseFloat(data[i].energyConsumption),
-                  cMeterFk: data[i].cMeterFk,
-                });
-              }
-              await prisma.Pems_MeterReporting_Week.createMany({ data: weekList });
-            }
-          }
-        }
-      }
-    } else {
-      let weekOfDay = new Date().getDay();
-      //上周周一
-      let startWeek = moment()
-        .subtract(weekOfDay + 6, 'days')
-        .format('YYYY-MM-DD');
-      //上周周日
-      let endWeek = moment()
-        .subtract(weekOfDay, 'days')
-        .format('YYYY-MM-DD');
-      await prisma.Pems_MeterReporting_Week.deleteMany({
-        where: { cWeekStart: new Date(startWeek) },
-      });
-      let data = await service.statisticalMeterWeek(startWeek, endWeek, null, null, null, null);
-      console.log(startWeek + '--' + endWeek);
-      if (data != null && data.length > 0) {
-        let weekList = [];
-        for (let i = 0; i < data.length; i++) {
-          weekList.push({
-            cWeekStart: new Date(data[i].startTime),
-            cWeekEnd: new Date(data[i].endTime),
-            cValue: parseFloat(data[i].energyConsumption),
-            cMeterFk: data[i].cMeterFk,
-          });
-        }
-        await prisma.Pems_MeterReporting_Week.createMany({ data: weekList });
-      }
-    }
+    await service.saveReoprtWeekHistory();
     res.json({ isok: true, message: 'ReportingWeek saved' });
-    // await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
-    // res.json(list);
   });
 
   router.get('/save/Current/week', async (req, res) => {
@@ -191,24 +125,7 @@ const controller = (() => {
   });
 
   router.get('/save/current/month', async (req, res) => {
-    const start = new Date(moment().format('YYYY-MM-01'));
-    const end = new Date(moment().format('YYYY-MM-DD'));
-    await prisma.Pems_MeterReporting_Month.deleteMany({
-      where: { cMonthStart: new Date(start) },
-    });
-    const data = await service.statisticalMeterMon(start, end, null, null, null, null);
-    if (data != null && data.length > 0) {
-      let monthList = [];
-      for (let i = 0; i < data.length; i++) {
-        monthList.push({
-          cMonthStart: new Date(data[i].startTime),
-          cMonthEnd: new Date(data[i].endTime),
-          cValue: parseFloat(data[i].energyConsumption),
-          cMeterFk: data[i].cMeterFk,
-        });
-      }
-      await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
-    }
+    await service.saveReoprtCurrentMon();
     res.json({ isok: true, message: 'ReportingWeek saved' });
   });
   /**
@@ -304,8 +221,9 @@ const controller = (() => {
         let statisticalMeter = [];
         meterReport.rstdata.forEach(element => {
           let energyConsumption = element.cValue;
+          const cRecordDate = element.cDate;
           console.log(element.cValue);
-          statisticalMeter.push(Object.assign({}, element, { energyConsumption }));
+          statisticalMeter.push(Object.assign({}, element, { cRecordDate }, { energyConsumption }));
         });
         res.json({
           totalEnergyConsumption: Number(total),
@@ -477,7 +395,7 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterMon', async (req, res) => {
-    let { row, page, startMonth, id, cType, cPositionFk,isAll } = req.query;
+    let { row, page, startMonth, id, cType, cPositionFk, isAll } = req.query;
     if (startMonth == null || startMonth == '') {
       startMonth = new Date();
     }
@@ -508,8 +426,8 @@ const controller = (() => {
         },
       },
     };
-    let rstdata ;
-    if(isAll==1){
+    let rstdata;
+    if (isAll == 1) {
       rstdata = await prisma.Pems_MeterReporting_Month.findMany({
         where: filter,
         select,
@@ -517,7 +435,7 @@ const controller = (() => {
           cMeterFk: 'asc',
         },
       });
-    }else{
+    } else {
       rstdata = await prisma.Pems_MeterReporting_Month.findMany({
         where: filter,
         select,
@@ -528,7 +446,7 @@ const controller = (() => {
         },
       });
     }
-   
+
     const count = await prisma.Pems_MeterReporting_Month.count({
       where: filter,
     });
