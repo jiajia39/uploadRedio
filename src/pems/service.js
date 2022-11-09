@@ -167,7 +167,7 @@ async function getMeterId(id, cType, cPositionFk) {
  * @param {*} cRecordType 班次
  * @returns meterValue的数据
  */
-async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cType) {
+async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cType, isAll) {
   let meterIds = [];
   meterIdList.forEach(element => {
     meterIds.push(element.id);
@@ -189,15 +189,26 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
       },
     },
   };
-  const rstdata = await prisma.Pems_MeterReporting_Day.findMany({
-    where: filter,
-    select,
-    skip: (page - 1) * row,
-    take: row,
-    orderBy: {
-      cMeterFk: 'asc',
-    },
-  });
+  let rstdata;
+  if (isAll == 1) {
+    rstdata = await prisma.Pems_MeterReporting_Day.findMany({
+      where: filter,
+      select,
+      orderBy: {
+        cMeterFk: 'asc',
+      },
+    });
+  } else {
+    rstdata = await prisma.Pems_MeterReporting_Day.findMany({
+      where: filter,
+      select,
+      skip: (page - 1) * row,
+      take: row,
+      orderBy: {
+        cMeterFk: 'asc',
+      },
+    });
+  }
   const count = await prisma.Pems_MeterReporting_Day.count({
     where: filter,
   });
@@ -222,34 +233,32 @@ async function saveReportDay() {
   const now = new Date(moment().format('YYYY-MM-DD'));
   if (report == null || report == '') {
     list = await statisticalMeterData(null, null, null, null, null);
+
+    const dayList = [];
+    if (list != null && list.length > 0) {
+      for (let i = 0; i < list.length; i++) {
+        const recordDate = new Date(list[i].cRecordDate).getTime();
+        if (recordDate >= now.getTime()) {
+          continue;
+        }
+        dayList.push({
+          cValue: parseFloat(list[i].energyConsumption),
+          cMeterFk: list[i].cMeterFk,
+          cDate: list[i].cRecordDate,
+        });
+      }
+    }
+    if (dayList != null && dayList != '' && dayList.length > 0) {
+      await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
+    }
   } else {
     let preDate = new Date(
       moment()
         .subtract(1, 'days')
         .format('YYYY-MM-DD'),
-    );
+    ).toISOString;
 
     list = await statisticalMeterData(null, null, null, preDate, null);
-  }
-  const dayList = [];
-  if (list != null && list.length > 0) {
-    for (let i = 0; i < list.length; i++) {
-      const recordDate = new Date(list[i].cRecordDate).getTime();
-      if (recordDate >= now.getTime()) {
-        continue;
-      }
-      dayList.push({
-        cValue: parseFloat(list[i].energyConsumption),
-        cMeterFk: list[i].cMeterFk,
-        cDate: list[i].cRecordDate,
-      });
-    }
-  }
-  if (dayList != null && dayList != '' && dayList.length > 0) {
-    await prisma.Pems_MeterReporting_Day.deleteMany({
-      where: { cDate: preDate },
-    });
-    await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
   }
 }
 /**
@@ -328,7 +337,7 @@ async function saveReoprtWeekHistory() {
 }
 
 /**
- * 保存当周耗能
+ * 保存当周耗能 逻辑：如果当天是周一，cvalue=0，如果是其他日期  获取reportWeek表中当周的数据+ influx查询出的昨天的数据 得到value，更新reportWeek数据
  */
 async function saveReoprtCurrentWeek() {
   let weekOfday = moment().format('E');
@@ -339,73 +348,98 @@ async function saveReoprtCurrentWeek() {
     .add(7 - weekOfday, 'days')
     .format('YYYY-MM-DD');
   const now = new Date(moment().format('YYYY-MM-DD'));
-  //判断是否是周日
+  //判断是否是周一
   if (moment().weekday() == 1) {
-    // //获取上周周日
-    let preEndWeek = new Date(
-      moment(startMon)
-        .subtract(1, 'days')
-        .format('YYYY-MM-DD'),
-    );
-    weekOfday = moment(preEndWeek).format('E');
-    //获取上周周一
-    let preStartWeek = new Date(
-      moment(preEndWeek)
-        .subtract(weekOfday - 1, 'days')
-        .format('YYYY-MM-DD'),
-    );
-
-    let data = await this.statisticalMeterWeek(preStartWeek, preEndWeek, null, null, null, null);
-    if (data != null && data.length > 0) {
-      let weekList = [];
-      for (let i = 0; i < data.length; i++) {
+    let weekList;
+    const meterIds = await getMeterId(null, null, null);
+    if (meterIds != null && meterIds != '' && meterIds.length > 0) {
+      meterIds.forEach(meterId => {
         weekList.push({
-          cWeekStart: new Date(data[i].startTime),
-          cWeekEnd: new Date(preEndWeek),
-          cValue: parseFloat(data[i].energyConsumption),
-          cMeterFk: data[i].cMeterFk,
-        });
-        weekList.push({
-          cWeekStart: new Date(now),
+          cWeekStart: new Date(startMon),
           cWeekEnd: new Date(endSun),
-          cValue: parseFloat(0),
-          cMeterFk: data[i].cMeterFk,
+          cValue: parseFloat(null),
+          cMeterFk: meterId.id,
         });
-      }
-      if (weekList != null && weekList != '' && weekList.length > 0) {
-        await prisma.Pems_MeterReporting_Week.deleteMany({
-          where: { cWeekStart: new Date(preStartWeek) },
-        });
-      }
+      });
       await prisma.Pems_MeterReporting_Week.createMany({
         data: weekList,
       });
     }
   } else {
-    const preDay = new Date(
+    let now = new Date(moment().format('YYYY-MM-DD 00:00:00')).toISOString();
+    let preDate = new Date(
       moment()
-        .subtract(1, 'day')
-        .format('YYYY-MM-DD'),
-    );
-    const data = await this.statisticalMeterWeek(startMon, preDay, null, null, null, null);
-    if (data != null && data.length > 0) {
-      let weekList = [];
-      for (let i = 0; i < data.length; i++) {
-        weekList.push({
-          cWeekStart: new Date(data[i].startTime),
-          cWeekEnd: new Date(endSun),
-          cValue: parseFloat(data[i].energyConsumption),
-          cMeterFk: data[i].cMeterFk,
+        .subtract(2, 'days')
+        .format('YYYY-MM-DD 00:00:00'),
+    ).toISOString();
+    const filter = { AND: [] };
+    if (startMon) filter.AND = { ...filter.AND, cWeekStart: new Date(startMon) };
+    const select = {
+      id: true,
+      cWeekStart: true,
+      cWeekEnd: true,
+      cValue: true,
+      cMeterFk: true,
+      Pems_Meter: {
+        select: {
+          id: true,
+          cName: true,
+          cDesc: true,
+          cType: true,
+        },
+      },
+    };
+    const rstdata = await prisma.Pems_MeterReporting_Week.findMany({
+      where: filter,
+      select,
+    });
+    if (rstdata != null && rstdata != '' && rstdata.length > 0) {
+      for (let i = 0; i <= rstdata.length; i++) {
+        let element = rstdata[i];
+        const measurement = element.Pems_Meter.cName + '-' + element.Pems_Meter.cDesc;
+        let cType = '';
+        if (element.Pems_Meter.cType == 'Electricity' || element.Pems_Meter.cType == '电表') {
+          cType = 'EP';
+        }
+        if (
+          element.Pems_Meter.cType == 'Water' ||
+          element.Pems_Meter.cType == 'Steam' ||
+          element.Pems_Meter.cType == '水表'
+        ) {
+          cType = 'TT';
+        }
+        console.log('------');
+        console.log(element.Pems_Meter);
+        const field = element.Pems_Meter.cName + '.' + cType;
+        const start = preDate;
+        const interval = '24h';
+        const queryType = 'last';
+        // 查询infulxDb数据
+        const result = await influxservice.getInfluxDifferenceData(
+          measurement,
+          field,
+          start,
+          interval,
+          queryType,
+        );
+        if (result != null && result != null && result.length > 0) {
+          const value = parseFloat(result[0].value).toFixed(2);
+          const energyConsumption = new Decimal(element.cValue).add(new Decimal(value)).toNumber();
+          console.log(element.cValue);
+          console.log(value);
+          rstdata[i].cValue = energyConsumption;
+        }
+        const data = {
+          cValue: parseFloat(element.cValue),
+          cMeterFk: Number(element.cMeterFk),
+          cWeekStart: element.cWeekStart,
+          cWeekEnd: element.cWeekEnd,
+        };
+        await prisma.Pems_MeterReporting_Week.update({
+          where: { id: Number(element.id) },
+          data,
         });
       }
-      if (weekList != null && weekList != '' && weekList.length > 0) {
-        await prisma.Pems_MeterReporting_Week.deleteMany({
-          where: { cWeekStart: new Date(startMon) },
-        });
-      }
-      await prisma.Pems_MeterReporting_Week.createMany({
-        data: weekList,
-      });
     }
   }
 }

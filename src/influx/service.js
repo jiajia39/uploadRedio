@@ -5,6 +5,7 @@ import {
   fluxDuration,
   fluxDateTime,
   fluxExpression,
+  Log,
 } from '@influxdata/influxdb-client';
 import { INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET } from '~/env';
 
@@ -78,7 +79,7 @@ function getInfluxDifferenceData(measurement, field, start, interval, queryType)
   |> range(start: ${startFormatted})
   |> filter(fn: (r) => r["_measurement"] == ${measurement})
   |> filter(fn: (r) => r["_field"] == ${field})
-  |> aggregateWindow(every: ${intervalFormatted}, fn: ${queryTypeFormatted}, createEmpty: false)
+  |> aggregateWindow(every: ${intervalFormatted}, fn: ${queryTypeFormatted}, createEmpty: false, offset:-8h)
   |> difference()`;
 
     console.log(query);

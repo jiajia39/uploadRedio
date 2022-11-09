@@ -110,35 +110,7 @@ const controller = (() => {
   });
 
   router.get('/save/Current/week', async (req, res) => {
-    //
-    const weekOfday = moment().format('E');
-    const startMon = moment()
-      .subtract(weekOfday - 1, 'days')
-      .format('YYYY-MM-DD');
-    const endSun = moment()
-      .add(7 - weekOfday, 'days')
-      .format('YYYY-MM-DD');
-    const now = new Date(moment().format('YYYY-MM-DD'));
-    let list = [];
-    await prisma.Pems_MeterReporting_Week.deleteMany({
-      where: { cWeekStart: new Date(startMon) },
-    });
-    let data = await service.statisticalMeterWeek(startMon, now, null, null, null, null);
-    console.log(startMon + '--' + endSun);
-    if (data != null && data.length > 0) {
-      let weekList = [];
-      for (let i = 0; i < data.length; i++) {
-        weekList.push({
-          cWeekStart: new Date(data[i].startTime),
-          cWeekEnd: new Date(data[i].endTime),
-          cValue: parseFloat(data[i].energyConsumption),
-          cMeterFk: data[i].cMeterFk,
-        });
-      }
-      await prisma.Pems_MeterReporting_Week.createMany({
-        data: weekList,
-      });
-    }
+    await service.saveReoprtCurrentWeek();
     res.json({ isok: true, message: 'ReportingWeek saved' });
   });
 
@@ -273,7 +245,8 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterValue', async (req, res) => {
-    let { page, row, cRecordDate, id, cType, cPositionFk, cRecordType } = req.query;
+    //isAll 是否展示所有数据 1展示
+    let { page, row, cRecordDate, id, cType, cPositionFk, cRecordType, isAll } = req.query;
     if (page == null) {
       page = 1;
     }
@@ -293,7 +266,12 @@ const controller = (() => {
         cRecordType,
       );
       if (date != null && date.length != 0) {
-        let pageList = service.getPageDate(date, row, page);
+        let pageList;
+        if (isAll == 1) {
+          pageList = date;
+        } else {
+          pageList = service.getPageDate(date, row, page);
+        }
         const { totalEnergyConsumption } = date[date.length - 1];
         res.json({
           totalEnergyConsumption,
@@ -316,6 +294,7 @@ const controller = (() => {
         cRecordDate,
         meterIdList,
         cPositionFk,
+        isAll,
       );
       let total;
       if (meterReport.data != null) {
@@ -372,7 +351,7 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterWeek', async (req, res) => {
-    let { row, page, startWeek, id, cType, cPositionFk, cRecordType } = req.query;
+    let { row, page, startWeek, id, cType, cPositionFk, isAll } = req.query;
     if (startWeek == null || startWeek == '') {
       startWeek = new Date();
     }
@@ -407,15 +386,27 @@ const controller = (() => {
         },
       },
     };
-    const rstdata = await prisma.Pems_MeterReporting_Week.findMany({
-      where: filter,
-      select,
-      skip: (page - 1) * row,
-      take: row,
-      orderBy: {
-        cMeterFk: 'asc',
-      },
-    });
+    let rstdata;
+    if (isAll == 1) {
+      rstdata = await prisma.Pems_MeterReporting_Week.findMany({
+        where: filter,
+        select,
+        orderBy: {
+          cMeterFk: 'asc',
+        },
+      });
+    } else {
+      rstdata = await prisma.Pems_MeterReporting_Week.findMany({
+        where: filter,
+        select,
+        skip: (page - 1) * row,
+        take: row,
+        orderBy: {
+          cMeterFk: 'asc',
+        },
+      });
+    }
+
     const count = await prisma.Pems_MeterReporting_Week.count({
       where: filter,
     });
@@ -486,7 +477,7 @@ const controller = (() => {
    *           type: object
    */
   router.get('/statisticalMeterMon', async (req, res) => {
-    let { row, page, startMonth, id, cType, cPositionFk } = req.query;
+    let { row, page, startMonth, id, cType, cPositionFk,isAll } = req.query;
     if (startMonth == null || startMonth == '') {
       startMonth = new Date();
     }
@@ -517,15 +508,27 @@ const controller = (() => {
         },
       },
     };
-    const rstdata = await prisma.Pems_MeterReporting_Month.findMany({
-      where: filter,
-      select,
-      skip: (page - 1) * row,
-      take: row,
-      orderBy: {
-        cMeterFk: 'asc',
-      },
-    });
+    let rstdata ;
+    if(isAll==1){
+      rstdata = await prisma.Pems_MeterReporting_Month.findMany({
+        where: filter,
+        select,
+        orderBy: {
+          cMeterFk: 'asc',
+        },
+      });
+    }else{
+      rstdata = await prisma.Pems_MeterReporting_Month.findMany({
+        where: filter,
+        select,
+        skip: (page - 1) * row,
+        take: row,
+        orderBy: {
+          cMeterFk: 'asc',
+        },
+      });
+    }
+   
     const count = await prisma.Pems_MeterReporting_Month.count({
       where: filter,
     });
