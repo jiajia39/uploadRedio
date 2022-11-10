@@ -173,9 +173,8 @@ const controller = (() => {
       row = 5;
     }
     let now = new Date(moment().format('YYYY-MM-DD'));
-    cRecordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
-
-    if (cRecordDate == null || cRecordDate == '' || now.getTime() == cRecordDate.getTime()) {
+    let recordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
+    if (cRecordDate == null || cRecordDate == '' || now.getTime() == recordDate.getTime()) {
       cRecordDate = new Date();
       const date = await service.statisticalMeterData(
         id,
@@ -206,6 +205,7 @@ const controller = (() => {
         });
       }
     } else {
+      cRecordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
       let meterIdList = await service.getMeterId(id, cType, cPositionFk);
       let meterReport = await service.getMeterReportingDayData(
         page,
@@ -365,7 +365,7 @@ const controller = (() => {
 
   /**
    * @swagger
-   * /api/pems/meterValues/statisticalMeterWeek:
+   * /api/pems/meterValues/statisticalMeterMon:
    *   get:
    *     security:
    *       - Authorization: []
