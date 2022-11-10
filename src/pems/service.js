@@ -397,10 +397,10 @@ async function saveReoprtCurrentWeek() {
     if (rstdata != null && rstdata != '' && rstdata.length > 0) {
       for (let i = 0; i < rstdata.length; i++) {
         let element = rstdata[i];
-        let result = await getInfluxDifferenceData(preDate, element);
+        let result = await getInfluxDifferenceData(preDate, null, element);
         if (result != null && result != null && result.length > 0) {
           let { value } = result[0];
-          let cvalue;
+          let cvalue = element.cValue;
           let energyConsumption;
           if (cvalue == null || cvalue == '') {
             if (value == null || value == '') {
@@ -408,7 +408,6 @@ async function saveReoprtCurrentWeek() {
             } else {
               cvalue = 0;
               value = parseFloat(value).toFixed(2);
-
               energyConsumption = new Decimal(cvalue).add(new Decimal(value)).toNumber();
             }
           } else {
@@ -436,7 +435,7 @@ async function saveReoprtCurrentWeek() {
  * @param {*} preDate 日期
  * @param {*} meter meter的信息
  */
-async function getInfluxDifferenceData(preDate, element) {
+async function getInfluxDifferenceData(preDate, endDate, element) {
   const measurement = element.Pems_Meter.cName + '-' + element.Pems_Meter.cDesc;
   let cType = '';
   if (element.Pems_Meter.cType == 'Electricity' || element.Pems_Meter.cType == '电表') {
@@ -458,6 +457,7 @@ async function getInfluxDifferenceData(preDate, element) {
     measurement,
     field,
     start,
+    endDate,
     interval,
     queryType,
   );
@@ -571,7 +571,7 @@ async function saveReoprtCurrentMon() {
         .format('YYYY-MM-DD 00:00:00'),
     ).toISOString();
     const filter = { AND: [] };
-    if (newFor) filter.AND = { ...filter.AND, cWeekStart: new Date(newFor) };
+    if (newFor) filter.AND = { ...filter.AND, cMonthStart: new Date(newFor) };
     const select = {
       id: true,
       cMonthStart: true,
@@ -593,7 +593,7 @@ async function saveReoprtCurrentMon() {
     });
     if (rstdata != null && rstdata != '' && rstdata.length > 0) {
       for (let i = 0; i < rstdata.length; i++) {
-        let result = await getInfluxDifferenceData(preDate, rstdata[i]);
+        let result = await getInfluxDifferenceData(preDate, null, rstdata[i]);
         if (result != null && result != null && result.length > 0) {
           let { value } = result[0];
           let energyConsumption;
