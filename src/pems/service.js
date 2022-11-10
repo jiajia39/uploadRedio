@@ -181,6 +181,7 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
     cValue: true,
     cMeterFk: true,
     cDate: true,
+    cRecordType: true,
     Pems_Meter: {
       select: {
         id: true,
@@ -700,16 +701,14 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
         }
       });
     }
-
     if (meterValueDate != null && meterValueDate.length > 0) {
       for (let i = 0; i < meterValueDate.length; i++) {
-        // meterValueDate[i].cRecordDate
-        if (
-          i + 1 < meterValueDate.length &&
-          meterValueDate[i].cRecordDate.getTime() == meterValueDate[i + 1].cRecordDate.getTime()
-        ) {
-          continue;
-        }
+        // if (
+        //   i + 1 < meterValueDate.length &&
+        //   meterValueDate[i].cRecordDate.getTime() == meterValueDate[i + 1].cRecordDate.getTime()
+        // ) {
+        //   continue;
+        // }
         //获取前一天的数据
         if (cRecordDate != null) {
           if (meterValueDate[i].cRecordDate.getTime() == cRecordDate.getTime()) {
@@ -752,26 +751,42 @@ async function getAfterCalculationValues(
   meterValueDate,
 ) {
   let preMeterValue = [];
-  if (meterValueDate[i].cValue != null) {
-    meterValueDate.forEach(element => {
-      let preDate = new Date(
-        moment(meterValueDate[i].cRecordDate)
-          .subtract(1, 'days')
-          .format('YYYY-MM-DD'),
-      );
-
-      if (preDate.getTime() == element.cRecordDate.getTime() && element.cValue != null) {
-        preMeterValue.push(element);
-      }
-    });
-  }
   let energyConsumption = '';
-  if (preMeterValue != null && preMeterValue != '') {
-    let value = preMeterValue[preMeterValue.length - 1].cValue;
-    energyConsumption = new Decimal(meterValueDate[i].cValue).sub(new Decimal(value)).toNumber();
-    totalEnergyConsumption = new Decimal(totalEnergyConsumption)
-      .add(new Decimal(energyConsumption))
-      .toNumber();
+  if (meterValueDate[i].cValue != null) {
+    //判断如果是当天晚班数据 耗能计算 晚班数据-白班数据
+    if (
+      meterValueDate[i - 1] != null &&
+      meterValueDate[i].cRecordDate.getTime() == meterValueDate[i - 1].cRecordDate.getTime() &&
+      meterValueDate[i - 1].cValue != null
+    ) {
+      energyConsumption = new Decimal(meterValueDate[i].cValue)
+        .sub(new Decimal(meterValueDate[i - 1].cValue))
+        .toNumber();
+      totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+        .add(new Decimal(energyConsumption))
+        .toNumber();
+    }
+    //判断如果是当天白班数据 耗能计算 白班数据-昨天的数据
+    else {
+      meterValueDate.forEach(element => {
+        let preDate = new Date(
+          moment(meterValueDate[i].cRecordDate)
+            .subtract(1, 'days')
+            .format('YYYY-MM-DD'),
+        );
+
+        if (preDate.getTime() == element.cRecordDate.getTime() && element.cValue != null) {
+          preMeterValue.push(element);
+        }
+      });
+    }
+    if (preMeterValue != null && preMeterValue != '') {
+      let value = preMeterValue[preMeterValue.length - 1].cValue;
+      energyConsumption = new Decimal(meterValueDate[i].cValue).sub(new Decimal(value)).toNumber();
+      totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+        .add(new Decimal(energyConsumption))
+        .toNumber();
+    }
   }
   let cDate = meterValueDate[i].cRecordDate;
   statisticalMeter.push(

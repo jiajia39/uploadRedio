@@ -18,6 +18,7 @@ const controller = (() => {
           .format('YYYY-MM-DD'),
       );
       list = await service.statisticalMeterData(null, null, null, preDate, null);
+      await prisma.Pems_MeterReporting_Day.deleteMany({ where: { cDate: new Date(preDate) } });
     }
     let dayList = [];
     if (list != null && list.length > 0) {
@@ -30,12 +31,13 @@ const controller = (() => {
           cValue: parseFloat(list[i].energyConsumption),
           cMeterFk: list[i].cMeterFk,
           cDate: list[i].cRecordDate,
+          cRecordType: list[i].cRecordType,
         });
       }
     }
     console.log(dayList);
     await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
-    res.json(list);
+    res.json({ isok: true, message: 'ReportingWeek saved' });
   });
 
   router.get('/save/week/history', async (req, res) => {
@@ -210,7 +212,7 @@ const controller = (() => {
         row,
         cRecordDate,
         meterIdList,
-        cPositionFk,
+        cType,
         isAll,
       );
       let total;

@@ -190,11 +190,12 @@ model Pems_MeterRecording {
 }
 
 model Pems_MeterReporting_Day {
-  id         Int         @id(map: "PK_dbo.Pems_MeterReporting_Day") @default(autoincrement())
-  cValue     Float?
-  cMeterFk   Int?
-  cDate      DateTime?   @db.Date
-  Pems_Meter Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Fk_MeterReporting_Meter")
+  id          Int         @id(map: "PK_dbo.Pems_MeterReporting_Day") @default(autoincrement())
+  cValue      Float?
+  cMeterFk    Int?
+  cDate       DateTime?   @db.Date
+  cRecordType String?     @db.VarChar(50)
+  Pems_Meter  Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Fk_MeterReporting_Meter")
 }
 
 model Pems_MeterReporting_Month {
