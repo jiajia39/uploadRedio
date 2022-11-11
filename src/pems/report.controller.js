@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import prisma from '../core/prisma';
 import service from '../pems/service';
+import energyService from './energy.service';
 var moment = require('moment');
 
 const controller = (() => {
@@ -193,6 +194,7 @@ const controller = (() => {
         const { totalEnergyConsumption } = date[date.length - 1];
         res.json({
           totalEnergyConsumption,
+          feeSum: null,
           data: pageList,
           total: date.length,
           message: 'Data obtained.',
@@ -207,6 +209,7 @@ const controller = (() => {
     } else {
       cRecordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
       let meterIdList = await service.getMeterId(id, cType, cPositionFk);
+      console.log(meterIdList);
       let meterReport = await service.getMeterReportingDayData(
         page,
         row,
@@ -231,7 +234,16 @@ const controller = (() => {
           totalEnergyConsumption: Number(total),
           data: statisticalMeter,
           total: meterReport.count,
+          feeSum: meterReport.feeSum,
           message: 'Data obtained.',
+        });
+      } else {
+        res.json({
+          data: [],
+          total: 0,
+          totalEnergyConsumption: null,
+          feeSum: null,
+          message: 'Data Empty.',
         });
       }
     }
@@ -282,6 +294,11 @@ const controller = (() => {
         .subtract(weekOfday - 1, 'days')
         .format('YYYY-MM-DD'),
     );
+    const endWeekOfday = moment(cRecordDate).format('E');
+    const endSun = moment(cRecordDate)
+      .add(7 - endWeekOfday, 'days')
+      .format('YYYYMMDD');
+
     let meterIdList = await service.getMeterId(id, cType, cPositionFk);
     let endWeek;
     page = Number(page) || 1;
@@ -330,6 +347,7 @@ const controller = (() => {
     const count = await prisma.Pems_MeterReporting_Week.count({
       where: filter,
     });
+    let feeSum = null;
     let totalEnergyConsumption = null;
     if (cType != null && cType != '') {
       const total = await prisma.Pems_MeterReporting_Week.aggregate({
@@ -339,6 +357,7 @@ const controller = (() => {
         },
       });
       totalEnergyConsumption = total._sum.cValue;
+      feeSum = await energyService.getFeeSum(meterIds, cRecordDate, endSun);
     }
     console.log(rstdata.length);
     if (rstdata != null && rstdata != '' && rstdata.length != 0) {
@@ -351,12 +370,15 @@ const controller = (() => {
       res.json({
         totalEnergyConsumption,
         data: rstdata,
+        feeSum,
         total: count,
         message: 'Data obtained.',
       });
     } else {
       res.json({
         data: [],
+        totalEnergyConsumption,
+        feeSum,
         total: 0,
         message: 'Data Empty.',
       });
@@ -404,6 +426,10 @@ const controller = (() => {
     let startDate = moment(startMonth);
     //月初
     startMonth = new Date(startDate.format('YYYY-MM-01'));
+    //月末
+    let endMonth = moment(startMonth)
+      .endOf('month')
+      .format('YYYY-MM-DD');
     console.log(startMonth);
     let meterIdList = await service.getMeterId(id, cType, cPositionFk);
     page = Number(page) || 1;
@@ -454,15 +480,17 @@ const controller = (() => {
     });
     let total;
     let totalEnergyConsumption = null;
-    // if (cType != null && cType != '') {
-    total = await prisma.Pems_MeterReporting_Month.aggregate({
-      where: filter,
-      _sum: {
-        cValue: true,
-      },
-    });
-    totalEnergyConsumption = total._sum.cValue;
-    // }
+    let feeSum = null;
+    if (cType != null && cType != '') {
+      total = await prisma.Pems_MeterReporting_Month.aggregate({
+        where: filter,
+        _sum: {
+          cValue: true,
+        },
+      });
+      totalEnergyConsumption = total._sum.cValue;
+      feeSum = await energyService.getFeeSum(meterIds, startMonth, endMonth);
+    }
 
     if (rstdata != null && rstdata != '' && rstdata.length != 0) {
       console.log(rstdata);
@@ -474,12 +502,15 @@ const controller = (() => {
       });
       res.json({
         totalEnergyConsumption,
+        feeSum,
         data: rstdata,
         total: count,
         message: 'Data obtained.',
       });
     } else {
       res.json({
+        totalEnergyConsumption,
+        feeSum,
         data: [],
         total: 0,
         message: 'Data Empty.',

@@ -109,10 +109,10 @@ async function saveValue(date) {
 }
 async function setEnergyFeeValuesAndSaveHistory() {
   const energyFeeValues = await prisma.Pems_EnergyFeeValues.findMany();
-  // let date = moment()
-  //   .subtract(1, 'day')
-  //   .format('YYYY-MM-DD');
-  let date = '2022-11-10';
+  let date = moment()
+    .subtract(1, 'day')
+    .format('YYYY-MM-DD');
+  // let date = '2022-11-10';
   if (energyFeeValues != null && energyFeeValues != '' && energyFeeValues.length > 0) {
     await saveValue(date);
   } else {
@@ -131,6 +131,37 @@ async function setEnergyFeeValuesAndSaveHistory() {
   // await prisma.Pems_EnergyFeeValues.create({
   //   data: energyFeeValues,
   // });
+}
+/**
+ * 获取耗能所需要的费用
+ * @param {*} meterIds meterId
+ * @param {*} startDate 开始时间
+ * @param {*} endDate 结束时间
+ * @returns 费用
+ */
+
+async function getFeeSum(meterIds, startDate, endDate) {
+  const filter = { AND: [] };
+  let cRecordDate;
+  //查询某天耗能
+  if (endDate == null) {
+    cRecordDate = new Date(moment(startDate).format('YYYY-MM-DD'));
+    if (cRecordDate) filter.AND.push({ cRecordDate });
+  } else {
+    //查询某个时间段的耗能
+    let start = new Date(moment(startDate).format('YYYY-MM-DD'));
+    let end = new Date(moment(endDate).format('YYYY-MM-DD'));
+    if (start) filter.AND.push({ cRecordDate: { gte: start } });
+    if (end) filter.AND.push({ cRecordDate: { lte: end } });
+  }
+  if (meterIds) filter.AND.push({ cMeterFk: { in: meterIds } });
+  const value = await prisma.Pems_EnergyFeeValues.aggregate({
+    where: filter,
+    _sum: {
+      cValue: true,
+    },
+  });
+  return parseFloat(value._sum.cValue).toFixed(2);
 }
 
 /**
@@ -154,4 +185,5 @@ function getAllDays(startDate, endDate) {
 }
 export default {
   setEnergyFeeValuesAndSaveHistory,
+  getFeeSum,
 };

@@ -2,6 +2,8 @@ import e from 'express';
 import { forEach, reject } from 'lodash';
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
+import energyService from './energy.service';
+
 var Decimal = require('decimal.js');
 var moment = require('moment');
 
@@ -210,9 +212,11 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
       },
     });
   }
+
   const count = await prisma.Pems_MeterReporting_Day.count({
     where: filter,
   });
+  let feeSum = null;
   let data = null;
   if (cType != null && cType != '') {
     data = await prisma.Pems_MeterReporting_Day.aggregate({
@@ -221,8 +225,9 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
         cValue: true,
       },
     });
+    feeSum = await energyService.getFeeSum(meterIds, cRecordDate, null);
   }
-  const date = { rstdata, data, count };
+  const date = { rstdata, data, count, feeSum };
   return date;
 }
 /**
