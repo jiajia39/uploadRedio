@@ -1,5 +1,5 @@
 import meterValue from '../pems/service';
-
+import energyService from '../pems/energy.service';
 const CronJob = require('node-cron');
 
 /**
@@ -23,7 +23,7 @@ exports.initScheduledJobs = () => {
 
   /**
    * Automatically Recording Meter Daily Consumption
-  */
+   */
   const scheduledJobForSaveDay = CronJob.schedule('0 10 0 * * *', () => {
     console.log('Automatically Recording Meter Daily Consumption');
     meterValue.saveReportDay();
@@ -33,7 +33,7 @@ exports.initScheduledJobs = () => {
 
   /**
    * Automatically Recording Meter Weekly Consumption for History Week
-  */
+   */
   const scheduledJobForSaveWeekHistory = CronJob.schedule('0 20 0 * * MON', () => {
     console.log('Automatically Recording Meter Weekly Consumption for History Week');
     meterValue.saveReoprtWeekHistory();
@@ -43,7 +43,7 @@ exports.initScheduledJobs = () => {
 
   /**
    * Automatically Recording Meter Weekly Consumption for Current Week
-  */
+   */
   const scheduledJobForSaveCurrentWeek = CronJob.schedule('0 15 0 * * *', () => {
     console.log('Automatically Recording Meter Weekly Consumption for Current Week');
     meterValue.saveReoprtCurrentWeek();
@@ -53,7 +53,7 @@ exports.initScheduledJobs = () => {
 
   /**
    * Automatically Recording Meter Monthly Consumption for History Month
-  */
+   */
   const scheduledJobForSaveMonHistory = CronJob.schedule('0 30 0 1 * *', () => {
     console.log('Automatically Recording Meter Monthly Consumption for History Month');
     meterValue.saveReoprtMonHistory();
@@ -63,11 +63,20 @@ exports.initScheduledJobs = () => {
 
   /**
    * Automatically Recording Meter Monthly Consumption for Current Month
-  */
+   */
   const scheduledJobForSaveCurrentMon = CronJob.schedule('0 25 0 * * *', () => {
     console.log('Automatically Recording Meter Monthly Consumption for Current Month');
     meterValue.saveReoprtCurrentMon();
     // Add your custom logic here
   });
   scheduledJobForSaveCurrentMon.start();
+
+  /**
+   * Automatically record the cost of daily energy consumption
+   */
+  const scheduledJobForSaveEnergyFeeValues = CronJob.schedule('0 25 0 * * *', () => {
+    console.log('Automatically record the cost of daily energy consumption');
+    meterValue.setEnergyFeeValuesAndSaveHistory();
+  });
+  scheduledJobForSaveEnergyFeeValues.start();
 };

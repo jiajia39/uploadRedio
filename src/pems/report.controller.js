@@ -356,7 +356,7 @@ const controller = (() => {
           cValue: true,
         },
       });
-      totalEnergyConsumption = total._sum.cValue;
+      totalEnergyConsumption = parseFloat(total._sum.cValue).toFixed(2);
       feeSum = await energyService.getFeeSum(meterIds, cRecordDate, endSun);
     }
     console.log(rstdata.length);
@@ -488,7 +488,7 @@ const controller = (() => {
           cValue: true,
         },
       });
-      totalEnergyConsumption = total._sum.cValue;
+      totalEnergyConsumption = parseFloat(total._sum.cValue).toFixed(2);
       feeSum = await energyService.getFeeSum(meterIds, startMonth, endMonth);
     }
 

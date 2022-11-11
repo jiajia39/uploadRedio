@@ -3,6 +3,13 @@ import influxservice from '../influx/service';
 import service from './service';
 var Decimal = require('decimal.js');
 var moment = require('moment');
+/**
+ * 获取每个meterId所耗费用
+ * @param {*} type meter类型
+ * @param {*} cType  EnergyFees类型
+ * @param {*} date 日期
+ * @returns 所耗费用
+ */
 
 async function getValueBytype(type, cType, date) {
   const filter = { AND: [] };
@@ -82,6 +89,10 @@ async function getEnergyFeeValues(meters, energyFeesEle, date) {
   }
   return energyFeeValues;
 }
+/**
+ * 获取并保存不同类型所耗费用
+ * @param {*} date 日期
+ */
 async function saveValue(date) {
   await prisma.Pems_EnergyFeeValues.deleteMany({
     where: { cRecordDate: new Date(date) },
@@ -107,12 +118,14 @@ async function saveValue(date) {
     data: list,
   });
 }
+/**
+ * 保存历史每日耗能所需费用
+ */
 async function setEnergyFeeValuesAndSaveHistory() {
   const energyFeeValues = await prisma.Pems_EnergyFeeValues.findMany();
   let date = moment()
     .subtract(1, 'day')
     .format('YYYY-MM-DD');
-  // let date = '2022-11-10';
   if (energyFeeValues != null && energyFeeValues != '' && energyFeeValues.length > 0) {
     await saveValue(date);
   } else {
