@@ -235,7 +235,6 @@ model Pems_Shift {
 model Pems_EnergyFeeValues {
   id          Int         @id(map: "PK_Pems_EnergyFeeValues") @default(autoincrement())
   cValue      Float?
-  cRecordTime DateTime?   @db.DateTime
   cRecordDate DateTime?   @db.Date
   cMeterFk    Int?
   Pems_Meter  Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_EnergyFeeValues_Meter")

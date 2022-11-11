@@ -1,7 +1,8 @@
 import e, { Router } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { lte } from 'lodash';
 import prisma from '../core/prisma';
-
+import energyService from './energy.service';
+var moment = require('moment');
 const controller = (() => {
   const router = Router();
   /**
@@ -191,6 +192,19 @@ const controller = (() => {
     });
     res.json(rstdata);
   });
+
+  router.get('/save/value', async (req, res) => {
+    // const filter = { AND: [] };
+    // const cRecordDate = new Date(moment('2022-11-09').format('YYYY-MM-DD'));
+    // if (cRecordDate) filter.AND.push({ cRecordDate: { gte: cRecordDate } });
+
+    // const value = await prisma.Pems_EnergyFeeValues.findMany({
+    //   where: filter,
+    // });
+    const value = await energyService.setEnergyFeeValuesAndSaveHistory();
+    res.json(value);
+  });
+
   return router;
 })();
 

@@ -5,8 +5,10 @@ import meterValues from './meterValues.controller';
 import energyFees from './energyFees.controller';
 import report from './report.controller';
 import shift from './shift.controller';
+import engrgyService from './energy.service';
 
 export const CrudOperations = {
+  engrgyService,
   service,
   meterPosition,
   meter,

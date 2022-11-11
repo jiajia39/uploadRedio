@@ -433,7 +433,7 @@ async function saveReoprtCurrentWeek() {
 /**
  * 获取某天的耗能
  * @param {*} preDate 日期
- * @param {*} meter meter的信息
+ * @param {*} element meter的信息
  */
 async function getInfluxDifferenceData(preDate, endDate, element) {
   const measurement = element.Pems_Meter.cName + '-' + element.Pems_Meter.cDesc;
@@ -1060,25 +1060,7 @@ function dateFmt(date, hour) {
   }
   return new Date(dateStr);
 }
-/**
- * 获取开始结束时间中每天的日期
- * @param {*} startDate 开始时间
- * @param {*} endDate 结束时间
- * @returns 日期
- */
-function getAllDays(startDate, endDate) {
-  let tempTimestamp = moment(startDate).format('YYYYMMDD');
-  let endTimestamp = moment(endDate).format('YYYYMMDD');
-  let resultArr = [];
-  while (tempTimestamp <= endTimestamp) {
-    resultArr.push(new Date(moment(tempTimestamp).format('YYYY-MM-DD')));
-    // 增加一天
-    tempTimestamp = moment(tempTimestamp)
-      .add(1, 'd')
-      .format('YYYYMMDD');
-  }
-  return resultArr;
-}
+
 /**
  * 获取日期前24小时每个小时的数据
  * @param {} date 日期
@@ -1156,4 +1138,5 @@ export default {
   saveReoprtCurrentWeek,
   saveReoprtMonHistory,
   saveReoprtCurrentMon,
+  getInfluxDifferenceData,
 };
