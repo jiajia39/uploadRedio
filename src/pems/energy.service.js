@@ -3,6 +3,7 @@ import influxservice from '../influx/service';
 import service from './service';
 var Decimal = require('decimal.js');
 var moment = require('moment');
+
 /**
  * 获取每个meterId所耗费用
  * @param {*} type meter类型
@@ -10,7 +11,6 @@ var moment = require('moment');
  * @param {*} date 日期
  * @returns 所耗费用
  */
-
 async function getValueBytype(type, cType, date) {
   const filter = { AND: [] };
   if (type) filter.AND = { ...filter.AND, cType: { in: type } };
@@ -24,6 +24,14 @@ async function getValueBytype(type, cType, date) {
   let list = await getEnergyFeeValues(meters, energyFeesEle, date);
   return list;
 }
+
+/**
+ * 根据所传仪表以及能源费用类型关联查询计算能源费用
+ * @param {*} meter 传入的仪表对象
+ * @param {*} energyFeesEle  能源费率对象
+ * @param {*} date 日期
+ * @returns 所耗费用
+ */
 async function getEnergyFeeValues(meters, energyFeesEle, date) {
   let energyFeeValues = [];
   for (let me = 0; me < meters.length; me++) {
@@ -122,11 +130,11 @@ async function saveValue(date) {
  * 保存历史每日耗能所需费用
  */
 async function setEnergyFeeValuesAndSaveHistory() {
-  const energyFeeValues = await prisma.Pems_EnergyFeeValues.findMany();
+  const isExist = await prisma.Pems_EnergyFeeValues.findFirst();
   let date = moment()
     .subtract(1, 'day')
     .format('YYYY-MM-DD');
-  if (energyFeeValues != null && energyFeeValues != '' && energyFeeValues.length > 0) {
+  if (isExist != null && isExist != '') {
     await saveValue(date);
   } else {
     let meterValue = await prisma.Pems_MeterValues.findMany({
@@ -199,4 +207,5 @@ function getAllDays(startDate, endDate) {
 export default {
   setEnergyFeeValuesAndSaveHistory,
   getFeeSum,
+  getAllDays,
 };

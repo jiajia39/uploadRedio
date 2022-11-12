@@ -1,13 +1,16 @@
 import { Router } from 'express';
 import prisma from '../core/prisma';
 import service from './service';
+import energyFeeService from './energy.service';
+import catchAsync from './../utils/catchAsync';
+import AppError from './../utils/appError';
 
 var moment = require('moment');
 const controller = (() => {
   const router = Router();
 
   // Test Cron Purpose
-  router.get('/testCronService', async (req, res) => {
+  router.get('/testCronService', catchAsync(async (req, res) => {
     const startDate = moment('2021-8-17');
     const endDate = moment('2022-10-01');
     const allYearMonth = []; // 接收所有年份和月份的数组
@@ -24,14 +27,15 @@ const controller = (() => {
     }
     console.log('所有年份和月份------>', allYearMonth);
     res.json(allYearMonth);
-  });
+  }));
 
   // Controller for GET Debug Test
-  router.get('/getTest', async (req, res) => {
-    let meterIds = await service.getMeterId(null, null, 8);
-    let data = await service.getMeterValuesData(null, null, meterIds);
-    res.json(data);
-  })
+  router.get('/getTest', catchAsync(async (req, res) => {
+    // let meterIds = await service.getMeterId(null, null, 8);
+    // let data = await service.getMeterValuesData(null, null, meterIds);
+    let dateList = await prisma.Pems_EnergyFeeValues.findFirst();
+    res.json(dateList);
+  }))
   
   /**
    * @swagger
@@ -66,7 +70,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/statisticalMeterValue', async (req, res) => {
+  router.get('/statisticalMeterValue', catchAsync(async (req, res) => {
     let { page, row, cRecordDate, id, cType, cPositionFk, cRecordType } = req.query;
     if (page == null) {
       page = 1;
@@ -103,7 +107,7 @@ const controller = (() => {
         message: 'Data Empty.',
       });
     }
-  });
+  }));
 
   /**
    * @swagger
@@ -138,7 +142,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/statisticalMeterWeek', async (req, res) => {
+  router.get('/statisticalMeterWeek', catchAsync(async (req, res) => {
     let { row, page, startWeek, id, cType, cPositionFk, cRecordType } = req.query;
     let endWeek;
     if (page == null) {
@@ -185,7 +189,7 @@ const controller = (() => {
         message: 'Data Empty.',
       });
     }
-  });
+  }));
 
   /**
    * @swagger
@@ -220,7 +224,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/statisticalMeterMon', async (req, res) => {
+  router.get('/statisticalMeterMon', catchAsync(async (req, res) => {
     let { row, page, startMonth, id, cType, cPositionFk, cRecordType } = req.query;
     if (page == null) {
       page = 1;
@@ -267,7 +271,8 @@ const controller = (() => {
         message: 'Data Empty.',
       });
     }
-  });
+  }));
+
   /**
    * @swagger
    * /api/pems/meterValues/getall:
@@ -293,7 +298,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/getall', async (req, res) => {
+  router.get('/getall', catchAsync(async (req, res) => {
     const { id, cMerterFk } = req.query;
     const filter = { OR: [] };
     const select = {
@@ -328,7 +333,8 @@ const controller = (() => {
       });
       res.json(data);
     }
-  });
+  }));
+
   /**
    * @swagger
    * /api/pems/meterValues/pagination:
@@ -354,7 +360,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/pagination', async (req, res) => {
+  router.get('/pagination', catchAsync(async (req, res) => {
     const { cRecordType, cMerterFk } = req.query;
     const filter = { AND: {} };
     if (cRecordType) filter.AND = { ...filter.AND, cRecordType: { contains: cRecordType } };
@@ -409,7 +415,7 @@ const controller = (() => {
         message: 'Data Empty.',
       });
     }
-  });
+  }));
 
   return router;
 })();

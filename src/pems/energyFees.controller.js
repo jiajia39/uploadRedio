@@ -2,7 +2,9 @@ import e, { Router } from 'express';
 import { lte } from 'lodash';
 import prisma from '../core/prisma';
 import energyService from './energy.service';
+import catchAsync from './../utils/catchAsync'
 var moment = require('moment');
+
 const controller = (() => {
   const router = Router();
   /**
@@ -72,7 +74,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.put('/edit/:id', async (req, res) => {
+  router.put('/edit/:id', catchAsync(async (req, res) => {
     const data = {
       cPrice: parseFloat(req.body.cPrice),
       cType: req.body.cType,
@@ -85,7 +87,7 @@ const controller = (() => {
       data: data,
     }).then(() => 'List updated');
     res.json({ isok: true, updatedData: data, message });
-  });
+  }));
   /**
    * @swagger
    * /api/pems/energyFees/pagination:
@@ -111,7 +113,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/pagination', async (req, res) => {
+  router.get('/pagination', catchAsync(async (req, res) => {
     const filter = { AND: {} };
     let cType = [];
     let type = req.query.cType;
@@ -166,7 +168,8 @@ const controller = (() => {
         message: 'Data Empty.',
       });
     }
-  });
+  }));
+
   /**
    * @swagger
    * /api/pems/energyFees/getType:
@@ -183,7 +186,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/getType', async (req, res) => {
+  router.get('/getType', catchAsync(async (req, res) => {
     // const select = {
     //   cType: true,
     // };
@@ -191,9 +194,9 @@ const controller = (() => {
       by: ['cType'],
     });
     res.json(rstdata);
-  });
+  }));
 
-  router.get('/save/value', async (req, res) => {
+  router.get('/save/value', catchAsync(async (req, res) => {
     // const filter = { AND: [] };
     // const cRecordDate = new Date(moment('2022-11-09').format('YYYY-MM-DD'));
     // if (cRecordDate) filter.AND.push({ cRecordDate: { gte: cRecordDate } });
@@ -203,7 +206,7 @@ const controller = (() => {
     // });
     const value = await energyService.setEnergyFeeValuesAndSaveHistory();
     res.json(value);
-  });
+  }));
 
   return router;
 })();
