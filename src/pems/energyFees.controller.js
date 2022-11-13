@@ -196,6 +196,22 @@ const controller = (() => {
     res.json(rstdata);
   }));
 
+  /**
+   * @swagger
+   * /api/pems/energyFees/save/value:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: Save the Energy Fees for All Meters(将计算的前一天能源费率存入表中)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: Save Completed
+   *         schema:
+   *           type: json
+   */
   router.get('/save/value', catchAsync(async (req, res) => {
     // const filter = { AND: [] };
     // const cRecordDate = new Date(moment('2022-11-09').format('YYYY-MM-DD'));
@@ -205,7 +221,7 @@ const controller = (() => {
     //   where: filter,
     // });
     const value = await energyService.setEnergyFeeValuesAndSaveHistory();
-    res.json(value);
+    res.json('Energy Fee Saved');
   }));
 
   return router;

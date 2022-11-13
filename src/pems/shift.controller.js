@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import prisma from '../core/prisma';
+import catchAsync from '../utils/catchAsync';
 
 const controller = (() => {
   const router = Router();
@@ -24,7 +25,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.put('/edit/:id', async (req, res) => {
+  router.put('/edit/:id', catchAsync(async (req, res) => {
     let startTime = req.body.cStartTime;
     let endTime = req.body.cEndTime;
     const data = {
@@ -36,7 +37,7 @@ const controller = (() => {
       data: data,
     }).then(() => 'List updated');
     res.json({ isok: true, updatedData: data, message });
-  });
+  }));
 
   /**
    * @swagger
@@ -63,7 +64,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/getall', async (req, res) => {
+  router.get('/getall', catchAsync(async (req, res) => {
     const { id, cDesc } = req.query;
     const filter = { OR: [] };
 
@@ -87,7 +88,7 @@ const controller = (() => {
       });
       res.json({ data: date });
     }
-  });
+  }));
 
   return router;
 })();

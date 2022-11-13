@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import service from './../sys/service';
 import prisma from '../core/prisma';
+import catchAsync from '../utils/catchAsync';
 
 const controller = (() => {
   const router = Router();
@@ -93,7 +94,8 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.put('/edit/:id', async (req, res) => {
+
+  router.put('/edit/:id', catchAsync(async (req, res) => {
     if (!req.body.parentId) {
       console.log("____________"+req.body.parentId);
       req.body.parentId = null;
@@ -111,7 +113,8 @@ const controller = (() => {
       data: date,
     }).then(() => 'List updated');
     res.json({ isok: true, message });
-  });
+  }));
+
   /**
    * @swagger
    * /api/pems/MeterPosition/delete/:id:
@@ -133,13 +136,14 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.delete('/delete/:id', async (req, res) => {
+  router.delete('/delete/:id', catchAsync(async (req, res) => {
     const message = await prisma.Pems_MeterPosition.delete({
       where: { id: Number(req.params.id) },
     }).then(() => 'MeterPosition deleted');
 
     res.json({ message });
-  });
+  }));
+
   /**
    * @swagger
    * /api/pems/meterPosition/getall:
@@ -165,7 +169,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/getall', async (req, res) => {
+  router.get('/getall', catchAsync(async (req, res) => {
     const { id, cType } = req.query;
     const filter = { OR: [] };
 
@@ -197,7 +201,7 @@ const controller = (() => {
       });
       res.json(data);
     }
-  });
+  }));
 
   /**
    * @swagger
@@ -220,7 +224,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/getbyparentid', async (req, res) => {
+  router.get('/getbyparentid', catchAsync(async (req, res) => {
     const { parentId } = req.query;
 
     const find = {};
@@ -232,7 +236,7 @@ const controller = (() => {
     });
 
     res.json({ data, message: 'Data obtained.' });
-  });
+  }));
 
   /**
    * @swagger
@@ -255,7 +259,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/gettreenodes', async (req, res) => {
+  router.get('/gettreenodes', catchAsync(async (req, res) => {
     const data = await prisma.Pems_MeterPosition.findMany();
     const treeOption = {
       enable: true, // 是否开启转tree插件数据
@@ -276,7 +280,7 @@ const controller = (() => {
       treeOption,
     );
     res.json({ treeData, message: 'Data obtained.' });
-  });
+  }));
 
   /**
    * @swagger
@@ -300,12 +304,12 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/item/:id', async (req, res) => {
+  router.get('/item/:id', catchAsync(async (req, res) => {
     const data = await prisma.Pems_MeterPosition.findUnique({
       where: { id: parseInt(req.params.id) },
     });
     res.json({ data, message: 'Data obtained.' });
-  });
+  }));
 
   /**
    * @swagger
@@ -319,10 +323,10 @@ const controller = (() => {
    *       200:
    *         description: Returns a mysterious string.
    */
-  router.get('/count', async (req, res) => {
+  router.get('/count', catchAsync(async (req, res) => {
     const data = await prisma.Pems_MeterPosition.count();
     res.json({ data, message: 'Data obtained.' });
-  });
+  }));
 
   /**
    * @name pagination - get a list of paging
@@ -360,7 +364,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/pagination', async (req, res) => {
+  router.get('/pagination', catchAsync(async (req, res) => {
     const { parentId, cDesc } = req.query;
 
     const filter = { AND: {} };
@@ -394,7 +398,7 @@ const controller = (() => {
         message: 'Data Empty.',
       });
     }
-  });
+  }));
 
   return router;
 })();
