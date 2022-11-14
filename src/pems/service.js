@@ -182,6 +182,7 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
     cMeterFk: true,
     cDate: true,
     cRecordType: true,
+    cMeterValue: true,
     Pems_Meter: {
       select: {
         id: true,

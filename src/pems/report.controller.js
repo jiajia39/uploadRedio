@@ -134,7 +134,16 @@ const controller = (() => {
           const cRecordDate = element.cDate;
           const cMeterFk = element.cMeterFk;
           const cRecordType = element.cRecordType;
-          statisticalMeter.push({ cMeterFk, cRecordType, cRecordDate, energyConsumption });
+          const Pems_Meter = element.Pems_Meter;
+          const cValue = element.cMeterValue;
+          statisticalMeter.push({
+            cMeterFk,
+            cRecordType,
+            cRecordDate,
+            energyConsumption,
+            cValue,
+            Pems_Meter,
+          });
         });
         res.json({
           totalEnergyConsumption: Number(total),
