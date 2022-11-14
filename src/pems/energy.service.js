@@ -50,7 +50,7 @@ async function getEnergyFeeValues(meters, energyFeesEle, date) {
           .format('YYYY-MM-DD  HH:mm:ss'),
       ).toISOString();
       const end = new Date(moment(date + endTime).format('YYYY-MM-DD  HH:mm:ss')).toISOString();
-
+      let hour = parseInt(moment(end).diff(start, 'hours')) - 1 + 'h';
       const measurement = meter.cName + '-' + meter.cDesc;
       let cType = '';
       if (meter.cType == 'Electricity' || meter.cType == '电表') {

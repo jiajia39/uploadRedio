@@ -7,37 +7,7 @@ var moment = require('moment');
 const controller = (() => {
   const router = Router();
   router.get('/save/day', async (req, res) => {
-    let report = await prisma.Pems_MeterReporting_Day.findMany();
-    let list;
-    let now = new Date(moment().format('YYYY-MM-DD'));
-    if (report == null || report == '') {
-      list = await service.statisticalMeterData(null, null, null, null, null);
-    } else {
-      let preDate = new Date(
-        moment()
-          .subtract(1, 'days')
-          .format('YYYY-MM-DD'),
-      );
-      list = await service.statisticalMeterData(null, null, null, preDate, null);
-      await prisma.Pems_MeterReporting_Day.deleteMany({ where: { cDate: new Date(preDate) } });
-    }
-    let dayList = [];
-    if (list != null && list.length > 0) {
-      for (let i = 0; i < list.length; i++) {
-        let recordDate = new Date(list[i].cRecordDate).getTime();
-        if (recordDate >= now.getTime()) {
-          continue;
-        }
-        dayList.push({
-          cValue: parseFloat(list[i].energyConsumption),
-          cMeterFk: list[i].cMeterFk,
-          cDate: list[i].cRecordDate,
-          cRecordType: list[i].cRecordType,
-        });
-      }
-    }
-    console.log(dayList);
-    await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
+    await service.saveReportDay();
     res.json({ isok: true, message: 'ReportingWeek saved' });
   });
 
@@ -52,76 +22,7 @@ const controller = (() => {
   });
 
   router.get('/save/month/history', async (req, res) => {
-    let start = new Date(moment().format('YYYY-MM-01'));
-    //上月月末
-    let endDate = new Date(
-      moment(start)
-        .subtract(1, 'days')
-        .format('YYYY-MM-DD'),
-    );
-
-    let report = await prisma.Pems_MeterReporting_Month.findMany();
-    console.log('111111111111111');
-    console.log(report);
-    let list = [];
-    let now = new Date(moment().format('YYYY-MM-DD'));
-    if (report == null || report == '') {
-      let meterValue = await prisma.Pems_MeterValues.findMany({
-        orderBy: {
-          cRecordDate: 'asc',
-        },
-      });
-      if (meterValue != null && meterValue.length > 0) {
-        let preDate = meterValue[0].cRecordDate;
-        preDate = new Date(moment(preDate).format('YYYY-MM-01'));
-        let timeList = await service.getStaAndEndMon(preDate, endDate);
-        for (let i = 0; i < timeList.length; i++) {
-          const startMonth = timeList[i].startTime;
-          const endMonth = timeList[i].endSun;
-          let data = await service.statisticalMeterMon(
-            startMonth,
-            endMonth,
-            null,
-            null,
-            null,
-            null,
-          );
-          if (data != null && data != '' && data.length > 0) {
-            let monthList = [];
-            if (data != null && data.length > 0) {
-              for (let i = 0; i < data.length; i++) {
-                monthList.push({
-                  cMonthStart: new Date(data[i].startTime),
-                  cMonthEnd: new Date(data[i].endTime),
-                  cValue: parseFloat(data[i].energyConsumption),
-                  cMeterFk: data[i].cMeterFk,
-                });
-              }
-              await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
-            }
-          }
-        }
-      }
-    } else {
-      //上月月初
-      let startMonth = new Date(moment(endDate).format('YYYY-MM-01'));
-      await prisma.Pems_MeterReporting_Month.deleteMany({
-        where: { cMonthStart: new Date(startMonth) },
-      });
-      let data = await service.statisticalMeterMon(startMonth, endDate, null, null, null, null);
-      if (data != null && data.length > 0) {
-        let monthList = [];
-        for (let i = 0; i < data.length; i++) {
-          monthList.push({
-            cMonthStart: new Date(data[i].startTime),
-            cMonthEnd: new Date(data[i].endTime),
-            cValue: parseFloat(data[i].energyConsumption),
-            cMeterFk: data[i].cMeterFk,
-          });
-        }
-        await prisma.Pems_MeterReporting_Month.createMany({ data: monthList });
-      }
-    }
+    await service.saveReoprtMonHistory();
     res.json({ isok: true, message: 'ReportingWeek saved' });
     // await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
     // res.json(list);

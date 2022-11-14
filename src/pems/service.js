@@ -1,3 +1,4 @@
+import { Log } from '@influxdata/influxdb-client';
 import e from 'express';
 import { forEach, reject } from 'lodash';
 import prisma from '../core/prisma';
@@ -239,32 +240,35 @@ async function saveReportDay() {
   const now = new Date(moment().format('YYYY-MM-DD'));
   if (report == null || report == '') {
     list = await statisticalMeterData(null, null, null, null, null);
-
-    const dayList = [];
-    if (list != null && list.length > 0) {
-      for (let i = 0; i < list.length; i++) {
-        const recordDate = new Date(list[i].cRecordDate).getTime();
-        if (recordDate >= now.getTime()) {
-          continue;
-        }
-        dayList.push({
-          cValue: parseFloat(list[i].energyConsumption),
-          cMeterFk: list[i].cMeterFk,
-          cDate: list[i].cRecordDate,
-        });
-      }
-    }
-    if (dayList != null && dayList != '' && dayList.length > 0) {
-      await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
-    }
   } else {
-    let preDate = new Date(
+    const preDate = new Date(
       moment()
         .subtract(1, 'days')
         .format('YYYY-MM-DD'),
-    ).toISOString;
-
+    ).toISOString();
+    console.log(preDate);
     list = await statisticalMeterData(null, null, null, preDate, null);
+  }
+
+  const dayList = [];
+  if (list != null && list.length > 0) {
+    for (let i = 0; i < list.length; i++) {
+      const recordDate = new Date(list[i].cRecordDate).getTime();
+      if (recordDate >= now.getTime()) {
+        continue;
+      }
+      dayList.push({
+        cValue: parseFloat(list[i].energyConsumption),
+        cMeterFk: list[i].cMeterFk,
+        cDate: list[i].cRecordDate,
+        cMeterValue: list[i].cValue,
+        cRecordType: list[i].cRecordType,
+      });
+    }
+  }
+  console.log(list);
+  if (dayList != null && dayList != '' && dayList.length > 0) {
+    await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
   }
 }
 /**
@@ -554,7 +558,6 @@ async function saveReoprtCurrentMon() {
   if (Number(day) == 1) {
     //当前时间是月初 1号时，添加1号的数据月数据，并更新上月月末的数据
     //获取开始时间上月月末的日期
-    let weekList = [];
     const meterIds = await getMeterId(null, null, null);
     if (meterIds != null && meterIds != '' && meterIds.length > 0) {
       meterIds.forEach(meterId => {
@@ -566,7 +569,7 @@ async function saveReoprtCurrentMon() {
         });
       });
       await prisma.Pems_MeterReporting_Month.createMany({
-        data: weekList,
+        data: monthList,
       });
     }
   } else {
@@ -575,6 +578,7 @@ async function saveReoprtCurrentMon() {
         .subtract(2, 'days')
         .format('YYYY-MM-DD 00:00:00'),
     ).toISOString();
+    let endDate = new Date(moment().format('YYYY-MM-DD 00:00:00')).toISOString();
     const filter = { AND: [] };
     if (newFor) filter.AND = { ...filter.AND, cMonthStart: new Date(newFor) };
     const select = {
@@ -598,7 +602,7 @@ async function saveReoprtCurrentMon() {
     });
     if (rstdata != null && rstdata != '' && rstdata.length > 0) {
       for (let i = 0; i < rstdata.length; i++) {
-        let result = await getInfluxDifferenceData(preDate, null, rstdata[i]);
+        let result = await getInfluxDifferenceData(preDate, endDate, rstdata[i]);
         if (result != null && result != null && result.length > 0) {
           let { value } = result[0];
           let energyConsumption;
@@ -938,6 +942,21 @@ async function statisticalMeterMon(startMonth, endMonth, id, cType, cPositionFk,
   let timeList = getStaAndEndMon(preDate, endDate);
   return await statisticalMeter(meterIdList, meterValueDateList, timeList);
 }
+
+async function getShiftTime() {
+  const date = await prisma.Pems_Shift.findMany();
+  let hour = '';
+  if (date != null) {
+    for (let i = 0; i < date.length; i++) {
+      if (i < date.length - 1) {
+        hour = hour + parseInt(date[i].cStartTime.substring(0, 2)) + ',';
+      } else {
+        hour = hour + parseInt(date[i].cStartTime.substring(0, 2));
+      }
+    }
+  }
+  return hour;
+}
 /**
  * 获取开始结束时间 每个月份的月初、月末
  * @param {*} startDate 开始时间
@@ -1144,4 +1163,5 @@ export default {
   saveReoprtMonHistory,
   saveReoprtCurrentMon,
   getInfluxDifferenceData,
+  getShiftTime,
 };
