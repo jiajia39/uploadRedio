@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import e, { Router } from 'express';
 import prisma from '../core/prisma';
 import service from '../pems/service';
 import energyService from './energy.service';
@@ -227,8 +227,9 @@ const controller = (() => {
         meterReport.rstdata.forEach(element => {
           let energyConsumption = element.cValue;
           const cRecordDate = element.cDate;
-          console.log(element.cValue);
-          statisticalMeter.push(Object.assign({}, element, { cRecordDate }, { energyConsumption }));
+          const cMeterFk = element.cMeterFk;
+          const cRecordType = element.cRecordType;
+          statisticalMeter.push({ cMeterFk, cRecordType, cRecordDate, energyConsumption });
         });
         res.json({
           totalEnergyConsumption: Number(total),
@@ -521,6 +522,6 @@ const controller = (() => {
   return router;
 })();
 
-controller.prefix = '/pems/reproting';
+controller.prefix = '/pems/reporting';
 
 export default controller;
