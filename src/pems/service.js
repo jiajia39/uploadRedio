@@ -1,6 +1,3 @@
-import { Log } from '@influxdata/influxdb-client';
-import e from 'express';
-import { forEach, reject } from 'lodash';
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
 import energyService from './energy.service';
@@ -16,10 +13,10 @@ async function setMeterValuesandSave() {
     //从meter 中获取 measurement和field 来进行查询influxDb的数据
     const measurement = meters[i].cName + '-' + meters[i].cDesc;
     let cType = '';
-    if (meters[i].cType == 'Electricity') {
+    if (meters[i].cType == 'Electricity' || meters[i].cType == '电表') {
       cType = 'EP';
     }
-    if (meters[i].cType == 'Water' || meters[i].cType == 'Steam') {
+    if (meters[i].cType == 'Water' || meters[i].cType == 'Steam' || meters[i].cType == '水表') {
       cType = 'TT';
     }
     const field = meters[i].cName + '.' + cType;
@@ -56,12 +53,12 @@ async function setMeterValuesandSave() {
       data: PemsMeterValuesDate,
     });
   }
+  console.log('end');
 }
 
 async function setMeterRecordingAndSave() {
   const meters = await prisma.Pems_Meter.findMany();
   console.log('Meter Count:', meters.length);
-  // eslint-disable-next-line no-plusplus
   for (let j = 0; j < meters.length; j++) {
     //从meter 中获取 measurement和field 来进行查询influxDb的数据
     const measurement = meters[j].cName + '-' + meters[j].cDesc;
@@ -213,6 +210,9 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
       },
     });
   }
+  rstdata.forEach(element => {
+    element.cDate = moment(element.cDate).format('YYYY-MM-DD');
+  });
 
   const count = await prisma.Pems_MeterReporting_Day.count({
     where: filter,
@@ -460,6 +460,7 @@ async function getInfluxDifferenceData(preDate, endDate, element) {
   const field = element.Pems_Meter.cName + '.' + cType;
   const start = preDate;
   const interval = '24h';
+  // const interval = '23d';
   const queryType = 'last';
   // 查询infulxDb数据
   const result = await influxservice.getInfluxDifferenceData(

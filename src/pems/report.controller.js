@@ -92,6 +92,9 @@ const controller = (() => {
         } else {
           pageList = service.getPageDate(date, row, page);
         }
+        pageList.forEach(element => {
+          element.cRecordDate = moment(element.cDate).format('YYYY-MM-DD');
+        });
         const { totalEnergyConsumption } = date[date.length - 1];
         res.json({
           totalEnergyConsumption,
@@ -119,6 +122,7 @@ const controller = (() => {
         cType,
         isAll,
       );
+      console.log(meterReport);
       let total;
       if (meterReport.data != null) {
         total = parseFloat(meterReport.data._sum.cValue).toFixed(2);

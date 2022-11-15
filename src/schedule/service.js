@@ -1,5 +1,4 @@
 import meterValue from '../pems/service';
-import prisma from '../core/prisma';
 const CronJob = require('node-cron');
 
 /**
