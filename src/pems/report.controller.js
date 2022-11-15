@@ -156,20 +156,28 @@ const controller = (() => {
   });
 
   router.get('/total/energy/consumption/echart/day', async (req, res) => {
+    let { cType } = req.query;
+    let meterIds = [];
     //当前时间的前10天时间
     const preTenDay = new Date(
       moment()
-        .subtract(10, 'days')
+        .subtract(9, 'days')
         .format('YYYY-MM-DD'),
     );
     const now = new Date(moment().format('YYYY-MM-DD'));
     let allDays = energyService.getAllDays(preTenDay, now);
     let list = [];
-    let totalEnergyConsumption = null;
+    if (cType != null && cType != '') {
+      const ids = await service.getMeterId(null, cType, null);
+      ids.forEach(element => {
+        meterIds.push(element.id);
+      });
+    }
     for (let i = 0; i < allDays.length; i++) {
+      let totalEnergyConsumption = null;
       let day = new Date(allDays[i]);
       if (new Date(day).getTime() == now.getTime()) {
-        const date = await service.statisticalMeterData(null, null, null, now, null);
+        const date = await service.statisticalMeterData(null, cType, null, now, null);
         if (date != null && date.length > 0) {
           let sum = date[date.length - 1].totalEnergyConsumption;
           totalEnergyConsumption = parseFloat(sum).toFixed(2);
@@ -177,6 +185,8 @@ const controller = (() => {
       } else {
         const filter = { AND: [] };
         if (day) filter.AND = { ...filter.AND, cDate: { in: day } };
+        if (meterIds != null && meterIds.length > 0)
+          filter.AND = { ...filter.AND, cMeterFk: { in: meterIds } };
         const data = await prisma.Pems_MeterReporting_Day.aggregate({
           where: filter,
           _sum: {
@@ -187,6 +197,102 @@ const controller = (() => {
       }
       list.push({
         date: moment(day).format('YYYY-MM-DD'),
+        totalEnergyConsumption,
+      });
+    }
+    res.json({
+      data: list,
+    });
+  });
+
+  router.get('/total/energy/consumption/echart/week', async (req, res) => {
+    const list = [];
+    let { cType } = req.query;
+    let meterIds = [];
+    //获取前7周的周一
+    let timeList = [];
+    let weekOfDay = parseInt(moment().format('E')); //计算今天是这周第几天
+    for (let i = 9; i >= 0; i--) {
+      //周一日期
+      let last_monday = new Date(
+        moment()
+          .subtract(weekOfDay + 7 * i - 1, 'days')
+          .format('YYYY-MM-DD'),
+      );
+      timeList.push(last_monday);
+    }
+
+    console.log(timeList);
+    if (cType != null && cType != '') {
+      const ids = await service.getMeterId(null, cType, null);
+      ids.forEach(element => {
+        meterIds.push(element.id);
+      });
+    }
+    for (let j = 0; j < timeList.length; j++) {
+      let totalEnergyConsumption = null;
+      const monTime = timeList[j];
+      const filter = { AND: [] };
+      if (meterIds != null && meterIds.length > 0)
+        filter.AND = { ...filter.AND, cMeterFk: { in: meterIds } };
+      if (monTime) filter.AND = { ...filter.AND, cWeekStart: { in: monTime } };
+      const data = await prisma.Pems_MeterReporting_Week.aggregate({
+        where: filter,
+        _sum: {
+          cValue: true,
+        },
+      });
+      totalEnergyConsumption = parseFloat(data._sum.cValue).toFixed(2);
+      //周日
+      const weekOfday = moment(monTime).format('E');
+      const endSun = moment(monTime)
+        .add(7 - weekOfday, 'days')
+        .format('YYYY-MM-DD');
+      const weekTime = moment(monTime).format('YYYY-MM-DD') + '---' + endSun;
+      list.push({
+        date: weekTime,
+        totalEnergyConsumption,
+      });
+    }
+    res.json({
+      data: list,
+    });
+  });
+
+  router.get('/total/energy/consumption/echart/month', async (req, res) => {
+    const list = [];
+    let { cType } = req.query;
+    let mon = new Date(
+      moment()
+        .subtract(9, 'months')
+        .format('YYYY-MM-DD'),
+    );
+    const now = new Date(moment().format('YYYY-MM-DD'));
+    let monList = await service.getStaAndEndMon(mon, now);
+    let meterIds = [];
+    if (cType != null && cType != '') {
+      const ids = await service.getMeterId(null, cType, null);
+      ids.forEach(element => {
+        meterIds.push(element.id);
+      });
+    }
+    for (let j = 0; j < monList.length; j++) {
+      let totalEnergyConsumption = null;
+      const startMonTime = new Date(monList[j].startTime);
+      const filter = { AND: [] };
+      if (meterIds != null && meterIds.length > 0)
+        filter.AND = { ...filter.AND, cMeterFk: { in: meterIds } };
+      if (startMonTime) filter.AND = { ...filter.AND, cMonthStart: { in: startMonTime } };
+      const data = await prisma.Pems_MeterReporting_Month.aggregate({
+        where: filter,
+        _sum: {
+          cValue: true,
+        },
+      });
+      totalEnergyConsumption = parseFloat(data._sum.cValue).toFixed(2);
+      const monTime = monList[j].startTime + '---' + monList[j].endSun;
+      list.push({
+        date: monTime,
         totalEnergyConsumption,
       });
     }
