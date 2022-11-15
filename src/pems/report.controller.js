@@ -155,6 +155,46 @@ const controller = (() => {
     }
   });
 
+  router.get('/total/energy/consumption/echart/day', async (req, res) => {
+    //当前时间的前10天时间
+    const preTenDay = new Date(
+      moment()
+        .subtract(10, 'days')
+        .format('YYYY-MM-DD'),
+    );
+    const now = new Date(moment().format('YYYY-MM-DD'));
+    let allDays = energyService.getAllDays(preTenDay, now);
+    let list = [];
+    let totalEnergyConsumption = null;
+    for (let i = 0; i < allDays.length; i++) {
+      let day = new Date(allDays[i]);
+      if (new Date(day).getTime() == now.getTime()) {
+        const date = await service.statisticalMeterData(null, null, null, now, null);
+        if (date != null && date.length > 0) {
+          let sum = date[date.length - 1].totalEnergyConsumption;
+          totalEnergyConsumption = parseFloat(sum).toFixed(2);
+        }
+      } else {
+        const filter = { AND: [] };
+        if (day) filter.AND = { ...filter.AND, cDate: { in: day } };
+        const data = await prisma.Pems_MeterReporting_Day.aggregate({
+          where: filter,
+          _sum: {
+            cValue: true,
+          },
+        });
+        totalEnergyConsumption = parseFloat(data._sum.cValue).toFixed(2);
+      }
+      list.push({
+        date: moment(day).format('YYYY-MM-DD'),
+        totalEnergyConsumption,
+      });
+    }
+    res.json({
+      data: list,
+    });
+  });
+
   /**
    * @swagger
    * /api/pems/meterValues/statisticalMeterWeek:
