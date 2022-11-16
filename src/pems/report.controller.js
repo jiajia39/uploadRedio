@@ -231,7 +231,7 @@ const controller = (() => {
       if (day) filter.AND = { ...filter.AND, cDate: { in: day } };
       if (meterIds != null && meterIds.length > 0)
         filter.AND = { ...filter.AND, cMeterFk: { in: meterIds } };
-      const data = await prisma.Pems_MeterReporting_Day.aggregate({
+      const data = await prisma.Pems_MeterReportHistory_Day.aggregate({
         where: filter,
         _sum: {
           cValue: true,

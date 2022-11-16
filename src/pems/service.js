@@ -1,3 +1,4 @@
+import { Log } from '@influxdata/influxdb-client';
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
 import energyService from './energy.service';
@@ -415,7 +416,7 @@ async function saveReoprtCurrentWeek() {
     if (rstdata != null && rstdata != '' && rstdata.length > 0) {
       for (let i = 0; i < rstdata.length; i++) {
         let element = rstdata[i];
-        let result = await getInfluxDifferenceData(preDate, null, element);
+        let result = await getInfluxDifferenceData(preDate, null, element.Pems_Meter);
         if (result != null && result != null && result.length > 0) {
           let { value } = result[0];
           let cvalue = element.cValue;
@@ -449,24 +450,61 @@ async function saveReoprtCurrentWeek() {
   }
 }
 /**
+ * 保存每日历史耗能
+ */
+async function saveReoprtHistoryDay() {
+  const meterList = await prisma.Pems_Meter.findMany();
+  const preDate = new Date(
+    moment()
+      .subtract(2, 'days')
+      .format('YYYY-MM-DD 00:00:00'),
+  ).toISOString();
+  const endDate = new Date(moment().format('YYYY-MM-DD 00:00:00')).toISOString();
+  const date = new Date(
+    moment()
+      .subtract(1, 'day')
+      .format('YYYY-MM-DD'),
+  );
+
+  let result = [];
+  for (let i = 0; i < meterList.length; i++) {
+    const influxResult = await getInfluxDifferenceData(preDate, endDate, meterList[i]);
+    if (influxResult != null && influxResult.length > 0) {
+      let { value } = influxResult[0];
+      value = parseFloat(value).toFixed(2);
+      result.push({
+        cValue: parseFloat(value),
+        cMeterFk: meterList[i].id,
+        cDate: date,
+      });
+    } else {
+      result.push({
+        cValue: null,
+        cMeterFk: meterList[i].id,
+        cDate: date,
+      });
+    }
+  }
+  if (result != null && result.length > 0) {
+    await prisma.Pems_MeterReportHistory_Day.createMany({ data: result });
+  }
+}
+
+/**
  * 获取某天的耗能
  * @param {*} preDate 日期
  * @param {*} element meter的信息
  */
 async function getInfluxDifferenceData(preDate, endDate, element) {
-  const measurement = element.Pems_Meter.cName + '-' + element.Pems_Meter.cDesc;
+  const measurement = element.cName + '-' + element.cDesc;
   let cType = '';
-  if (element.Pems_Meter.cType == 'Electricity' || element.Pems_Meter.cType == '电表') {
+  if (element.cType == 'Electricity' || element.cType == '电表') {
     cType = 'EP';
   }
-  if (
-    element.Pems_Meter.cType == 'Water' ||
-    element.Pems_Meter.cType == 'Steam' ||
-    element.Pems_Meter.cType == '水表'
-  ) {
+  if (element.cType == 'Water' || element.cType == 'Steam' || element.cType == '水表') {
     cType = 'TT';
   }
-  const field = element.Pems_Meter.cName + '.' + cType;
+  const field = element.cName + '.' + cType;
   const start = preDate;
   const interval = '24h';
   // const interval = '23d';
@@ -612,7 +650,7 @@ async function saveReoprtCurrentMon() {
     });
     if (rstdata != null && rstdata != '' && rstdata.length > 0) {
       for (let i = 0; i < rstdata.length; i++) {
-        let result = await getInfluxDifferenceData(preDate, endDate, rstdata[i]);
+        let result = await getInfluxDifferenceData(preDate, endDate, rstdata[i].Pems_Meter);
         if (result != null && result != null && result.length > 0) {
           let { value } = result[0];
           let energyConsumption;
@@ -1233,4 +1271,5 @@ export default {
   saveReoprtCurrentMon,
   getInfluxDifferenceData,
   getShiftTime,
+  saveReoprtHistoryDay,
 };
