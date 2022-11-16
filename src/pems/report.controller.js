@@ -181,7 +181,15 @@ const controller = (() => {
     let allDays = energyService.getAllDays(preTenDay, now);
     let list = [];
     if (cType != null && cType != '') {
-      const ids = await service.getMeterId(null, cType, null);
+      const cPositionFk = [18, 19, 20];
+      const filterMeter = { AND: [] };
+      if (cType) filterMeter.AND.push({ cType });
+      if (cPositionFk) filterMeter.AND.push({ cPositionFk: { in: cPositionFk } });
+
+      const ids = await prisma.Pems_Meter.groupBy({
+        where: filterMeter,
+        by: ['id'],
+      });
       ids.forEach(element => {
         meterIds.push(element.id);
       });
@@ -250,7 +258,15 @@ const controller = (() => {
 
     console.log(timeList);
     if (cType != null && cType != '') {
-      const ids = await service.getMeterId(null, cType, null);
+      const cPositionFk = [18, 19, 20];
+      const filterMeter = { AND: [] };
+      if (cType) filterMeter.AND.push({ cType });
+      if (cPositionFk) filterMeter.AND.push({ cPositionFk: { in: cPositionFk } });
+
+      const ids = await prisma.Pems_Meter.groupBy({
+        where: filterMeter,
+        by: ['id'],
+      });
       ids.forEach(element => {
         meterIds.push(element.id);
       });
@@ -297,7 +313,15 @@ const controller = (() => {
     let monList = await service.getStaAndEndMon(mon, now);
     let meterIds = [];
     if (cType != null && cType != '') {
-      const ids = await service.getMeterId(null, cType, null);
+      const cPositionFk = [18, 19, 20];
+      const filterMeter = { AND: [] };
+      if (cType) filterMeter.AND.push({ cType });
+      if (cPositionFk) filterMeter.AND.push({ cPositionFk: { in: cPositionFk } });
+
+      const ids = await prisma.Pems_Meter.groupBy({
+        where: filterMeter,
+        by: ['id'],
+      });
       ids.forEach(element => {
         meterIds.push(element.id);
       });

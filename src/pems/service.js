@@ -1105,10 +1105,21 @@ function gimePerHour(date) {
  * 判断当前时间是上午还是下午
  * @param {*} date 日期
  */
-function isMorOrAft(date) {
+async function isMorOrAft(date) {
+  const data = new Date(moment(date).format('YYYY-MM-DD  HH:mm:ss'));
+  const dateFor = moment(date).format('YYYY-MM-DD');
   let state = '';
-  const hour = date.getHours();
-  if (hour >= 5 && hour < 23) {
+  const shiftDate = await prisma.Pems_Shift.findMany({
+    where: {
+      cDesc: '早班',
+    },
+  });
+  const start = dateFor + ' ' + shiftDate[0].cStartTime + ':00';
+
+  const startTime = new Date(start).getTime();
+  const end = dateFor + ' ' + shiftDate[0].cEndTime + ':00';
+  const endTime = new Date(end).getTime();
+  if (data.getTime() >= startTime && data.getTime() < endTime) {
     state = `白班`;
   } else {
     state = `晚班`;
