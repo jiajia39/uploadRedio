@@ -26,7 +26,7 @@ async function setMeterValuesandSave() {
     const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
     const time = new Date();
     const date = dateFmt(time, '');
-    const cRecordType = isMorOrAft(time);
+    const cRecordType = await isMorOrAft(time);
     // 查询infulxDb数据
     const result = await influxservice.getInfluxData(
       measurement,
