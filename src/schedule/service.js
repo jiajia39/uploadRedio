@@ -82,4 +82,14 @@ exports.initScheduledJobs = async function() {
     meterValue.setEnergyFeeValuesAndSaveHistory();
   });
   scheduledJobForSaveEnergyFeeValues.start();
+
+  /**
+   * Automatically Recording Historical daily energy consumption
+   */
+  const scheduledJobForSaveDayHistory = CronJob.schedule('0 35 0 * * *', () => {
+    console.log('Automatically Recording Historical daily energy consumption');
+    meterValue.saveReoprtHistoryDay();
+    // Add your custom logic here
+  });
+  scheduledJobForSaveDayHistory.start();
 };

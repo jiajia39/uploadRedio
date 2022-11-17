@@ -153,19 +153,20 @@ model Pems_EnergyFees {
 }
 
 model Pems_Meter {
-  id                        Int                         @id(map: "PK_Pems_Meter") @default(autoincrement())
-  cName                     String?                     @db.VarChar(50)
-  cType                     String?                     @db.VarChar(50)
-  cDesc                     String?                     @db.NVarChar(Max)
-  cPositionFk               Int?
-  dAddTime                  DateTime?                   @db.DateTime
-  Pems_MeterPosition        Pems_MeterPosition?         @relation(fields: [cPositionFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_Meter_Position")
-  Pems_EnergyFeeValues      Pems_EnergyFeeValues[]
-  Pems_MeterRecording       Pems_MeterRecording[]
-  Pems_MeterReporting_Day   Pems_MeterReporting_Day[]
-  Pems_MeterReporting_Month Pems_MeterReporting_Month[]
-  Pems_MeterReporting_Week  Pems_MeterReporting_Week[]
-  Pems_MeterValues          Pems_MeterValues[]
+  id                          Int                           @id(map: "PK_Pems_Meter") @default(autoincrement())
+  cName                       String?                       @db.VarChar(50)
+  cType                       String?                       @db.VarChar(50)
+  cDesc                       String?                       @db.NVarChar(Max)
+  cPositionFk                 Int?
+  dAddTime                    DateTime?                     @db.DateTime
+  Pems_MeterPosition          Pems_MeterPosition?           @relation(fields: [cPositionFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_Meter_Position")
+  Pems_EnergyFeeValues        Pems_EnergyFeeValues[]
+  Pems_MeterRecording         Pems_MeterRecording[]
+  Pems_MeterReportHistory_Day Pems_MeterReportHistory_Day[]
+  Pems_MeterReporting_Day     Pems_MeterReporting_Day[]
+  Pems_MeterReporting_Month   Pems_MeterReporting_Month[]
+  Pems_MeterReporting_Week    Pems_MeterReporting_Week[]
+  Pems_MeterValues            Pems_MeterValues[]
 }
 
 model Pems_MeterValues {
@@ -239,4 +240,12 @@ model Pems_EnergyFeeValues {
   cRecordDate DateTime?   @db.Date
   cMeterFk    Int?
   Pems_Meter  Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_EnergyFeeValues_Meter")
+}
+
+model Pems_MeterReportHistory_Day {
+  id         Int         @id(map: "PK_dbo.Pems_MeterReportHistory_Day") @default(autoincrement())
+  cValue     Float?
+  cMeterFk   Int?
+  cDate      DateTime?   @db.Date
+  Pems_Meter Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Fk_MeterReportHistory_Day")
 }

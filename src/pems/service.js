@@ -1,3 +1,4 @@
+import { Log } from '@influxdata/influxdb-client';
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
 import energyService from './energy.service';
@@ -26,7 +27,7 @@ async function setMeterValuesandSave() {
     const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
     const time = new Date();
     const date = dateFmt(time, '');
-    const cRecordType = isMorOrAft(time);
+    const cRecordType = await isMorOrAft(time);
     // 查询infulxDb数据
     const result = await influxservice.getInfluxData(
       measurement,
@@ -220,8 +221,16 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
   });
   let feeSum = null;
   let data = null;
+  let dataSum = null;
   if (cType != null && cType != '') {
-    data = await prisma.Pems_MeterReporting_Day.aggregate({
+    data = await prisma.Pems_MeterReporting_Day.groupBy({
+      by: ['cRecordType'],
+      where: filter,
+      _sum: {
+        cValue: true,
+      },
+    });
+    dataSum = await prisma.Pems_MeterReporting_Day.aggregate({
       where: filter,
       _sum: {
         cValue: true,
@@ -229,7 +238,7 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
     });
     feeSum = await energyService.getFeeSum(meterIds, cRecordDate, null);
   }
-  const date = { rstdata, data, count, feeSum };
+  const date = { rstdata, data, dataSum, count, feeSum };
   return date;
 }
 /**
@@ -407,7 +416,7 @@ async function saveReoprtCurrentWeek() {
     if (rstdata != null && rstdata != '' && rstdata.length > 0) {
       for (let i = 0; i < rstdata.length; i++) {
         let element = rstdata[i];
-        let result = await getInfluxDifferenceData(preDate, null, element);
+        let result = await getInfluxDifferenceData(preDate, null, element.Pems_Meter);
         if (result != null && result != null && result.length > 0) {
           let { value } = result[0];
           let cvalue = element.cValue;
@@ -441,24 +450,61 @@ async function saveReoprtCurrentWeek() {
   }
 }
 /**
+ * 保存每日历史耗能
+ */
+async function saveReoprtHistoryDay() {
+  const meterList = await prisma.Pems_Meter.findMany();
+  const preDate = new Date(
+    moment()
+      .subtract(2, 'days')
+      .format('YYYY-MM-DD 00:00:00'),
+  ).toISOString();
+  const endDate = new Date(moment().format('YYYY-MM-DD 00:00:00')).toISOString();
+  const date = new Date(
+    moment()
+      .subtract(1, 'day')
+      .format('YYYY-MM-DD'),
+  );
+
+  let result = [];
+  for (let i = 0; i < meterList.length; i++) {
+    const influxResult = await getInfluxDifferenceData(preDate, endDate, meterList[i]);
+    if (influxResult != null && influxResult.length > 0) {
+      let { value } = influxResult[0];
+      value = parseFloat(value).toFixed(2);
+      result.push({
+        cValue: parseFloat(value),
+        cMeterFk: meterList[i].id,
+        cDate: date,
+      });
+    } else {
+      result.push({
+        cValue: null,
+        cMeterFk: meterList[i].id,
+        cDate: date,
+      });
+    }
+  }
+  if (result != null && result.length > 0) {
+    await prisma.Pems_MeterReportHistory_Day.createMany({ data: result });
+  }
+}
+
+/**
  * 获取某天的耗能
  * @param {*} preDate 日期
  * @param {*} element meter的信息
  */
 async function getInfluxDifferenceData(preDate, endDate, element) {
-  const measurement = element.Pems_Meter.cName + '-' + element.Pems_Meter.cDesc;
+  const measurement = element.cName + '-' + element.cDesc;
   let cType = '';
-  if (element.Pems_Meter.cType == 'Electricity' || element.Pems_Meter.cType == '电表') {
+  if (element.cType == 'Electricity' || element.cType == '电表') {
     cType = 'EP';
   }
-  if (
-    element.Pems_Meter.cType == 'Water' ||
-    element.Pems_Meter.cType == 'Steam' ||
-    element.Pems_Meter.cType == '水表'
-  ) {
+  if (element.cType == 'Water' || element.cType == 'Steam' || element.cType == '水表') {
     cType = 'TT';
   }
-  const field = element.Pems_Meter.cName + '.' + cType;
+  const field = element.cName + '.' + cType;
   const start = preDate;
   const interval = '24h';
   // const interval = '23d';
@@ -604,7 +650,7 @@ async function saveReoprtCurrentMon() {
     });
     if (rstdata != null && rstdata != '' && rstdata.length > 0) {
       for (let i = 0; i < rstdata.length; i++) {
-        let result = await getInfluxDifferenceData(preDate, endDate, rstdata[i]);
+        let result = await getInfluxDifferenceData(preDate, endDate, rstdata[i].Pems_Meter);
         if (result != null && result != null && result.length > 0) {
           let { value } = result[0];
           let energyConsumption;
@@ -703,6 +749,9 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
   const meterValueDateList = await getMeterValuesData(dateList, null, meterIdList);
   let statisticalMeter = [];
   let totalEnergyConsumption = 0.0;
+  let totalEnergyConsumptionDay = 0.0;
+  let totalEnergyConsumptionNight = 0.0;
+  const shiftDate = await prisma.Pems_Shift.findMany();
   for (let i = 0; i < meterIdList.length; i++) {
     let meterValueDate = [];
     if (meterValueDateList != null && meterValueDateList.length > 0) {
@@ -725,22 +774,36 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
           if (meterValueDate[i].cRecordDate.getTime() == cRecordDate.getTime()) {
             statisticalMeter = await getAfterCalculationValues(
               i,
+              shiftDate,
               statisticalMeter,
               totalEnergyConsumption,
+              totalEnergyConsumptionDay,
+              totalEnergyConsumptionNight,
               meterValueDate,
             );
             totalEnergyConsumption =
               statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumption;
+            totalEnergyConsumptionDay =
+              statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumptionDay;
+            totalEnergyConsumptionNight =
+              statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumptionNight;
           }
         } else {
           statisticalMeter = await getAfterCalculationValues(
             i,
+            shiftDate,
             statisticalMeter,
             totalEnergyConsumption,
+            totalEnergyConsumptionDay,
+            totalEnergyConsumptionNight,
             meterValueDate,
           );
           totalEnergyConsumption =
             statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumption;
+          totalEnergyConsumptionDay =
+            statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumptionDay;
+          totalEnergyConsumptionNight =
+            statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumptionNight;
         }
       }
     }
@@ -757,8 +820,11 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
  */
 async function getAfterCalculationValues(
   i,
+  shiftDate,
   statisticalMeter,
   totalEnergyConsumption,
+  totalEnergyConsumptionDay,
+  totalEnergyConsumptionNight,
   meterValueDate,
 ) {
   let preMeterValue = [];
@@ -776,6 +842,15 @@ async function getAfterCalculationValues(
       totalEnergyConsumption = new Decimal(totalEnergyConsumption)
         .add(new Decimal(energyConsumption))
         .toNumber();
+      if (meterValueDate[i].cRecordType == '白班') {
+        totalEnergyConsumptionDay = new Decimal(totalEnergyConsumptionDay)
+          .add(new Decimal(energyConsumption))
+          .toNumber();
+      } else {
+        totalEnergyConsumptionNight = new Decimal(totalEnergyConsumptionNight)
+          .add(new Decimal(energyConsumption))
+          .toNumber();
+      }
     }
     //判断如果是当天白班数据 耗能计算 白班数据-昨天的数据
     else {
@@ -797,16 +872,35 @@ async function getAfterCalculationValues(
       totalEnergyConsumption = new Decimal(totalEnergyConsumption)
         .add(new Decimal(energyConsumption))
         .toNumber();
+      if (meterValueDate[i].cRecordType == '白班') {
+        totalEnergyConsumptionDay = new Decimal(totalEnergyConsumptionDay)
+          .add(new Decimal(energyConsumption))
+          .toNumber();
+      } else {
+        totalEnergyConsumptionNight = new Decimal(totalEnergyConsumptionNight)
+          .add(new Decimal(energyConsumption))
+          .toNumber();
+      }
     }
   }
+  //获取日期
+  let shiftTime;
+  shiftDate.forEach(element => {
+    if (element.cDesc == meterValueDate[i].cRecordType) {
+      shiftTime = element.cStartTime + '---' + element.cEndTime;
+    }
+  });
   let cDate = meterValueDate[i].cRecordDate;
   statisticalMeter.push(
     Object.assign(
       {},
       meterValueDate[i],
       { cDate },
-      { energyConsumption },
+      { shiftTime },
       { totalEnergyConsumption },
+      { energyConsumption },
+      { totalEnergyConsumptionDay },
+      { totalEnergyConsumptionNight },
     ),
   );
   return statisticalMeter;
@@ -1177,4 +1271,5 @@ export default {
   saveReoprtCurrentMon,
   getInfluxDifferenceData,
   getShiftTime,
+  saveReoprtHistoryDay,
 };
