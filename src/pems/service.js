@@ -221,7 +221,8 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
   let feeSum = null;
   let data = null;
   if (cType != null && cType != '') {
-    data = await prisma.Pems_MeterReporting_Day.aggregate({
+    data = await prisma.Pems_MeterReporting_Day.groupBy({
+      by: ['cRecordType'],
       where: filter,
       _sum: {
         cValue: true,
@@ -702,7 +703,8 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
   }
   const meterValueDateList = await getMeterValuesData(dateList, null, meterIdList);
   let statisticalMeter = [];
-  let totalEnergyConsumption = 0.0;
+  let totalEnergyConsumptionDay = 0.0;
+  let totalEnergyConsumptionNight = 0.0;
   for (let i = 0; i < meterIdList.length; i++) {
     let meterValueDate = [];
     if (meterValueDateList != null && meterValueDateList.length > 0) {
@@ -726,21 +728,27 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
             statisticalMeter = await getAfterCalculationValues(
               i,
               statisticalMeter,
-              totalEnergyConsumption,
+              totalEnergyConsumptionDay,
+              totalEnergyConsumptionNight,
               meterValueDate,
             );
-            totalEnergyConsumption =
-              statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumption;
+            totalEnergyConsumptionDay =
+              statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumptionDay;
+            totalEnergyConsumptionNight =
+              statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumptionNight;
           }
         } else {
           statisticalMeter = await getAfterCalculationValues(
             i,
             statisticalMeter,
-            totalEnergyConsumption,
+            totalEnergyConsumptionDay,
+            totalEnergyConsumptionNight,
             meterValueDate,
           );
-          totalEnergyConsumption =
-            statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumption;
+          totalEnergyConsumptionDay =
+            statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumptionDay;
+          totalEnergyConsumptionNight =
+            statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumptionNight;
         }
       }
     }
@@ -758,9 +766,11 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
 async function getAfterCalculationValues(
   i,
   statisticalMeter,
-  totalEnergyConsumption,
+  totalEnergyConsumptionDay,
+  totalEnergyConsumptionNight,
   meterValueDate,
 ) {
+  const shiftDate = await prisma.Pems_Shift.findMany();
   let preMeterValue = [];
   let energyConsumption = '';
   if (meterValueDate[i].cValue != null) {
@@ -773,9 +783,15 @@ async function getAfterCalculationValues(
       energyConsumption = new Decimal(meterValueDate[i].cValue)
         .sub(new Decimal(meterValueDate[i - 1].cValue))
         .toNumber();
-      totalEnergyConsumption = new Decimal(totalEnergyConsumption)
-        .add(new Decimal(energyConsumption))
-        .toNumber();
+      if (meterValueDate[i].cRecordType == '白班') {
+        totalEnergyConsumptionDay = new Decimal(totalEnergyConsumptionDay)
+          .add(new Decimal(energyConsumption))
+          .toNumber();
+      } else {
+        totalEnergyConsumptionNight = new Decimal(totalEnergyConsumptionNight)
+          .add(new Decimal(energyConsumption))
+          .toNumber();
+      }
     }
     //判断如果是当天白班数据 耗能计算 白班数据-昨天的数据
     else {
@@ -794,19 +810,34 @@ async function getAfterCalculationValues(
     if (preMeterValue != null && preMeterValue != '') {
       let value = preMeterValue[preMeterValue.length - 1].cValue;
       energyConsumption = new Decimal(meterValueDate[i].cValue).sub(new Decimal(value)).toNumber();
-      totalEnergyConsumption = new Decimal(totalEnergyConsumption)
-        .add(new Decimal(energyConsumption))
-        .toNumber();
+      if (meterValueDate[i].cRecordType == '白班') {
+        totalEnergyConsumptionDay = new Decimal(totalEnergyConsumptionDay)
+          .add(new Decimal(energyConsumption))
+          .toNumber();
+      } else {
+        totalEnergyConsumptionNight = new Decimal(totalEnergyConsumptionNight)
+          .add(new Decimal(energyConsumption))
+          .toNumber();
+      }
     }
   }
+  //获取日期
+  let shiftTime;
+  shiftDate.forEach(element => {
+    if (element.cDesc == meterValueDate[i].cRecordType) {
+      shiftTime = element.cStartTime + '---' + element.cEndTime;
+    }
+  });
   let cDate = meterValueDate[i].cRecordDate;
   statisticalMeter.push(
     Object.assign(
       {},
       meterValueDate[i],
       { cDate },
+      { shiftTime },
       { energyConsumption },
-      { totalEnergyConsumption },
+      { totalEnergyConsumptionDay },
+      { totalEnergyConsumptionNight },
     ),
   );
   return statisticalMeter;

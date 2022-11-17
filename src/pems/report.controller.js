@@ -95,9 +95,11 @@ const controller = (() => {
         pageList.forEach(element => {
           element.cRecordDate = moment(element.cDate).format('YYYY-MM-DD');
         });
-        const { totalEnergyConsumption } = date[date.length - 1];
+        const { totalEnergyConsumptionDay } = date[date.length - 1];
+        const { totalEnergyConsumptionNight } = date[date.length - 1];
         res.json({
-          totalEnergyConsumption,
+          totalEnergyConsumptionDay,
+          totalEnergyConsumptionNight,
           feeSum: null,
           data: pageList,
           total: date.length,
@@ -113,7 +115,6 @@ const controller = (() => {
     } else {
       cRecordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
       let meterIdList = await service.getMeterId(id, cType, cPositionFk);
-      console.log(meterIdList);
       let meterReport = await service.getMeterReportingDayData(
         page,
         row,
@@ -122,14 +123,29 @@ const controller = (() => {
         cType,
         isAll,
       );
-      console.log(meterReport);
-      let total;
+      console.log(meterReport.rstdata[0]);
+      console.log('+++');
+      let totalEnergyConsumptionDay = null;
+      let totalEnergyConsumptionNight = null;
       if (meterReport.data != null) {
-        total = parseFloat(meterReport.data._sum.cValue).toFixed(2);
+        meterReport.data.forEach(element => {
+          if (element.cRecordType == '白班') {
+            totalEnergyConsumptionDay = element._sum.cValue;
+          } else {
+            totalEnergyConsumptionNight = element._sum.cValue;
+          }
+        });
       }
       if (meterReport.rstdata != null && meterReport.rstdata.length > 0) {
+        const shiftDate = await prisma.Pems_Shift.findMany();
         let statisticalMeter = [];
         meterReport.rstdata.forEach(element => {
+          let shiftTime = null;
+          shiftDate.forEach(shift => {
+            if (shift.cDesc == element.cRecordType) {
+              shiftTime = shift.cStartTime + '---' + shift.cEndTime;
+            }
+          });
           let energyConsumption = element.cValue;
           const cRecordDate = element.cDate;
           const cMeterFk = element.cMeterFk;
@@ -137,6 +153,7 @@ const controller = (() => {
           const Pems_Meter = element.Pems_Meter;
           const cValue = element.cMeterValue;
           statisticalMeter.push({
+            shiftTime,
             cMeterFk,
             cRecordType,
             cRecordDate,
@@ -146,7 +163,8 @@ const controller = (() => {
           });
         });
         res.json({
-          totalEnergyConsumption: Number(total),
+          totalEnergyConsumptionDay,
+          totalEnergyConsumptionNight,
           data: statisticalMeter,
           total: meterReport.count,
           feeSum: meterReport.feeSum,
