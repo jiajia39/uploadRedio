@@ -2,39 +2,65 @@ import e, { Router } from 'express';
 import prisma from '../core/prisma';
 import service from '../pems/service';
 import energyService from './energy.service';
+import catchAsync from './../utils/catchAsync'
 var moment = require('moment');
 
 const controller = (() => {
   const router = Router();
+  
+  /**
+   * Save the Daily Energy Consumption to the Energy Fee Day Table
+   * Executed Every Day at Midnight, can be referred at Schedule Service
+   * This Controller is for Test Purpose and will not be used in the Production Env
+  */
   router.get('/save/day', async (req, res) => {
     await service.saveReportDay();
-    res.json({ isok: true, message: 'ReportingWeek saved' });
+    res.json({ isok: true, message: 'Report saved' });
   });
 
+  /**
+   * Save the Weekly Energy Consumption to the Energy Week Table
+   * Executed Every Monday at Midnight, can be referred at Schedule Service
+   * This Controller is for Test Purpose and will not be used in the Production Env
+  */
   router.get('/save/week/history', async (req, res) => {
     await service.saveReoprtWeekHistory();
-    res.json({ isok: true, message: 'ReportingWeek saved' });
+    res.json({ isok: true, message: 'Report saved' });
   });
 
+  /**
+   * Update the Weekly Energy Consumption per Day to the Energy Week Table
+   * Executed Every Day at Midnight, can be referred at Schedule Service
+   * This Controller is for Test Purpose and will not be used in the Production Env
+  */
   router.get('/save/Current/week', async (req, res) => {
     await service.saveReoprtCurrentWeek();
-    res.json({ isok: true, message: 'ReportingWeek saved' });
+    res.json({ isok: true, message: 'Report saved' });
   });
 
+  /**
+   * Save the Monthly Energy Consumption to the Energy Month Table
+   * Executed Every Month at Midnight, can be referred at Schedule Service
+   * This Controller is for Test Purpose and will not be used in the Production Env
+  */
   router.get('/save/month/history', async (req, res) => {
     await service.saveReoprtMonHistory();
-    res.json({ isok: true, message: 'ReportingWeek saved' });
-    // await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
-    // res.json(list);
+    res.json({ isok: true, message: 'Report saved' });
   });
 
+  /**
+   * Update the Monthly Energy Consumption per Day to the Energy Week Table
+   * Executed Every Day at Midnight, can be referred at Schedule Service
+   * This Controller is for Test Purpose and will not be used in the Production Env
+  */
   router.get('/save/current/month', async (req, res) => {
     await service.saveReoprtCurrentMon();
-    res.json({ isok: true, message: 'ReportingWeek saved' });
+    res.json({ isok: true, message: 'Report saved' });
   });
+
   /**
    * @swagger
-   * /api/pems/meterValues/statisticalMeterValue:
+   * /api/pems/reporting/statisticalMeterValue:
    *   get:
    *     security:
    *       - Authorization: []
@@ -43,6 +69,18 @@ const controller = (() => {
    *     produces:
    *       - application/json
    *     parameters:
+   *       - name: cRecordDate
+   *         description: Date Input (YYYY-MM-DD), Default is Current Date
+   *         in: query
+   *         type: datetime
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *       - name: cPositionFk
+   *         description: meter's cPositionFk
+   *         in: query
+   *         type: int
    *       - name: id
    *         description: meter's id.
    *         in: query
@@ -56,7 +94,7 @@ const controller = (() => {
    *         in: query
    *         type: int
    *       - name: cRecordType
-   *         description: meterValues's cRecordType
+   *         description: meterValues's cRecordType,  
    *         in: query
    *         type: string
    *     responses:
@@ -65,7 +103,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/statisticalMeterValue', async (req, res) => {
+  router.get('/statisticalMeterValue', catchAsync(async (req, res) => {
     //isAll 是否展示所有数据 1展示
     let { page, row, cRecordDate, id, cType, cPositionFk, cRecordType, isAll } = req.query;
     if (page == null) {
@@ -162,9 +200,10 @@ const controller = (() => {
         });
       }
     }
-  });
+  }));
 
-  router.get('/total/energy/consumption/echart/day', async (req, res) => {
+
+  router.get('/total/energy/consumption/echart/day', catchAsync(async (req, res) => {
     let { cType } = req.query;
     let meterIds = [];
     //当前时间的前10天时间
@@ -237,9 +276,9 @@ const controller = (() => {
     res.json({
       data: list,
     });
-  });
+  }));
 
-  router.get('/total/energy/consumption/echart/week', async (req, res) => {
+  router.get('/total/energy/consumption/echart/week', catchAsync(async (req, res) => {
     const list = [];
     let { cType } = req.query;
     let meterIds = [];
@@ -299,9 +338,9 @@ const controller = (() => {
     res.json({
       data: list,
     });
-  });
+  }));
 
-  router.get('/total/energy/consumption/echart/month', async (req, res) => {
+  router.get('/total/energy/consumption/echart/month', catchAsync(async (req, res) => {
     const list = [];
     let { cType } = req.query;
     let mon = new Date(
@@ -349,7 +388,7 @@ const controller = (() => {
     res.json({
       data: list,
     });
-  });
+  }));
 
   /**
    * @swagger
@@ -384,7 +423,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/statisticalMeterWeek', async (req, res) => {
+  router.get('/statisticalMeterWeek', catchAsync(async (req, res) => {
     let { row, page, startWeek, id, cType, cPositionFk, isAll } = req.query;
     if (startWeek == null || startWeek == '') {
       startWeek = new Date();
@@ -485,7 +524,7 @@ const controller = (() => {
         message: 'Data Empty.',
       });
     }
-  });
+  }));
 
   /**
    * @swagger
@@ -520,7 +559,7 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/statisticalMeterMon', async (req, res) => {
+  router.get('/statisticalMeterMon', catchAsync(async (req, res) => {
     let { row, page, startMonth, id, cType, cPositionFk, isAll } = req.query;
     if (startMonth == null || startMonth == '') {
       startMonth = new Date();
@@ -618,7 +657,7 @@ const controller = (() => {
         message: 'Data Empty.',
       });
     }
-  });
+  }));
 
   return router;
 })();

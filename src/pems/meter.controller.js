@@ -293,6 +293,7 @@ const controller = (() => {
     }).then(() => 'List updated');
     res.json({ isok: true, message });
   });
+
  /**
    * @swagger
    * /api/pems/Meter/delete/:id:
@@ -321,7 +322,9 @@ const controller = (() => {
 
     res.json({ message });
   });
+
   return router;
+  
 })();
 
 controller.prefix = '/pems/meter';
