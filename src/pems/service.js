@@ -1205,7 +1205,7 @@ async function isMorOrAft(date) {
   let state = '';
   const shiftDate = await prisma.Pems_Shift.findMany({
     where: {
-      cDesc: '早班',
+      cDesc: '白班',
     },
   });
   const start = dateFor + ' ' + shiftDate[0].cStartTime + ':00';

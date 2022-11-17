@@ -11,22 +11,7 @@ const controller = (() => {
 
   // Test Cron Purpose
   router.get('/testCronService', catchAsync(async (req, res) => {
-    const startDate = moment('2021-8-17');
-    const endDate = moment('2022-10-01');
-    const allYearMonth = []; // 接收所有年份和月份的数组
-    while (endDate > startDate || startDate.format('M') === endDate.format('M')) {
-      let start = startDate.format('YYYY-MM-01');
-      let end = moment(start)
-        .endOf('month')
-        .format('YYYY-MM-DD');
-      allYearMonth.push({
-        start,
-        end,
-      });
-      startDate.add(1, 'month');
-    }
-    console.log('所有年份和月份------>', allYearMonth);
-    res.json(allYearMonth);
+    await service.setMeterValuesandSave();
   }));
 
   // Controller for GET Debug Test
