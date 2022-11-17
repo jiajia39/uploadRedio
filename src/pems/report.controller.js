@@ -134,9 +134,9 @@ const controller = (() => {
         total = parseFloat(meterReport.dataSum._sum.cValue).toFixed(2);
         meterReport.data.forEach(element => {
           if (element.cRecordType == '白班') {
-            totalEnergyConsumptionDay = element._sum.cValue;
+            totalEnergyConsumptionDay = parseFloat(element._sum.cValue).toFixed(2);
           } else {
-            totalEnergyConsumptionNight = element._sum.cValue;
+            totalEnergyConsumptionNight = parseFloat(element._sum.cValue).toFixed(2);
           }
         });
       }

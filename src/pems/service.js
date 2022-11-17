@@ -713,6 +713,7 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
   let totalEnergyConsumption = 0.0;
   let totalEnergyConsumptionDay = 0.0;
   let totalEnergyConsumptionNight = 0.0;
+  const shiftDate = await prisma.Pems_Shift.findMany();
   for (let i = 0; i < meterIdList.length; i++) {
     let meterValueDate = [];
     if (meterValueDateList != null && meterValueDateList.length > 0) {
@@ -735,6 +736,7 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
           if (meterValueDate[i].cRecordDate.getTime() == cRecordDate.getTime()) {
             statisticalMeter = await getAfterCalculationValues(
               i,
+              shiftDate,
               statisticalMeter,
               totalEnergyConsumption,
               totalEnergyConsumptionDay,
@@ -751,6 +753,7 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
         } else {
           statisticalMeter = await getAfterCalculationValues(
             i,
+            shiftDate,
             statisticalMeter,
             totalEnergyConsumption,
             totalEnergyConsumptionDay,
@@ -779,13 +782,13 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
  */
 async function getAfterCalculationValues(
   i,
+  shiftDate,
   statisticalMeter,
   totalEnergyConsumption,
   totalEnergyConsumptionDay,
   totalEnergyConsumptionNight,
   meterValueDate,
 ) {
-  const shiftDate = await prisma.Pems_Shift.findMany();
   let preMeterValue = [];
   let energyConsumption = '';
   if (meterValueDate[i].cValue != null) {
