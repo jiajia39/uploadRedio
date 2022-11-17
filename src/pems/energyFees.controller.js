@@ -2,7 +2,7 @@ import e, { Router } from 'express';
 import { lte } from 'lodash';
 import prisma from '../core/prisma';
 import energyService from './energy.service';
-import catchAsync from './../utils/catchAsync'
+import catchAsync from './../utils/catchAsync';
 var moment = require('moment');
 
 const controller = (() => {
@@ -74,20 +74,23 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.put('/edit/:id', catchAsync(async (req, res) => {
-    const data = {
-      cPrice: parseFloat(req.body.cPrice),
-      cType: req.body.cType,
-      cStartTime: req.body.cStartTime,
-      cEndTime: req.body.cEndTime,
-      cModel: req.body.cModel,
-    };
-    const message = await prisma.Pems_EnergyFees.update({
-      where: { id: Number(req.params.id) },
-      data: data,
-    }).then(() => 'List updated');
-    res.json({ isok: true, updatedData: data, message });
-  }));
+  router.put(
+    '/edit/:id',
+    catchAsync(async (req, res) => {
+      const data = {
+        cPrice: parseFloat(req.body.cPrice),
+        cType: req.body.cType,
+        cStartTime: req.body.cStartTime,
+        cEndTime: req.body.cEndTime,
+        cModel: req.body.cModel,
+      };
+      const message = await prisma.Pems_EnergyFees.update({
+        where: { id: Number(req.params.id) },
+        data: data,
+      }).then(() => 'List updated');
+      res.json({ isok: true, updatedData: data, message });
+    }),
+  );
   /**
    * @swagger
    * /api/pems/energyFees/pagination:
@@ -113,62 +116,63 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/pagination', catchAsync(async (req, res) => {
-    const filter = { AND: {} };
-    let cType = [];
-    let type = req.query.cType;
-    if (type != null && type != '') {
-      if (type.includes(',')) {
-        const text1 = type.substring(0, 2);
-        const text2 = type.substring(3, 5);
-        cType.push(text1, text2);
-        if (type.length > 5) {
-          cType.push(type.substring(6, 8));
+  router.get(
+    '/pagination',
+    catchAsync(async (req, res) => {
+      const filter = { AND: {} };
+      let cType = [];
+      let type = req.query.cType;
+      if (type != null && type != '') {
+        if (type.includes(',')) {
+          const result = type.split(',');
+          for (let i = 0; i < result.length; i++) {
+            cType.push(result[i]);
+          }
+        } else {
+          cType.push(type);
         }
-      } else {
-        cType.push(type);
+        if (cType) filter.AND = { ...filter.AND, cType: { in: cType } };
       }
-      if (cType) filter.AND = { ...filter.AND, cType: { in: cType } };
-    }
-    const page = Number(req.query.page) || 1;
-    const row = Number(req.query.row) || 5;
-    const count = await prisma.Pems_EnergyFees.count({
-      where: filter,
-    });
-
-    const select = {
-      id: true,
-      cPrice: true,
-      cType: true,
-      cStartTime: true,
-      cEndTime: true,
-      cModel: true,
-    };
-
-    if (count != null && count > 0) {
-      const rstdata = await prisma.Pems_EnergyFees.findMany({
+      const page = Number(req.query.page) || 1;
+      const row = Number(req.query.row) || 5;
+      const count = await prisma.Pems_EnergyFees.count({
         where: filter,
-        select,
-        skip: (page - 1) * row,
-        take: row,
-        orderBy: {
-          id: 'asc',
-        },
       });
 
-      res.json({
-        data: rstdata,
-        total: count,
-        message: 'Data obtained.',
-      });
-    } else {
-      res.json({
-        data: [],
-        total: count,
-        message: 'Data Empty.',
-      });
-    }
-  }));
+      const select = {
+        id: true,
+        cPrice: true,
+        cType: true,
+        cStartTime: true,
+        cEndTime: true,
+        cModel: true,
+      };
+
+      if (count != null && count > 0) {
+        const rstdata = await prisma.Pems_EnergyFees.findMany({
+          where: filter,
+          select,
+          skip: (page - 1) * row,
+          take: row,
+          orderBy: {
+            id: 'asc',
+          },
+        });
+
+        res.json({
+          data: rstdata,
+          total: count,
+          message: 'Data obtained.',
+        });
+      } else {
+        res.json({
+          data: [],
+          total: count,
+          message: 'Data Empty.',
+        });
+      }
+    }),
+  );
 
   /**
    * @swagger
@@ -186,15 +190,18 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/getType', catchAsync(async (req, res) => {
-    // const select = {
-    //   cType: true,
-    // };
-    const rstdata = await prisma.Pems_EnergyFees.groupBy({
-      by: ['cType'],
-    });
-    res.json(rstdata);
-  }));
+  router.get(
+    '/getType',
+    catchAsync(async (req, res) => {
+      // const select = {
+      //   cType: true,
+      // };
+      const rstdata = await prisma.Pems_EnergyFees.groupBy({
+        by: ['cType'],
+      });
+      res.json(rstdata);
+    }),
+  );
 
   /**
    * @swagger
@@ -212,17 +219,20 @@ const controller = (() => {
    *         schema:
    *           type: json
    */
-  router.get('/save/value', catchAsync(async (req, res) => {
-    // const filter = { AND: [] };
-    // const cRecordDate = new Date(moment('2022-11-09').format('YYYY-MM-DD'));
-    // if (cRecordDate) filter.AND.push({ cRecordDate: { gte: cRecordDate } });
+  router.get(
+    '/save/value',
+    catchAsync(async (req, res) => {
+      // const filter = { AND: [] };
+      // const cRecordDate = new Date(moment('2022-11-09').format('YYYY-MM-DD'));
+      // if (cRecordDate) filter.AND.push({ cRecordDate: { gte: cRecordDate } });
 
-    // const value = await prisma.Pems_EnergyFeeValues.findMany({
-    //   where: filter,
-    // });
-    const value = await energyService.setEnergyFeeValuesAndSaveHistory();
-    res.json('Energy Fee Saved');
-  }));
+      // const value = await prisma.Pems_EnergyFeeValues.findMany({
+      //   where: filter,
+      // });
+      const value = await energyService.setEnergyFeeValuesAndSaveHistory();
+      res.json('Energy Fee Saved');
+    }),
+  );
 
   return router;
 })();
