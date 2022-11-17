@@ -97,7 +97,9 @@ const controller = (() => {
         });
         const { totalEnergyConsumptionDay } = date[date.length - 1];
         const { totalEnergyConsumptionNight } = date[date.length - 1];
+        const { totalEnergyConsumption } = date[date.length - 1];
         res.json({
+          totalEnergyConsumption,
           totalEnergyConsumptionDay,
           totalEnergyConsumptionNight,
           feeSum: null,
@@ -127,7 +129,9 @@ const controller = (() => {
       console.log('+++');
       let totalEnergyConsumptionDay = null;
       let totalEnergyConsumptionNight = null;
+      let total;
       if (meterReport.data != null) {
+        total = parseFloat(meterReport.dataSum._sum.cValue).toFixed(2);
         meterReport.data.forEach(element => {
           if (element.cRecordType == '白班') {
             totalEnergyConsumptionDay = element._sum.cValue;
@@ -163,6 +167,7 @@ const controller = (() => {
           });
         });
         res.json({
+          totalEnergyConsumption: Number(total),
           totalEnergyConsumptionDay,
           totalEnergyConsumptionNight,
           data: statisticalMeter,

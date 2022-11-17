@@ -220,6 +220,7 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
   });
   let feeSum = null;
   let data = null;
+  let dataSum = null;
   if (cType != null && cType != '') {
     data = await prisma.Pems_MeterReporting_Day.groupBy({
       by: ['cRecordType'],
@@ -228,9 +229,15 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
         cValue: true,
       },
     });
+    dataSum = await prisma.Pems_MeterReporting_Day.aggregate({
+      where: filter,
+      _sum: {
+        cValue: true,
+      },
+    });
     feeSum = await energyService.getFeeSum(meterIds, cRecordDate, null);
   }
-  const date = { rstdata, data, count, feeSum };
+  const date = { rstdata, data, dataSum, count, feeSum };
   return date;
 }
 /**
@@ -703,6 +710,7 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
   }
   const meterValueDateList = await getMeterValuesData(dateList, null, meterIdList);
   let statisticalMeter = [];
+  let totalEnergyConsumption = 0.0;
   let totalEnergyConsumptionDay = 0.0;
   let totalEnergyConsumptionNight = 0.0;
   for (let i = 0; i < meterIdList.length; i++) {
@@ -728,10 +736,13 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
             statisticalMeter = await getAfterCalculationValues(
               i,
               statisticalMeter,
+              totalEnergyConsumption,
               totalEnergyConsumptionDay,
               totalEnergyConsumptionNight,
               meterValueDate,
             );
+            totalEnergyConsumption =
+              statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumption;
             totalEnergyConsumptionDay =
               statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumptionDay;
             totalEnergyConsumptionNight =
@@ -741,10 +752,13 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
           statisticalMeter = await getAfterCalculationValues(
             i,
             statisticalMeter,
+            totalEnergyConsumption,
             totalEnergyConsumptionDay,
             totalEnergyConsumptionNight,
             meterValueDate,
           );
+          totalEnergyConsumption =
+            statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumption;
           totalEnergyConsumptionDay =
             statisticalMeter[statisticalMeter.length - 1].totalEnergyConsumptionDay;
           totalEnergyConsumptionNight =
@@ -766,6 +780,7 @@ async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecord
 async function getAfterCalculationValues(
   i,
   statisticalMeter,
+  totalEnergyConsumption,
   totalEnergyConsumptionDay,
   totalEnergyConsumptionNight,
   meterValueDate,
@@ -782,6 +797,9 @@ async function getAfterCalculationValues(
     ) {
       energyConsumption = new Decimal(meterValueDate[i].cValue)
         .sub(new Decimal(meterValueDate[i - 1].cValue))
+        .toNumber();
+      totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+        .add(new Decimal(energyConsumption))
         .toNumber();
       if (meterValueDate[i].cRecordType == '白班') {
         totalEnergyConsumptionDay = new Decimal(totalEnergyConsumptionDay)
@@ -810,6 +828,9 @@ async function getAfterCalculationValues(
     if (preMeterValue != null && preMeterValue != '') {
       let value = preMeterValue[preMeterValue.length - 1].cValue;
       energyConsumption = new Decimal(meterValueDate[i].cValue).sub(new Decimal(value)).toNumber();
+      totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+        .add(new Decimal(energyConsumption))
+        .toNumber();
       if (meterValueDate[i].cRecordType == '白班') {
         totalEnergyConsumptionDay = new Decimal(totalEnergyConsumptionDay)
           .add(new Decimal(energyConsumption))
@@ -835,6 +856,7 @@ async function getAfterCalculationValues(
       meterValueDate[i],
       { cDate },
       { shiftTime },
+      { totalEnergyConsumption },
       { energyConsumption },
       { totalEnergyConsumptionDay },
       { totalEnergyConsumptionNight },
