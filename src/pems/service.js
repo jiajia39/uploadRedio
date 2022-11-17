@@ -10,6 +10,11 @@ async function setMeterValuesandSave() {
   const meters = await prisma.Pems_Meter.findMany();
   console.log('startig iteration.........');
   console.log(meters);
+  const shiftDate = await prisma.Pems_Shift.findMany({
+    where: {
+      cDesc: '白班',
+    },
+  });
   for (let i = 0; i < meters.length; i++) {
     //从meter 中获取 measurement和field 来进行查询influxDb的数据
     const measurement = meters[i].cName + '-' + meters[i].cDesc;
@@ -27,7 +32,7 @@ async function setMeterValuesandSave() {
     const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
     const time = new Date();
     const date = dateFmt(time, '');
-    const cRecordType = await isMorOrAft(time);
+    const cRecordType = await isMorOrAft(shiftDate, time);
     // 查询infulxDb数据
     const result = await influxservice.getInfluxData(
       measurement,
@@ -488,6 +493,7 @@ async function saveReoprtHistoryDay() {
   if (result != null && result.length > 0) {
     await prisma.Pems_MeterReportHistory_Day.createMany({ data: result });
   }
+  console.log('end');
 }
 
 /**
@@ -1199,15 +1205,10 @@ function gimePerHour(date) {
  * 判断当前时间是上午还是下午
  * @param {*} date 日期
  */
-async function isMorOrAft(date) {
+async function isMorOrAft(shiftDate, date) {
   const data = new Date(moment(date).format('YYYY-MM-DD  HH:mm:ss'));
   const dateFor = moment(date).format('YYYY-MM-DD');
   let state = '';
-  const shiftDate = await prisma.Pems_Shift.findMany({
-    where: {
-      cDesc: '白班',
-    },
-  });
   const start = dateFor + ' ' + shiftDate[0].cStartTime + ':00';
 
   const startTime = new Date(start).getTime();
