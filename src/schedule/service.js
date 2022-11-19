@@ -1,4 +1,5 @@
 import meterValue from '../pems/service';
+import energyFee from '../pems/energy.service'
 const CronJob = require('node-cron');
 
 /**
@@ -45,12 +46,11 @@ exports.initScheduledJobs = async function() {
   scheduledJobForSaveWeekHistory.start();
 
   /**
-   * Automatically Recording Meter Weekly Consumption for Current Week
+   * Automatically Update Meter Weekly Consumption for Current Week
    */
   const scheduledJobForSaveCurrentWeek = CronJob.schedule('0 15 0 * * *', () => {
-    console.log('Automatically Recording Meter Weekly Consumption for Current Week');
+    console.log('Automatically Update Meter Weekly Consumption for Current Week');
     meterValue.saveReoprtCurrentWeek();
-    // Add your custom logic here
   });
   scheduledJobForSaveCurrentWeek.start();
 
@@ -65,10 +65,10 @@ exports.initScheduledJobs = async function() {
   scheduledJobForSaveMonHistory.start();
 
   /**
-   * Automatically Recording Meter Monthly Consumption for Current Month
+   * Automatically Update Meter Monthly Consumption for Current Month
    */
   const scheduledJobForSaveCurrentMon = CronJob.schedule('0 25 0 * * *', () => {
-    console.log('Automatically Recording Meter Monthly Consumption for Current Month');
+    console.log('Automatically Update Meter Monthly Consumption for Current Month');
     meterValue.saveReoprtCurrentMon();
     // Add your custom logic here
   });
@@ -79,7 +79,7 @@ exports.initScheduledJobs = async function() {
    */
   const scheduledJobForSaveEnergyFeeValues = CronJob.schedule('0 05 0 * * *', () => {
     console.log('Automatically record the cost of daily energy consumption');
-    meterValue.setEnergyFeeValuesAndSaveHistory();
+    energyFee.setEnergyFeeValuesAndSaveHistory();
   });
   scheduledJobForSaveEnergyFeeValues.start();
 

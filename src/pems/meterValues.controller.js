@@ -12,6 +12,7 @@ const controller = (() => {
   // Test Cron Purpose
   router.get('/testCronService', catchAsync(async (req, res) => {
     await service.setMeterValuesandSave();
+    res.json('Completed');
   }));
 
   // Controller for GET Debug Test
