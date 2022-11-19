@@ -60,7 +60,7 @@ async function getEnergyFeeValues(meters, energyFeesEle, date) {
         cType = 'TT';
       }
       const field = meter.cName + '.' + cType;
-      let interval = '8h';
+      let interval = hour;
       const queryType = 'last';
       // 查询infulxDb数据
       influxDate = await influxservice.getInfluxDifferenceData(
@@ -114,12 +114,11 @@ async function saveValue(date) {
   type = ['Electricity', '电表'];
   cType = '电费';
   list = await getValueBytype(type, cType, date);
-
   await prisma.Pems_EnergyFeeValues.createMany({
     data: list,
   });
   type = ['Steam'];
-  cType = '气费';
+  cType = '蒸汽';
   list = await getValueBytype(type, cType, date);
 
   await prisma.Pems_EnergyFeeValues.createMany({
@@ -147,6 +146,7 @@ async function setEnergyFeeValuesAndSaveHistory() {
     for (let i = 0; i < days.length; i++) {
       await saveValue(days[i]);
     }
+    console.log('end');
   }
 
   // await prisma.Pems_EnergyFeeValues.create({

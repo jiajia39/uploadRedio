@@ -1,5 +1,5 @@
 import meterValue from '../pems/service';
-import energyFee from '../pems/energy.service'
+import energyService from '../pems/energy.service';
 const CronJob = require('node-cron');
 
 /**
@@ -79,7 +79,7 @@ exports.initScheduledJobs = async function() {
    */
   const scheduledJobForSaveEnergyFeeValues = CronJob.schedule('0 05 0 * * *', () => {
     console.log('Automatically record the cost of daily energy consumption');
-    energyFee.setEnergyFeeValuesAndSaveHistory();
+    energyService.setEnergyFeeValuesAndSaveHistory();
   });
   scheduledJobForSaveEnergyFeeValues.start();
 
