@@ -331,23 +331,36 @@ async function saveReoprtWeekHistory() {
   } else {
     let weekOfDay = new Date().getDay();
     //上周周一
-    let startWeek = moment()
-      .subtract(weekOfDay + 6, 'days')
-      .format('YYYY-MM-DD');
+    let startWeek = new Date(
+      moment()
+        .subtract(weekOfDay + 6, 'days')
+        .format('YYYY-MM-DD'),
+    );
     //上周周日
-    let endWeek = moment()
-      .subtract(weekOfDay, 'days')
-      .format('YYYY-MM-DD');
+    let endWeek = new Date(
+      moment()
+        .subtract(weekOfDay, 'days')
+        .format('YYYY-MM-DD'),
+    );
+    const filter = { AND: [] };
 
-    let data = await this.statisticalMeterWeek(startWeek, endWeek, null, null, null, null);
+    if (startWeek) filter.AND.push({ cDate: { gte: startWeek } });
+    if (endWeek) filter.AND.push({ cDate: { lte: endWeek } });
+    const data = await prisma.Pems_MeterReportHistory_Day.groupBy({
+      by: ['cMeterFk'],
+      where: filter,
+      _sum: {
+        cValue: true,
+      },
+    });
     console.log(startWeek + '--' + endWeek);
     if (data != null && data.length > 0) {
       let weekList = [];
       for (let i = 0; i < data.length; i++) {
         weekList.push({
-          cWeekStart: new Date(data[i].startTime),
-          cWeekEnd: new Date(data[i].endTime),
-          cValue: parseFloat(data[i].energyConsumption),
+          cWeekStart: startWeek,
+          cWeekEnd: endWeek,
+          cValue: parseFloat(data[i]._sum.cValue),
           cMeterFk: data[i].cMeterFk,
         });
       }
