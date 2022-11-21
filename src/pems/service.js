@@ -357,10 +357,11 @@ async function saveReoprtWeekHistory() {
     if (data != null && data.length > 0) {
       let weekList = [];
       for (let i = 0; i < data.length; i++) {
+        let value = parseFloat(data[i]._sum.cValue).toFixed(2);
         weekList.push({
           cWeekStart: startWeek,
           cWeekEnd: endWeek,
-          cValue: parseFloat(data[i]._sum.cValue),
+          cValue: parseFloat(value),
           cMeterFk: data[i].cMeterFk,
         });
       }
@@ -598,12 +599,13 @@ async function saveReoprtMonHistory() {
         // let data = await this.statisticalMeterMon(startMonth, endMonth, null, null, null, null);
 
         if (data != null && data != '' && data.length > 0) {
+          let value = parseFloat(data[i]._sum.cValue).toFixed(2);
           let monthList = [];
           for (let i = 0; i < data.length; i++) {
             monthList.push({
               cMonthStart: startMonth,
               cMonthEnd: endMonth,
-              cValue: parseFloat(data[i]._sum.cValue),
+              cValue: parseFloat(value),
               cMeterFk: data[i].cMeterFk,
             });
           }
@@ -631,10 +633,11 @@ async function saveReoprtMonHistory() {
     if (data != null && data.length > 0) {
       let monthList = [];
       for (let i = 0; i < data.length; i++) {
+        let value = parseFloat(data[i]._sum.cValue).toFixed(2);
         monthList.push({
           cMonthStart: startMonth,
           cMonthEnd: endDate,
-          cValue: parseFloat(data[i]._sum.cValue),
+          cValue: parseFloat(value),
           cMeterFk: data[i].cMeterFk,
         });
       }
