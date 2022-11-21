@@ -294,7 +294,7 @@ const controller = (() => {
     res.json({ isok: true, message });
   });
 
- /**
+  /**
    * @swagger
    * /api/pems/Meter/delete/:id:
    *   put:
@@ -316,15 +316,36 @@ const controller = (() => {
    *           type: object
    */
   router.delete('/delete/:id', async (req, res) => {
+    const { id } = req.params;
+    await prisma.Pems_MeterValues.deleteMany({
+      where: { cMeterFk: Number(id) },
+    });
+    await prisma.Pems_MeterReporting_Week.deleteMany({
+      where: { cMeterFk: Number(id) },
+    });
+    await prisma.Pems_MeterReporting_Month.deleteMany({
+      where: { cMeterFk: Number(id) },
+    });
+
+    await prisma.Pems_MeterReporting_Day.deleteMany({
+      where: { cMeterFk: Number(id) },
+    });
+
+    await prisma.Pems_MeterReportHistory_Day.deleteMany({
+      where: { cMeterFk: Number(id) },
+    });
+
+    await prisma.Pems_EnergyFeeValues.deleteMany({
+      where: { cMeterFk: Number(id) },
+    });
     const message = await prisma.Pems_Meter.delete({
-      where: { id: Number(req.params.id) },
+      where: { id: Number(id) },
     }).then(() => 'Pems_Meter deleted');
 
     res.json({ message });
   });
 
   return router;
-  
 })();
 
 controller.prefix = '/pems/meter';
