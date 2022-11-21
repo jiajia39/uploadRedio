@@ -360,7 +360,26 @@ async function saveReoprtWeekHistory() {
     }
   }
 }
-
+/**
+ * 创建Pems_MeterReporting_Week某周的初始化数据
+ */
+async function createInitializationWeek(startMon, endSun) {
+  let weekList = [];
+  const meterIds = await getMeterId(null, null, null);
+  if (meterIds != null && meterIds != '' && meterIds.length > 0) {
+    meterIds.forEach(meterId => {
+      weekList.push({
+        cWeekStart: new Date(startMon),
+        cWeekEnd: new Date(endSun),
+        cValue: parseFloat(null),
+        cMeterFk: meterId.id,
+      });
+    });
+    await prisma.Pems_MeterReporting_Week.createMany({
+      data: weekList,
+    });
+  }
+}
 /**
  * 保存当周耗能 逻辑：如果当天是周一，cvalue=0，如果是其他日期  获取reportWeek表中当周的数据+ influx查询出的昨天的数据 得到value，更新reportWeek数据
  */
@@ -373,24 +392,20 @@ async function saveReoprtCurrentWeek() {
     .add(7 - weekOfday, 'days')
     .format('YYYY-MM-DD');
   const now = new Date(moment().format('YYYY-MM-DD'));
+  const weekInfo = await prisma.Pems_MeterReporting_Week.findMany({
+    where: {
+      cWeekStart: new Date(startMon),
+    },
+  });
   //判断是否是周一
   if (moment().weekday() == 1) {
-    let weekList = [];
-    const meterIds = await getMeterId(null, null, null);
-    if (meterIds != null && meterIds != '' && meterIds.length > 0) {
-      meterIds.forEach(meterId => {
-        weekList.push({
-          cWeekStart: new Date(startMon),
-          cWeekEnd: new Date(endSun),
-          cValue: parseFloat(null),
-          cMeterFk: meterId.id,
-        });
-      });
-      await prisma.Pems_MeterReporting_Week.createMany({
-        data: weekList,
-      });
+    if (weekInfo.length == 0) {
+      await createInitializationWeek(startMon, endSun);
     }
   } else {
+    if (weekInfo.length == 0) {
+      await createInitializationWeek(startMon, endSun);
+    }
     let now = new Date(moment().format('YYYY-MM-DD 00:00:00')).toISOString();
     let preDate = new Date(
       moment()
@@ -450,10 +465,12 @@ async function saveReoprtCurrentWeek() {
           where: { id: Number(element.id) },
           data,
         });
+        return data;
       }
     }
   }
 }
+
 /**
  * 保存每日历史耗能
  */
