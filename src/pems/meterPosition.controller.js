@@ -49,10 +49,10 @@ const controller = (() => {
       res.status(400).json({ message: 'Please pass cDesc.' });
     }
     if (!req.body.parentId) {
-      console.log("____________"+req.body.parentId);
+      console.log('____________' + req.body.parentId);
       req.body.parentId = null;
-    }else{
-      req.body.parentId =Number(req.body.parentId);
+    } else {
+      req.body.parentId = Number(req.body.parentId);
     }
     req.body.dAddTime = new Date();
     await prisma.Pems_MeterPosition.create({
@@ -95,25 +95,28 @@ const controller = (() => {
    *           type: object
    */
 
-  router.put('/edit/:id', catchAsync(async (req, res) => {
-    if (!req.body.parentId) {
-      console.log("____________"+req.body.parentId);
-      req.body.parentId = null;
-    }else{
-      req.body.parentId =Number(req.body.parentId);
-    }
-    const date = {
-      parentId:req.body.parentId,
-      cName: req.body.cName,
-      cType: req.body.cType,
-      cDesc: req.body.cDesc,
-    };
-    const message = await prisma.Pems_MeterPosition.update({
-      where: { id: Number(req.params.id) },
-      data: date,
-    }).then(() => 'List updated');
-    res.json({ isok: true, message });
-  }));
+  router.put(
+    '/edit/:id',
+    catchAsync(async (req, res) => {
+      if (!req.body.parentId) {
+        console.log('____________' + req.body.parentId);
+        req.body.parentId = null;
+      } else {
+        req.body.parentId = Number(req.body.parentId);
+      }
+      const date = {
+        parentId: req.body.parentId,
+        cName: req.body.cName,
+        cType: req.body.cType,
+        cDesc: req.body.cDesc,
+      };
+      const message = await prisma.Pems_MeterPosition.update({
+        where: { id: Number(req.params.id) },
+        data: date,
+      }).then(() => 'List updated');
+      res.json({ isok: true, message });
+    }),
+  );
 
   /**
    * @swagger
@@ -136,13 +139,16 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.delete('/delete/:id', catchAsync(async (req, res) => {
-    const message = await prisma.Pems_MeterPosition.delete({
-      where: { id: Number(req.params.id) },
-    }).then(() => 'MeterPosition deleted');
+  router.delete(
+    '/delete/:id',
+    catchAsync(async (req, res) => {
+      const message = await prisma.Pems_MeterPosition.delete({
+        where: { id: Number(req.params.id) },
+      }).then(() => 'MeterPosition deleted');
 
-    res.json({ message });
-  }));
+      res.json({ message });
+    }),
+  );
 
   /**
    * @swagger
@@ -169,39 +175,42 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/getall', catchAsync(async (req, res) => {
-    const { id, cType } = req.query;
-    const filter = { OR: [] };
+  router.get(
+    '/getall',
+    catchAsync(async (req, res) => {
+      const { id, cType } = req.query;
+      const filter = { OR: [] };
 
-    const select = {
-      id: true,
-      cName: true,
-      parentId: true,
-      dAddTime: true,
-      Pems_Meter: {
-        select: {
-          cName: true,
-          cType: true,
-          cDesc: true,
-          dAddTime: true,
+      const select = {
+        id: true,
+        cName: true,
+        parentId: true,
+        dAddTime: true,
+        Pems_Meter: {
+          select: {
+            cName: true,
+            cType: true,
+            cDesc: true,
+            dAddTime: true,
+          },
         },
-      },
-    };
+      };
 
-    if (id) filter.OR.push({ id: parseInt(id) });
-    if (cType) filter.OR.push({ cType });
+      if (id) filter.OR.push({ id: parseInt(id) });
+      if (cType) filter.OR.push({ cType });
 
-    if (filter.OR.length < 1) {
-      const data = await prisma.Pems_MeterPosition.findMany({ select });
-      res.json(data);
-    } else {
-      const data = await prisma.Pems_MeterPosition.findMany({
-        where: filter,
-        select,
-      });
-      res.json(data);
-    }
-  }));
+      if (filter.OR.length < 1) {
+        const data = await prisma.Pems_MeterPosition.findMany({ select });
+        res.json(data);
+      } else {
+        const data = await prisma.Pems_MeterPosition.findMany({
+          where: filter,
+          select,
+        });
+        res.json(data);
+      }
+    }),
+  );
 
   /**
    * @swagger
@@ -224,19 +233,22 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/getbyparentid', catchAsync(async (req, res) => {
-    const { parentId } = req.query;
+  router.get(
+    '/getbyparentid',
+    catchAsync(async (req, res) => {
+      const { parentId } = req.query;
 
-    const find = {};
+      const find = {};
 
-    if (parentId) find.parentId = parentId;
+      if (parentId) find.parentId = parentId;
 
-    const data = await prisma.Pems_MeterPosition.findMany({
-      where: find,
-    });
+      const data = await prisma.Pems_MeterPosition.findMany({
+        where: find,
+      });
 
-    res.json({ data, message: 'Data obtained.' });
-  }));
+      res.json({ data, message: 'Data obtained.' });
+    }),
+  );
 
   /**
    * @swagger
@@ -259,28 +271,31 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/gettreenodes', catchAsync(async (req, res) => {
-    const data = await prisma.Pems_MeterPosition.findMany();
-    const treeOption = {
-      enable: true, // 是否开启转tree插件数据
-      keyField: 'key', // 标识字段名称
-      valueField: 'value', // 值字段名称
-      titleField: 'title', // 标题字段名称
+  router.get(
+    '/gettreenodes',
+    catchAsync(async (req, res) => {
+      const data = await prisma.Pems_MeterPosition.findMany();
+      const treeOption = {
+        enable: true, // 是否开启转tree插件数据
+        keyField: 'key', // 标识字段名称
+        valueField: 'value', // 值字段名称
+        titleField: 'title', // 标题字段名称
 
-      keyFieldBind: 'id', // 标识字段绑定字段名称
-      valueFieldBind: 'id', // 值字段名称绑定字段名称
-      titleFieldBind: 'cName', // 标题字段名称绑定字段名称
-    };
-    const treeData = service.toTreeByRecursion(
-      data,
-      'id',
-      'parentId',
-      null,
-      'children',
-      treeOption,
-    );
-    res.json({ treeData, message: 'Data obtained.' });
-  }));
+        keyFieldBind: 'id', // 标识字段绑定字段名称
+        valueFieldBind: 'id', // 值字段名称绑定字段名称
+        titleFieldBind: 'cName', // 标题字段名称绑定字段名称
+      };
+      const treeData = service.toTreeByRecursion(
+        data,
+        'id',
+        'parentId',
+        null,
+        'children',
+        treeOption,
+      );
+      res.json({ treeData, message: 'Data obtained.' });
+    }),
+  );
 
   /**
    * @swagger
@@ -304,12 +319,15 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/item/:id', catchAsync(async (req, res) => {
-    const data = await prisma.Pems_MeterPosition.findUnique({
-      where: { id: parseInt(req.params.id) },
-    });
-    res.json({ data, message: 'Data obtained.' });
-  }));
+  router.get(
+    '/item/:id',
+    catchAsync(async (req, res) => {
+      const data = await prisma.Pems_MeterPosition.findUnique({
+        where: { id: parseInt(req.params.id) },
+      });
+      res.json({ data, message: 'Data obtained.' });
+    }),
+  );
 
   /**
    * @swagger
@@ -323,10 +341,13 @@ const controller = (() => {
    *       200:
    *         description: Returns a mysterious string.
    */
-  router.get('/count', catchAsync(async (req, res) => {
-    const data = await prisma.Pems_MeterPosition.count();
-    res.json({ data, message: 'Data obtained.' });
-  }));
+  router.get(
+    '/count',
+    catchAsync(async (req, res) => {
+      const data = await prisma.Pems_MeterPosition.count();
+      res.json({ data, message: 'Data obtained.' });
+    }),
+  );
 
   /**
    * @name pagination - get a list of paging
@@ -364,41 +385,46 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-  router.get('/pagination', catchAsync(async (req, res) => {
-    const { parentId, cDesc } = req.query;
+  router.get(
+    '/pagination',
+    catchAsync(async (req, res) => {
+      const { parentId, cDesc } = req.query;
 
-    const filter = { AND: {} };
+      const filter = { AND: {} };
 
-    if (parentId) filter.AND = { ...filter.AND, parentId: Number(parentId) };
-    if (cDesc) filter.AND = { ...filter.AND, cDesc: { contains: cDesc } };
+      if (parentId) filter.AND = { ...filter.AND, parentId: Number(parentId) };
+      if (cDesc) filter.AND = { ...filter.AND, cDesc: { contains: cDesc } };
 
-    const page = Number(req.query.page) || 1;
-    const row = Number(req.query.row) || 5;
-    const count = await prisma.Pems_MeterPosition.count();
-
-    if (count != null && count > 0) {
-      const rstdata = await prisma.Pems_MeterPosition.findMany({
+      const page = Number(req.query.page) || 1;
+      const row = Number(req.query.row) || 5;
+      const count = await prisma.Pems_MeterPosition.count({
         where: filter,
-        skip: (page - 1) * row,
-        take: row,
-        orderBy: {
-          id: 'asc',
-        },
       });
 
-      res.json({
-        data: rstdata,
-        total: count,
-        message: 'Data obtained.',
-      });
-    } else {
-      res.json({
-        data: [],
-        total: count,
-        message: 'Data Empty.',
-      });
-    }
-  }));
+      if (count != null && count > 0) {
+        const rstdata = await prisma.Pems_MeterPosition.findMany({
+          where: filter,
+          skip: (page - 1) * row,
+          take: row,
+          orderBy: {
+            id: 'asc',
+          },
+        });
+
+        res.json({
+          data: rstdata,
+          total: count,
+          message: 'Data obtained.',
+        });
+      } else {
+        res.json({
+          data: [],
+          total: count,
+          message: 'Data Empty.',
+        });
+      }
+    }),
+  );
 
   return router;
 })();
