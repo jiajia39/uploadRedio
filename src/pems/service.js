@@ -250,7 +250,7 @@ async function getMeterReportingDayData(page, row, cRecordDate, meterIdList, cTy
  * 保存每天耗能
  */
 async function saveReportDay() {
-  const report = await prisma.Pems_MeterReporting_Day.findMany();
+  const report = await prisma.Pems_MeterReporting_Day.findFirst();
   let list;
   const now = new Date(moment().format('YYYY-MM-DD'));
   if (report == null || report == '') {
@@ -290,7 +290,7 @@ async function saveReportDay() {
  * 保存历史每周耗能
  */
 async function saveReoprtWeekHistory() {
-  let report = await prisma.Pems_MeterReporting_Week.findMany();
+  let report = await prisma.Pems_MeterReporting_Week.findFirst();
   let list = [];
   let now = new Date(moment().format('YYYY-MM-DD'));
   if (report == null || report == '') {
@@ -406,7 +406,7 @@ async function saveReoprtCurrentWeek() {
     .add(7 - weekOfday, 'days')
     .format('YYYY-MM-DD');
   const now = new Date(moment().format('YYYY-MM-DD'));
-  const weekInfo = await prisma.Pems_MeterReporting_Week.findMany({
+  const weekInfo = await prisma.Pems_MeterReporting_Week.findFirst({
     where: {
       cWeekStart: new Date(startMon),
     },
@@ -570,9 +570,7 @@ async function saveReoprtMonHistory() {
       .format('YYYY-MM-DD'),
   );
 
-  let report = await prisma.Pems_MeterReporting_Month.findMany();
-  let list = [];
-  let now = new Date(moment().format('YYYY-MM-DD'));
+  let report = await prisma.Pems_MeterReporting_Month.findFirst();
   if (report == null || report == '') {
     let meterValue = await prisma.Pems_MeterValues.findMany({
       orderBy: {
