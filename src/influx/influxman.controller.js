@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import service from './service';
+import catchAsync from './../utils/catchAsync';
 
 const controller = (() => {
   const router = Router();
@@ -125,6 +126,32 @@ const controller = (() => {
       Values: data,
     });
   });
+
+  /**
+   * @swagger
+   * /api/influx/influxman/getMeassurements:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: Get all the influxdb measurements
+   *     tags: [influxman]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *     responses:
+   *       200:
+   *         description: influxdb measurements
+   *         schema:
+   *           type: object
+   */
+  router.get('/getInfluxMeasurements', catchAsync(async(req, res) => {
+    const data = await service.queryInfluxMeasurement();
+    
+    res.json({
+      measurement: data,
+    });
+  })
+  )
 
   return router;
 })();

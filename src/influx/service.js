@@ -7,7 +7,6 @@ import {
   fluxExpression,
   Log,
 } from '@influxdata/influxdb-client';
-import e from 'express';
 import { INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET } from '~/env';
 
 let client = null;
@@ -130,6 +129,33 @@ function getInfluxDifferenceData(measurement, field, start, end, interval, query
   });
 }
 
+function queryInfluxMeasurement() {
+  return new Promise(function (resolve, reject) {
+    let query;
+      query = flux`import "influxdata/influxdb/schema"
+                   schema.measurements(bucket: ${INFLUX_BUCKET})`; 
+    try {
+      const result = [];
+      queryApi.queryRows(query, {
+        next(row, tableMeta) {
+          const o = tableMeta.toObject(row);
+          result.push({
+            value: o._value,
+          });
+        },
+        error(error) {
+          reject(error);
+        },
+        complete() {
+          resolve(result);
+        },
+      });  
+    } catch (error) {
+        reject(error);
+    }
+  });
+}
+
 function dateFmt(fmt, date) {
   var o = {
     'M+': date.getMonth() + 1, //月份
@@ -154,4 +180,5 @@ function dateFmt(fmt, date) {
 export default {
   getInfluxData,
   getInfluxDifferenceData,
+  queryInfluxMeasurement,
 };
