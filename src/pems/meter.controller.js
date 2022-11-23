@@ -363,7 +363,9 @@ const controller = (() => {
         runningSum,
         runningRate,
       };
-      res.json(date);
+      res.json({
+        data: date,
+      });
     }),
   );
 
