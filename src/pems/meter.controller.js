@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import prisma from '../core/prisma';
+import influxservice from '../influx/service';
+import catchAsync from '../utils/catchAsync';
 
 const controller = (() => {
   const router = Router();
@@ -344,6 +346,26 @@ const controller = (() => {
 
     res.json({ message });
   });
+
+  router.get(
+    '/running',
+    catchAsync(async (req, res) => {
+      const totalMeterValue = await prisma.Pems_Meter.count();
+      const data = await influxservice.queryInfluxMeasurement();
+      console.log(data.length);
+      const runningSum = data.length;
+      let runningRate = runningSum / totalMeterValue;
+
+      runningRate = (runningRate * 100).toFixed(2) + '%';
+
+      const date = {
+        totalMeterValue,
+        runningSum,
+        runningRate,
+      };
+      res.json(date);
+    }),
+  );
 
   return router;
 })();
