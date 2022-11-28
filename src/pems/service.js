@@ -134,7 +134,7 @@ async function setMeterRecordingAndSave() {
         cMeterFk: Number(meters[j].id),
       });
     }
-    if (list.length > 0) {
+    if (list != null && list.length > 0) {
       await prisma.Pems_MeterRecording.createMany({
         data: list,
       });
@@ -411,13 +411,14 @@ async function saveReoprtCurrentWeek() {
       cWeekStart: new Date(startMon),
     },
   });
+  console.log(weekInfo);
   //判断是否是周一
   if (moment().weekday() == 1) {
-    if (weekInfo.length == 0) {
+    if (weekInfo == null || weekInfo == '') {
       await createInitializationWeek(startMon, endSun);
     }
   } else {
-    if (weekInfo.length == 0) {
+    if (weekInfo == null || weekInfo == '') {
       await createInitializationWeek(startMon, endSun);
     }
     let now = new Date(moment().format('YYYY-MM-DD 00:00:00')).toISOString();
