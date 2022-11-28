@@ -28,7 +28,7 @@ exports.initScheduledJobs = async function() {
   /**
    * Automatically Recording Meter Daily Consumption
    */
-  const scheduledJobForSaveDay = CronJob.schedule('0 10 0 * * *', () => {
+  const scheduledJobForSaveDay = CronJob.schedule('0 20 0 * * *', () => {
     console.log('Automatically Recording Meter Daily Consumption');
     meterValue.saveReportDay();
     // Add your custom logic here
@@ -38,7 +38,7 @@ exports.initScheduledJobs = async function() {
   /**
    * Automatically Recording Meter Weekly Consumption for History Week
    */
-  const scheduledJobForSaveWeekHistory = CronJob.schedule('0 20 0 * * MON', () => {
+  const scheduledJobForSaveWeekHistory = CronJob.schedule('0 35 0 * * MON', () => {
     console.log('Automatically Recording Meter Weekly Consumption for History Week');
     meterValue.saveReoprtWeekHistory();
     // Add your custom logic here
@@ -86,7 +86,7 @@ exports.initScheduledJobs = async function() {
   /**
    * Automatically Recording Historical daily energy consumption
    */
-  const scheduledJobForSaveDayHistory = CronJob.schedule('0 35 0 * * *', () => {
+  const scheduledJobForSaveDayHistory = CronJob.schedule('0 10 0 * * *', () => {
     console.log('Automatically Recording Historical daily energy consumption');
     meterValue.saveReoprtHistoryDay();
     // Add your custom logic here
