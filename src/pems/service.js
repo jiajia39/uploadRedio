@@ -457,7 +457,7 @@ async function saveReoprtCurrentWeek() {
           let cvalue = element.cValue;
           let energyConsumption;
           if (cvalue == null || cvalue == '') {
-            if (value == null || value == '') {
+            if (value == null) {
               energyConsumption = null;
             } else {
               cvalue = 0;
@@ -480,7 +480,6 @@ async function saveReoprtCurrentWeek() {
           where: { id: Number(element.id) },
           data,
         });
-        return data;
       }
     }
   }
