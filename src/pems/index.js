@@ -5,6 +5,7 @@ import meterValues from './meterValues.controller';
 import energyFees from './energyFees.controller';
 import report from './report.controller';
 import shift from './shift.controller';
+import meterProductionLine from './meterProductionLine.controller';
 import engrgyService from './energy.service';
 
 export const CrudOperations = {
@@ -15,7 +16,16 @@ export const CrudOperations = {
   meterValues,
   energyFees,
   report,
+  meterProductionLine,
   shift,
 };
 
-export default { meterPosition, meter, meterValues, energyFees, report, shift };
+export default {
+  meterPosition,
+  meter,
+  meterValues,
+  energyFees,
+  report,
+  shift,
+  meterProductionLine,
+};

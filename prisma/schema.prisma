@@ -249,3 +249,12 @@ model Pems_MeterReportHistory_Day {
   cDate      DateTime?   @db.Date
   Pems_Meter Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Fk_MeterReportHistory_Day")
 }
+
+model Pems_MeterProductionLine {
+  id       Int       @id(map: "PK_Pems_MeterProductionLine") @default(autoincrement())
+  cName    String?   @db.VarChar(50)
+  cType    String?   @db.VarChar(50)
+  cDesc    String?   @db.VarChar(50)
+  parentId Int?
+  dAddTime DateTime? @db.DateTime
+}
