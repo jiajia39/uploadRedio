@@ -159,7 +159,9 @@ model Pems_Meter {
   cDesc                       String?                       @db.NVarChar(Max)
   cPositionFk                 Int?
   dAddTime                    DateTime?                     @db.DateTime
+  cProductionLineFk           Int?
   Pems_MeterPosition          Pems_MeterPosition?           @relation(fields: [cPositionFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_Meter_Position")
+  Pems_MeterProductionLine    Pems_MeterProductionLine?     @relation(fields: [cProductionLineFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterProductionLine")
   Pems_EnergyFeeValues        Pems_EnergyFeeValues[]
   Pems_MeterRecording         Pems_MeterRecording[]
   Pems_MeterReportHistory_Day Pems_MeterReportHistory_Day[]
@@ -251,10 +253,11 @@ model Pems_MeterReportHistory_Day {
 }
 
 model Pems_MeterProductionLine {
-  id       Int       @id(map: "PK_Pems_MeterProductionLine") @default(autoincrement())
-  cName    String?   @db.VarChar(50)
-  cType    String?   @db.VarChar(50)
-  cDesc    String?   @db.VarChar(50)
-  parentId Int?
-  dAddTime DateTime? @db.DateTime
+  id         Int          @id(map: "PK_Pems_MeterProductionLine") @default(autoincrement())
+  cName      String?      @db.VarChar(50)
+  cType      String?      @db.VarChar(50)
+  cDesc      String?      @db.VarChar(50)
+  parentId   Int?
+  dAddTime   DateTime?    @db.DateTime
+  Pems_Meter Pems_Meter[]
 }

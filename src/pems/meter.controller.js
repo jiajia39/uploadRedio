@@ -45,13 +45,8 @@ const controller = (() => {
       cType: true,
       cDesc: true,
       dAddTime: true,
-      Pems_MeterPosition: {
-        select: {
-          id: true,
-          cName: true,
-          dAddTime: true,
-        },
-      },
+      cProductionLineFk: true,
+      Pems_MeterPosition: true,
     };
 
     if (id) filter.OR.push({ id: parseInt(id) });
@@ -144,13 +139,8 @@ const controller = (() => {
       cDesc: true,
       cPositionFk: true,
       dAddTime: true,
-      Pems_MeterPosition: {
-        select: {
-          id: true,
-          cName: true,
-          dAddTime: true,
-        },
-      },
+      cProductionLineFk: true,
+      Pems_MeterPosition: true,
     };
 
     if (count != null && count > 0) {
@@ -228,6 +218,19 @@ const controller = (() => {
       });
       if (positionFk == null) {
         res.status(400).json({ message: 'Please pass cPositionFk.' });
+      } else {
+        req.body.cPositionFk = Number(cPositionFk);
+      }
+    }
+    const cProductionLineFk = req.body.cProductionLineFk;
+    if (cProductionLineFk != null) {
+      const productionLineFk = await prisma.Pems_MeterProductionLine.findFirst({
+        where: { id: Number(cProductionLineFk) },
+      });
+      if (productionLineFk == null) {
+        res.status(400).json({ message: 'Please pass cProductionLineFk.' });
+      } else {
+        req.body.cProductionLineFk = Number(cProductionLineFk);
       }
     }
     req.body.dAddTime = new Date();
@@ -272,6 +275,7 @@ const controller = (() => {
    */
   router.put('/edit/:id', async (req, res) => {
     const cPositionFk = req.body.cPositionFk;
+    const cProductionLineFk = req.body.cProductionLineFk;
     if (cPositionFk) {
       const positionFk = await prisma.Pems_MeterPosition.findFirst({
         where: { id: Number(cPositionFk) },
@@ -279,7 +283,17 @@ const controller = (() => {
       if (positionFk == null) {
         res.status(400).json({ message: 'Please pass cPositionFk.' });
       } else {
-        req.body.cPositionFk = Number(req.body.cPositionFk);
+        req.body.cPositionFk = Number(cPositionFk);
+      }
+    }
+    if (cProductionLineFk) {
+      const productionLineFk = await prisma.Pems_MeterPosition.findFirst({
+        where: { id: Number(cProductionLineFk) },
+      });
+      if (productionLineFk == null) {
+        res.status(400).json({ message: 'Please pass cPositionFk.' });
+      } else {
+        req.body.cProductionLineFk = Number(cProductionLineFk);
       }
     }
     const date = {
@@ -287,6 +301,7 @@ const controller = (() => {
       cType: req.body.cType,
       cDesc: req.body.cDesc,
       cPositionFk: req.body.cPositionFk,
+      cProductionLineFk: req.body.cProductionLineFk,
       dAddTime: new Date(),
     };
     const message = await prisma.Pems_Meter.update({
