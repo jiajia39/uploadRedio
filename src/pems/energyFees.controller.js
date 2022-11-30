@@ -39,6 +39,8 @@ const controller = (() => {
   router.post('/add', async (req, res) => {
     if (!req.body.cPrice) {
       res.status(400).json({ message: 'Please pass price.' });
+    } else {
+      req.body.cPrice = Number(req.body.cPrice);
     }
     await prisma.Pems_EnergyFees.create({
       data: req.body,
