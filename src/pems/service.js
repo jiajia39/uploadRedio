@@ -149,12 +149,12 @@ async function setMeterRecordingAndSave() {
  * @param {*} cPositionFk PositionId
  * @returns meterId
  */
-async function getMeterId(id, cType, cPositionFk) {
+async function getMeterId(id, cType, cPositionFk, cProductionLineFk) {
   const filter = { AND: [] };
   if (id) filter.AND.push({ id: parseInt(id) });
   if (cType) filter.AND.push({ cType });
   if (cPositionFk) filter.AND.push({ cPositionFk: parseInt(cPositionFk) });
-
+  if (cProductionLineFk) filter.AND.push({ cProductionLineFk: parseInt(cProductionLineFk) });
   if (filter.AND.length < 1) {
     const data = await prisma.Pems_Meter.groupBy({ by: ['id'] });
     return data;
@@ -254,7 +254,7 @@ async function saveReportDay() {
   let list;
   const now = new Date(moment().format('YYYY-MM-DD'));
   if (report == null || report == '') {
-    list = await statisticalMeterData(null, null, null, null, null);
+    list = await statisticalMeterData(null, null, null, null, null, null);
   } else {
     const preDate = new Date(
       moment()
@@ -262,7 +262,7 @@ async function saveReportDay() {
         .format('YYYY-MM-DD'),
     ).toISOString();
     console.log(preDate);
-    list = await statisticalMeterData(null, null, null, preDate, null);
+    list = await statisticalMeterData(null, null, null, preDate, null, null);
   }
 
   const dayList = [];
@@ -379,7 +379,7 @@ async function saveReoprtWeekHistory() {
  */
 async function createInitializationWeek(startMon, endSun) {
   let weekList = [];
-  const meterIds = await getMeterId(null, null, null);
+  const meterIds = await getMeterId(null, null, null, null);
   if (meterIds != null && meterIds != '' && meterIds.length > 0) {
     meterIds.forEach(meterId => {
       weekList.push({
@@ -664,7 +664,7 @@ async function saveReoprtCurrentMon() {
   if (Number(day) == 1) {
     //当前时间是月初 1号时，添加1号的数据月数据，并更新上月月末的数据
     //获取开始时间上月月末的日期
-    const meterIds = await getMeterId(null, null, null);
+    const meterIds = await getMeterId(null, null, null, null);
     if (meterIds != null && meterIds != '' && meterIds.length > 0) {
       meterIds.forEach(meterId => {
         monthList.push({
@@ -788,8 +788,15 @@ async function getMeterValuesData(cRecordDate, cRecordType, meterIdList) {
  * @param {*} cRecordType 班次
  * @returns meterValue数据
  */
-async function statisticalMeterData(id, cType, cPositionFk, cRecordDate, cRecordType) {
-  let meterIdList = await getMeterId(id, cType, cPositionFk);
+async function statisticalMeterData(
+  id,
+  cType,
+  cPositionFk,
+  cRecordDate,
+  cRecordType,
+  cProductionLineFk,
+) {
+  let meterIdList = await getMeterId(id, cType, cPositionFk, cProductionLineFk);
   let dateList = [];
   if (cRecordDate == null || cRecordDate == '') {
     dateList = null;
@@ -1029,73 +1036,6 @@ async function statisticalMeter(meterIdList, meterValueDateList, timeList) {
   }
   return statisticalMeter;
 }
-/**
- * 按周计算Meter的耗能
- * @param {*} startWeek 开始时间
- * @param {*} endWeek 结束时间
- * @param {*} id meterID
- * @param {*} cType 类型
- * @param {*} cPositionFk poitionId
- * @param {*} cRecordType 班次
- * @returns meterValue的耗能信息
- */
-async function statisticalMeterWeek(startWeek, endWeek, id, cType, cPositionFk, cRecordType) {
-  //获取meter的数据
-  let meterIdList = await getMeterId(id, cType, cPositionFk);
-  if (meterIdList == null || meterIdList.length == 0) {
-    return null;
-  }
-  //获取上周周日的日期
-  let preDate = new Date(
-    moment(startWeek)
-      .subtract(1, 'days')
-      .format('YYYY-MM-DD'),
-  );
-  let endDate = new Date(moment(endWeek).format('YYYY-MM-DD'));
-  startWeek = new Date(moment(startWeek).format('YYYY-MM-DD'));
-  let timeList = getMonAndSunDayList(preDate, endDate);
-  let list = [preDate, endDate];
-  //获取meterValue的数据
-  // let list = getAllDays(preDate, endDate);
-  const meterValueDateList = await getMeterValuesData(list, null, meterIdList);
-  return await statisticalMeter(meterIdList, meterValueDateList, timeList);
-}
-/**
- * 按月计算meterValue的耗能
- * @param {*} startWeek 开始时间
- * @param {*} endWeek 结束时间
- * @param {*} id meterID
- * @param {*} cType 类型
- * @param {*} cPositionFk poitionId
- * @param {*} cRecordType 班次
- * @returns meterValue的耗能信息
- */
-async function statisticalMeterMon(startMonth, endMonth, id, cType, cPositionFk, cRecordType) {
-  //获取meter的数据
-  let meterIdList = await getMeterId(id, cType, cPositionFk);
-
-  //获取开始时间上月月末的日期
-  let preDate = new Date(
-    moment(startMonth)
-      .month(moment(startMonth).month() - 1)
-      .endOf('month')
-      .format('YYYY-MM-DD'),
-  );
-
-  let endDate = new Date(moment(endMonth).format('YYYY-MM-DD'));
-  // let list = getAllDays(preDate, endDate);
-  let list = [preDate, endDate];
-  //获取meterValue的数据
-  const meterValueDateList = await getMeterValuesData(list, null, meterIdList);
-  console.log('-----');
-  console.log(meterValueDateList);
-  // let startDate = meterValueDateList[0].cRecordDate;
-  // let endDate = meterValueDateList[meterValueDateList.length - 1].cRecordDate;
-  startMonth = new Date(moment(startMonth).format('YYYY-MM-DD'));
-
-  let timeList = getStaAndEndMon(preDate, endDate);
-  return await statisticalMeter(meterIdList, meterValueDateList, timeList);
-}
 
 async function getShiftTime() {
   const date = await prisma.Pems_Shift.findMany();
@@ -1312,8 +1252,7 @@ export default {
   getMeterId,
   getMonAndSunDayList,
   getMonAndSunDay,
-  statisticalMeterWeek,
-  statisticalMeterMon,
+
   getPageDate,
   getMeterReportingDayData,
   getStaAndEndMon,
