@@ -48,6 +48,8 @@ const controller = (() => {
     const { cEnergySubstituteFk } = req.body;
     if (!cEnergySubstituteFk) {
       res.status(400).json({ message: 'Please pass cEnergySubstituteFk.' });
+    } else {
+      req.body.cEnergySubstituteFk = Number(cEnergySubstituteFk);
     }
     res.json({ isok: true, message: 'EnergyFees saved' });
   });
@@ -93,7 +95,7 @@ const controller = (() => {
         cStartTime: req.body.cStartTime,
         cEndTime: req.body.cEndTime,
         cModel: req.body.cModel,
-        cEnergySubstituteFk,
+        cEnergySubstituteFk: Number(cEnergySubstituteFk),
       };
 
       const message = await prisma.Pems_EnergyFees.update({
