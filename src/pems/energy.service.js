@@ -1,29 +1,7 @@
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
-import service from './service';
 var Decimal = require('decimal.js');
 var moment = require('moment');
-
-/**
- * 获取每个meterId所耗费用
- * @param {*} type meter类型
- * @param {*} cType  EnergyFees类型
- * @param {*} date 日期
- * @returns 所耗费用
- */
-async function getValueBytype(type, cType, date) {
-  const filter = { AND: [] };
-  if (type) filter.AND = { ...filter.AND, cType: { in: type } };
-  const meters = await prisma.Pems_Meter.findMany({
-    where: filter,
-  });
-  if (cType) filter.AND = { ...filter.AND, cType };
-  const energyFeesEle = await prisma.Pems_EnergyFees.findMany({
-    where: filter,
-  });
-  let list = await getEnergyFeeValues(meters, energyFeesEle, date);
-  return list;
-}
 
 /**
  * 根据所传仪表以及能源费用类型关联查询计算能源费用
@@ -105,25 +83,29 @@ async function saveValue(date) {
   await prisma.Pems_EnergyFeeValues.deleteMany({
     where: { cRecordDate: new Date(date) },
   });
-  let type = ['Water', '水表'];
-  let cType = '水费';
-  let list = await getValueBytype(type, cType, date);
-  await prisma.Pems_EnergyFeeValues.createMany({
-    data: list,
-  });
-  type = ['Electricity', '电表'];
-  cType = '电费';
-  list = await getValueBytype(type, cType, date);
-  await prisma.Pems_EnergyFeeValues.createMany({
-    data: list,
-  });
-  type = ['Steam'];
-  cType = '蒸汽';
-  list = await getValueBytype(type, cType, date);
-
-  await prisma.Pems_EnergyFeeValues.createMany({
-    data: list,
-  });
+  const energySubstituteList = await prisma.Pems_Energy_Substitute.findMany();
+  let list;
+  for (let i = 0; i < energySubstituteList.length; i++) {
+    let energySubstitute = energySubstituteList[i];
+    const energyFilter = { AND: {} };
+    energyFilter.AND = {
+      ...energyFilter.AND,
+      cEnergySubstituteFk: energySubstitute.id,
+    };
+    const energyFeesList = await prisma.Pems_EnergyFees.findMany({
+      where: energyFilter,
+    });
+    const pemsMeterList = await prisma.Pems_Meter.findMany({
+      where: energyFilter,
+    });
+    list = await getEnergyFeeValues(pemsMeterList, energyFeesList, date);
+    console.log(list);
+    if (list != null && list.length > 0) {
+      await prisma.Pems_EnergyFeeValues.createMany({
+        data: list,
+      });
+    }
+  }
 }
 /**
  * 保存历史每日耗能所需费用
@@ -148,10 +130,6 @@ async function setEnergyFeeValuesAndSaveHistory() {
     }
     console.log('end');
   }
-
-  // await prisma.Pems_EnergyFeeValues.create({
-  //   data: energyFeeValues,
-  // });
 }
 /**
  * 获取耗能所需要的费用
