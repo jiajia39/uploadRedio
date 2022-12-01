@@ -45,6 +45,10 @@ const controller = (() => {
     await prisma.Pems_EnergyFees.create({
       data: req.body,
     });
+    const { cEnergySubstituteFk } = req.body;
+    if (!cEnergySubstituteFk) {
+      res.status(400).json({ message: 'Please pass cEnergySubstituteFk.' });
+    }
     res.json({ isok: true, message: 'EnergyFees saved' });
   });
   /**
@@ -79,13 +83,19 @@ const controller = (() => {
   router.put(
     '/edit/:id',
     catchAsync(async (req, res) => {
+      const { cEnergySubstituteFk } = req.body;
+      if (!cEnergySubstituteFk) {
+        res.status(400).json({ message: 'Please pass cEnergySubstituteFk.' });
+      }
       const data = {
         cPrice: parseFloat(req.body.cPrice),
         cType: req.body.cType,
         cStartTime: req.body.cStartTime,
         cEndTime: req.body.cEndTime,
         cModel: req.body.cModel,
+        cEnergySubstituteFk,
       };
+
       const message = await prisma.Pems_EnergyFees.update({
         where: { id: Number(req.params.id) },
         data: data,
@@ -148,6 +158,12 @@ const controller = (() => {
         cStartTime: true,
         cEndTime: true,
         cModel: true,
+        Pems_Energy_Substitute: {
+          select: {
+            id: true,
+            cName: true,
+          },
+        },
       };
 
       if (count != null && count > 0) {
@@ -176,6 +192,37 @@ const controller = (() => {
     }),
   );
 
+  /**
+   * @swagger
+   * /api/pems/Pems_EnergyFees/delete/:id:
+   *   put:
+   *     security:
+   *       - Authorization: []
+   *     description : delete Pems_EnergyFees  (删除)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: id
+   *         description: Pems_EnergyFees's id.
+   *         in: query
+   *         type: int
+   *     responses:
+   *       200:
+   *         description: Pems_EnergyFees
+   *         schema:
+   *           type: object
+   */
+  router.delete(
+    '/delete/:id',
+    catchAsync(async (req, res) => {
+      const message = await prisma.Pems_EnergyFees.delete({
+        where: { id: Number(req.params.id) },
+      }).then(() => 'MeterPosition deleted');
+
+      res.json({ message });
+    }),
+  );
   /**
    * @swagger
    * /api/pems/energyFees/getType:
