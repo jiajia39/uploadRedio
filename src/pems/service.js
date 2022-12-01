@@ -714,7 +714,7 @@ async function saveReoprtCurrentMon() {
           let energyConsumption;
           let cvalue = rstdata[i].cValue;
           if (cvalue == null || cvalue == '') {
-            if (value == null || value == '') {
+            if (value == null) {
               energyConsumption = null;
             } else {
               cvalue = 0;
