@@ -42,15 +42,13 @@ const controller = (() => {
     } else {
       req.body.cPrice = Number(req.body.cPrice);
     }
+    const { cEnergySubstituteFk } = req.body;
+    if (cEnergySubstituteFk != null && cEnergySubstituteFk != '') {
+      req.body.cEnergySubstituteFk = Number(cEnergySubstituteFk);
+    }
     await prisma.Pems_EnergyFees.create({
       data: req.body,
     });
-    const { cEnergySubstituteFk } = req.body;
-    if (!cEnergySubstituteFk) {
-      res.status(400).json({ message: 'Please pass cEnergySubstituteFk.' });
-    } else {
-      req.body.cEnergySubstituteFk = Number(cEnergySubstituteFk);
-    }
     res.json({ isok: true, message: 'EnergyFees saved' });
   });
   /**
@@ -86,8 +84,8 @@ const controller = (() => {
     '/edit/:id',
     catchAsync(async (req, res) => {
       const { cEnergySubstituteFk } = req.body;
-      if (!cEnergySubstituteFk) {
-        res.status(400).json({ message: 'Please pass cEnergySubstituteFk.' });
+      if (cEnergySubstituteFk != null && cEnergySubstituteFk != '') {
+        req.body.cEnergySubstituteFk = Number(cEnergySubstituteFk);
       }
       const data = {
         cPrice: parseFloat(req.body.cPrice),

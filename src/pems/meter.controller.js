@@ -45,7 +45,8 @@ const controller = (() => {
       cType: true,
       cDesc: true,
       dAddTime: true,
-      cProductionLineFk: true,
+      Pems_MeterProductionLine: true,
+      Pems_Energy_Substitute: true,
       Pems_MeterPosition: true,
     };
 
@@ -139,7 +140,8 @@ const controller = (() => {
       cDesc: true,
       cPositionFk: true,
       dAddTime: true,
-      cProductionLineFk: true,
+      Pems_MeterProductionLine: true,
+      Pems_Energy_Substitute: true,
       Pems_MeterPosition: true,
     };
 
@@ -233,6 +235,18 @@ const controller = (() => {
         req.body.cProductionLineFk = Number(cProductionLineFk);
       }
     }
+
+    const cEnergySubstituteFk = req.body.cEnergySubstituteFk;
+    if (cEnergySubstituteFk != null) {
+      const energySubstituteFk = await prisma.Pems_Energy_Substitute.findFirst({
+        where: { id: Number(cEnergySubstituteFk) },
+      });
+      if (energySubstituteFk == null) {
+        res.status(400).json({ message: 'Please pass cEnergySubstituteFk.' });
+      } else {
+        req.body.cEnergySubstituteFk = Number(cEnergySubstituteFk);
+      }
+    }
     req.body.dAddTime = new Date();
     await prisma.Pems_Meter.create({
       data: req.body,
@@ -296,12 +310,24 @@ const controller = (() => {
         req.body.cProductionLineFk = Number(cProductionLineFk);
       }
     }
+    const cEnergySubstituteFk = req.body.cEnergySubstituteFk;
+    if (cEnergySubstituteFk != null) {
+      const energySubstituteFk = await prisma.Pems_Energy_Substitute.findFirst({
+        where: { id: Number(cEnergySubstituteFk) },
+      });
+      if (energySubstituteFk == null) {
+        res.status(400).json({ message: 'Please pass cEnergySubstituteFk.' });
+      } else {
+        req.body.cEnergySubstituteFk = Number(cEnergySubstituteFk);
+      }
+    }
     const date = {
       cName: req.body.cName,
       cType: req.body.cType,
       cDesc: req.body.cDesc,
       cPositionFk: req.body.cPositionFk,
       cProductionLineFk: req.body.cProductionLineFk,
+      cEnergySubstituteFk: req.body.cEnergySubstituteFk,
       dAddTime: new Date(),
     };
     const message = await prisma.Pems_Meter.update({
