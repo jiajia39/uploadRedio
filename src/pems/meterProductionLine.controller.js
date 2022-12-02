@@ -309,7 +309,7 @@ const controller = (() => {
         'children',
         treeOption,
       );
-      res.json({ treeData, message: 'Data obtained.' });
+      res.json({ treeData, message: 'Data obtained.', productLine: true });
     }),
   );
 
@@ -431,6 +431,7 @@ const controller = (() => {
           data: rstdata,
           total: count,
           message: 'Data obtained.',
+          productLine: true,
         });
       } else {
         res.json({

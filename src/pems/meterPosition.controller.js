@@ -171,6 +171,17 @@ const controller = (() => {
           where: { id: Number(req.params.id) },
         }).then(() => 'MeterPosition deleted');
       } else {
+        let position = await prisma.Pems_MeterPosition.findFirst({
+          where: {
+            parentId: Number(req.params.id),
+          },
+        });
+        if (position != null && position != '') {
+          res
+            .status(400)
+            .json({ message: 'There is data referencing this ID, which cannot be deleted' });
+        }
+
         message = await prisma.Pems_MeterPosition.delete({
           where: { id: Number(req.params.id) },
         }).then(() => 'MeterPosition deleted');
@@ -322,7 +333,7 @@ const controller = (() => {
         'children',
         treeOption,
       );
-      res.json({ treeData, message: 'Data obtained.' });
+      res.json({ treeData, message: 'Data obtained.', productLine: false });
     }),
   );
 
@@ -444,6 +455,7 @@ const controller = (() => {
           data: rstdata,
           total: count,
           message: 'Data obtained.',
+          productLine: false,
         });
       } else {
         res.json({
