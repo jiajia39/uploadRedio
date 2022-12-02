@@ -55,10 +55,24 @@ const controller = (() => {
       req.body.parentId = Number(req.body.parentId);
     }
     req.body.dAddTime = new Date();
-    await prisma.Pems_MeterPosition.create({
-      data: req.body,
-    });
-    res.json({ isok: true, message: 'EnergyFees saved' });
+    const date = {
+      cName: req.body.cName,
+      cType: req.body.cType,
+      cDesc: req.body.cDesc,
+      parentId: req.body.parentId,
+      dAddTime: req.body.dAddTime,
+    };
+    if (req.body.productLine) {
+      await prisma.Pems_MeterProductionLine.create({
+        data: date,
+      });
+    } else {
+      await prisma.Pems_MeterPosition.create({
+        data: date,
+      });
+    }
+
+    res.json({ isok: true, message: 'saved success' });
   });
 
   /**
@@ -110,10 +124,19 @@ const controller = (() => {
         cType: req.body.cType,
         cDesc: req.body.cDesc,
       };
-      const message = await prisma.Pems_MeterPosition.update({
-        where: { id: Number(req.params.id) },
-        data: date,
-      }).then(() => 'List updated');
+      let message;
+      if (req.body.productLine) {
+        message = await prisma.Pems_MeterProductionLine.update({
+          where: { id: Number(req.params.id) },
+          data: date,
+        }).then(() => 'List updated');
+      } else {
+        message = await prisma.Pems_MeterPosition.update({
+          where: { id: Number(req.params.id) },
+          data: date,
+        }).then(() => 'List updated');
+      }
+
       res.json({ isok: true, message });
     }),
   );
@@ -142,10 +165,16 @@ const controller = (() => {
   router.delete(
     '/delete/:id',
     catchAsync(async (req, res) => {
-      const message = await prisma.Pems_MeterPosition.delete({
-        where: { id: Number(req.params.id) },
-      }).then(() => 'MeterPosition deleted');
-
+      let message;
+      if (req.body.productLine) {
+        message = await prisma.Pems_MeterProductionLine.delete({
+          where: { id: Number(req.params.id) },
+        }).then(() => 'MeterPosition deleted');
+      } else {
+        message = await prisma.Pems_MeterPosition.delete({
+          where: { id: Number(req.params.id) },
+        }).then(() => 'MeterPosition deleted');
+      }
       res.json({ message });
     }),
   );
