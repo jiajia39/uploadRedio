@@ -135,6 +135,30 @@ const controller = (() => {
 
   /**
    * @swagger
+   * /api/pems/energySubstitute/getAll:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: Pagination query(根据条件获取energy_Substitutenergyfee的所有信息)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: Get Energy Substitute Pagination
+   *         schema:
+   *           type: object
+   */
+  router.get(
+    '/getAll',
+    catchAsync(async (req, res) => {
+      const rstdata = await prisma.Pems_Energy_Substitute.findMany();
+      res.json({ data: rstdata });
+    }),
+  );
+
+  /**
+   * @swagger
    * /api/pems/energySubstitute/delete/:id:
    *   put:
    *     security:
