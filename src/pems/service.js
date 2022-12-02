@@ -1,4 +1,5 @@
 import { Log } from '@influxdata/influxdb-client';
+import { format } from 'morgan';
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
 import energyService from './energy.service';
@@ -64,23 +65,24 @@ async function setMeterValuesandSave() {
 
 async function setMeterRecordingAndSave() {
   const meters = await prisma.Pems_Meter.findMany();
+  let time;
   console.log('Meter Count:', meters.length);
+  let list = [];
   for (let j = 0; j < meters.length; j++) {
     //从meter 中获取 measurement和field 来进行查询influxDb的数据
     const measurement = meters[j].cName + '-' + meters[j].cDesc;
-    console.log(measurement);
     let cType = '';
-    if (meters[j].cType == 'Electricity') {
+    if (meters[j].cType == 'Electricity' || meters[j].cType == '电表') {
       cType = 'EP';
     }
-    if (meters[j].cType == 'Water' || meters[j].cType == 'Steam') {
+    if (meters[j].cType == 'Water' || meters[j].cType == 'Steam' || meters[j].cType == '水表') {
       cType = 'TT';
     }
     const field = meters[j].cName + '.' + cType;
-    let start = '-24h';
+    let start = '-1h';
     let interval = '1h';
-    const queryType = 'mean';
-    let list = [];
+    const queryType = 'last';
+
     // 查询infulxDb数据
     const influxData = await influxservice.getInfluxData(
       measurement,
@@ -89,59 +91,153 @@ async function setMeterRecordingAndSave() {
       interval,
       queryType,
     );
-    let length = 0;
-    if (influxData.length > 24) {
-      length = influxData.length - 1;
-    } else {
-      length = influxData.length;
-    }
     // 当前时间
-    const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
-    if (influxData.length === 0) {
-      console.log(`No Influx Value for ${meters[j].id}`);
-      let date = this.dateFmt(new Date(), 1);
-      let listRes = this.gimePerHour(date);
-
-      listRes.forEach(gimePerHourTime => {
-        const endTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
-
-        //开始时间
-        let startTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
-        startTime = new Date(startTime.setHours(startTime.getHours() - 1));
-        list.push({
-          dStartTime: startTime,
-          dEndTime: endTime,
-          cRecordDate: dateTime,
-          cValue: null,
-          cMeterFk: Number(meters[j].id),
-        });
-      });
-    }
-    for (let i = 0; i < length; i++) {
-      //获取infulxDb的value
-      const value = influxData[i].value;
-      const influxValue = parseFloat(value).toFixed(2);
-      //结束时间
-      const endTime = new Date(new Date(influxData[i].time).getTime() + 8 * 60 * 60 * 1000);
-      //开始时间
-      let startTime = new Date(new Date(influxData[i].time).getTime() + 8 * 60 * 60 * 1000);
-      startTime = new Date(startTime.setHours(startTime.getHours() - 1));
+    let dateTime = new Date(moment(new Date()).format('YYYY-MM-DD'));
+    if (influxData.length == 0) {
+      console.log('---');
+      const startDate = moment(new Date());
+      const endTime = new Date(
+        new Date(
+          moment(startDate)
+            .subtract(1, 'hour')
+            .format('YYYY-MM-DD HH:mm:00'),
+        ).getTime() +
+          8 * 60 * 60 * 1000,
+      );
+      const startTime = new Date(
+        moment(endTime)
+          .subtract(15, 'minutes')
+          .format('YYYY-MM-DD HH:mm:00'),
+      );
       list.push({
         dStartTime: startTime,
         dEndTime: endTime,
         cRecordDate: dateTime,
-        cValue: parseFloat(influxValue),
+        cValue: null,
+        cMeterFk: Number(meters[j].id),
+      });
+    } else {
+      const endTime = new Date(
+        new Date(moment(influxData[0].time).format('YYYY-MM-DD HH:mm:ss')).getTime() +
+          8 * 60 * 60 * 1000,
+      );
+      const startTime = new Date(
+        new Date(
+          moment(influxData[0].time)
+            .subtract(1, 'h')
+            .format('YYYY-MM-DD HH:mm:ss'),
+        ).getTime() +
+          8 * 60 * 60 * 1000,
+      );
+      dateTime = new Date(moment(influxData[0].time).format('YYYY-MM-DD'));
+      const cValue = parseFloat(influxData[0].value).toFixed(2);
+      list.push({
+        dStartTime: startTime,
+        dEndTime: endTime,
+        cRecordDate: dateTime,
+        cValue: parseFloat(cValue),
         cMeterFk: Number(meters[j].id),
       });
     }
-    if (list != null && list.length > 0) {
+  }
+  if (list != null && list.length > 0) {
+    const record = await prisma.Pems_MeterRecording.findFirst({
+      where: {
+        dEndTime: list[0].dEndTime,
+      },
+    });
+    if (record == null) {
       await prisma.Pems_MeterRecording.createMany({
         data: list,
       });
     }
   }
-  console.log('Service Invoked');
+  // return list;
 }
+
+/**
+ * Saving Meter Recording Information--- Version 1
+ */
+// async function setMeterRecordingAndSave() {
+//   const meters = await prisma.Pems_Meter.findMany();
+//   console.log('Meter Count:', meters.length);
+//   for (let j = 0; j < meters.length; j++) {
+//     //从meter 中获取 measurement和field 来进行查询influxDb的数据
+//     const measurement = meters[j].cName + '-' + meters[j].cDesc;
+//     console.log(measurement);
+//     let cType = '';
+//     if (meters[j].cType == 'Electricity') {
+//       cType = 'EP';
+//     }
+//     if (meters[j].cType == 'Water' || meters[j].cType == 'Steam') {
+//       cType = 'TT';
+//     }
+//     const field = meters[j].cName + '.' + cType;
+//     let start = '-24h';
+//     let interval = '1h';
+//     const queryType = 'mean';
+//     let list = [];
+//     // 查询infulxDb数据
+//     const influxData = await influxservice.getInfluxData(
+//       measurement,
+//       field,
+//       start,
+//       interval,
+//       queryType,
+//     );
+//     let length = 0;
+//     if (influxData.length > 24) {
+//       length = influxData.length - 1;
+//     } else {
+//       length = influxData.length;
+//     }
+//     // 当前时间
+//     const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+//     if (influxData.length === 0) {
+//       console.log(`No Influx Value for ${meters[j].id}`);
+//       let date = this.dateFmt(new Date(), 1);
+//       let listRes = this.gimePerHour(date);
+
+//       listRes.forEach(gimePerHourTime => {
+//         const endTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
+
+//         //开始时间
+//         let startTime = new Date(new Date(gimePerHourTime).getTime() + 8 * 60 * 60 * 1000);
+//         startTime = new Date(startTime.setHours(startTime.getHours() - 1));
+//         list.push({
+//           dStartTime: startTime,
+//           dEndTime: endTime,
+//           cRecordDate: dateTime,
+//           cValue: null,
+//           cMeterFk: Number(meters[j].id),
+//         });
+//       });
+//     }
+//     for (let i = 0; i < length; i++) {
+//       //获取infulxDb的value
+//       const value = influxData[i].value;
+//       const influxValue = parseFloat(value).toFixed(2);
+//       //结束时间
+//       const endTime = new Date(new Date(influxData[i].time).getTime() + 8 * 60 * 60 * 1000);
+//       //开始时间
+//       let startTime = new Date(new Date(influxData[i].time).getTime() + 8 * 60 * 60 * 1000);
+//       startTime = new Date(startTime.setHours(startTime.getHours() - 1));
+//       list.push({
+//         dStartTime: startTime,
+//         dEndTime: endTime,
+//         cRecordDate: dateTime,
+//         cValue: parseFloat(influxValue),
+//         cMeterFk: Number(meters[j].id),
+//       });
+//     }
+//     if (list != null && list.length > 0) {
+//       await prisma.Pems_MeterRecording.createMany({
+//         data: list,
+//       });
+//     }
+//   }
+//   console.log('Service Invoked');
+// }
 /**
  * 根据条件查询meter的Id
  * @param {*} id meterId
@@ -1252,7 +1348,6 @@ export default {
   getMeterId,
   getMonAndSunDayList,
   getMonAndSunDay,
-
   getPageDate,
   getMeterReportingDayData,
   getStaAndEndMon,

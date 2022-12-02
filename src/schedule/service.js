@@ -16,15 +16,15 @@ exports.initScheduledJobs = async function() {
     });
     scheduledJobFunction.start();
   }
-
-  // Meter Recording per Day to Store Meter's Hourly Data
-  // const scheduledJobForPMR = CronJob.schedule('0 0 0 * * *', () => {
-  //   console.log("I'm executed on a schedule!!!!!!!!");
-  //   meterValue.setMeterRecordingAndSave();
-  //   // Add your custom logic here
-  // });
-  // scheduledJobForPMR.start();
-
+  /**
+   * Meter Recording per Day to Store Meter's Hourly Data
+   */
+  const scheduledJobForPMR = CronJob.schedule('0 0 */1 * * *', () => {
+    console.log("I'm executed on a schedule!!!!!!!!");
+    meterValue.setMeterRecordingAndSave();
+    // Add your custom logic here
+  });
+  scheduledJobForPMR.start();
   /**
    * Automatically Recording Meter Daily Consumption
    */
