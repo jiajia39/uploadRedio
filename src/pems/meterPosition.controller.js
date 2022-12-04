@@ -450,7 +450,9 @@ const controller = (() => {
             id: 'asc',
           },
         });
-
+        rstdata.forEach(element => {
+          element.productLine = false;
+        });
         res.json({
           data: rstdata,
           total: count,

@@ -426,6 +426,9 @@ const controller = (() => {
             id: 'asc',
           },
         });
+        rstdata.forEach(element => {
+          element.productLine = true;
+        });
 
         res.json({
           data: rstdata,
