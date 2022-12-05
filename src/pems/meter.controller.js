@@ -36,9 +36,8 @@ const controller = (() => {
    *           type: object
    */
   router.get('/getall', async (req, res) => {
-    const { id, cType, cPositionFk } = req.query;
+    const { id, cType, cPositionFk, productLine } = req.query;
     const filter = { OR: [] };
-
     const select = {
       id: true,
       cName: true,
@@ -120,13 +119,34 @@ const controller = (() => {
    *           type: object
    */
   router.get('/pagination', async (req, res) => {
-    const { cPositionFk, cDesc, cProductionLineFk, cEnergySubstituteFk } = req.query;
-
+    const { cPositionFk, cDesc, cProductionLineFk, cEnergySubstituteFk, productLine } = req.query;
+    console.log(productLine == true);
     const filter = { AND: {} };
+    if (productLine == 'true' && (cProductionLineFk == null || cProductionLineFk == '')) {
+      console.log('a');
+      filter.AND = {
+        ...filter.AND,
+        cProductionLineFk: {
+          not: null,
+        },
+      };
+    } else {
+      if (cProductionLineFk)
+        filter.AND = { ...filter.AND, cProductionLineFk: Number(cProductionLineFk) };
+    }
 
-    if (cPositionFk) filter.AND = { ...filter.AND, cPositionFk: Number(cPositionFk) };
-    if (cProductionLineFk)
-      filter.AND = { ...filter.AND, cProductionLineFk: Number(cProductionLineFk) };
+    if (productLine == 'false' && (cPositionFk == null || cPositionFk == '')) {
+      console.log('a');
+      filter.AND = {
+        ...filter.AND,
+        cPositionFk: {
+          not: null,
+        },
+      };
+    } else {
+      if (cPositionFk) filter.AND = { ...filter.AND, cPositionFk: Number(cPositionFk) };
+    }
+
     if (cEnergySubstituteFk)
       filter.AND = { ...filter.AND, cEnergySubstituteFk: Number(cEnergySubstituteFk) };
     if (cDesc) filter.AND = { ...filter.AND, cDesc: { contains: cDesc } };
