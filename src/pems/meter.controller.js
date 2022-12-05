@@ -120,11 +120,15 @@ const controller = (() => {
    *           type: object
    */
   router.get('/pagination', async (req, res) => {
-    const { cPositionFk, cDesc } = req.query;
+    const { cPositionFk, cDesc, cProductionLineFk, cEnergySubstituteFk } = req.query;
 
     const filter = { AND: {} };
 
     if (cPositionFk) filter.AND = { ...filter.AND, cPositionFk: Number(cPositionFk) };
+    if (cProductionLineFk)
+      filter.AND = { ...filter.AND, cProductionLineFk: Number(cProductionLineFk) };
+    if (cEnergySubstituteFk)
+      filter.AND = { ...filter.AND, cEnergySubstituteFk: Number(cEnergySubstituteFk) };
     if (cDesc) filter.AND = { ...filter.AND, cDesc: { contains: cDesc } };
 
     const page = Number(req.query.page) || 1;
