@@ -179,6 +179,15 @@ const controller = (() => {
           id: 'asc',
         },
       });
+      if (productLine == 'true' || (cProductionLineFk != null && cProductionLineFk != '')) {
+        rstdata.forEach(element => {
+          element.productLine = true;
+        });
+      } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
+        rstdata.forEach(element => {
+          element.productLine = false;
+        });
+      }
 
       res.json({
         data: rstdata,
