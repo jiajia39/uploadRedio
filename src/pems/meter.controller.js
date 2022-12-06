@@ -414,6 +414,9 @@ const controller = (() => {
     await prisma.Pems_EnergyFeeValues.deleteMany({
       where: { cMeterFk: Number(id) },
     });
+    await prisma.Pems_MeterRecording.deleteMany({
+      where: { cMeterFk: Number(id) },
+    });
     const message = await prisma.Pems_Meter.delete({
       where: { id: Number(id) },
     }).then(() => 'Pems_Meter deleted');
