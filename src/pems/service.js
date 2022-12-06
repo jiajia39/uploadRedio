@@ -45,7 +45,8 @@ async function setMeterValuesandSave() {
     let influxValue = '';
     const valueLength = result.length;
     if (valueLength != 0) {
-      const val = result[valueLength - 1].value;
+      const val = result[0].value;
+      // const val = result[valueLength - 1].value;
       influxValue = parseFloat(val).toFixed(2);
     }
     const PemsMeterValuesDate = {
@@ -756,33 +757,25 @@ async function saveReoprtCurrentMon() {
   );
   let now = new Date();
   let day = now.getDate();
-  let monthList = [];
   if (Number(day) == 1) {
     //当前时间是月初 1号时，添加1号的数据月数据，并更新上月月末的数据
     //获取开始时间上月月末的日期
-    const meterIds = await getMeterId(null, null, null, null);
-    if (meterIds != null && meterIds != '' && meterIds.length > 0) {
-      meterIds.forEach(meterId => {
-        monthList.push({
-          cMonthStart: new Date(newFor),
-          cMonthEnd: new Date(end),
-          cValue: parseFloat(null),
-          cMeterFk: meterId.id,
-        });
-      });
-      await prisma.Pems_MeterReporting_Month.createMany({
-        data: monthList,
-      });
-    }
+    await createNullValueDate();
   } else {
+    const filter = { AND: [] };
+    if (newFor) filter.AND = { ...filter.AND, cMonthStart: new Date(newFor) };
+    const date = await prisma.Pems_MeterReporting_Month.findFirst({
+      where: filter,
+    });
+    if (date == null || date == '') {
+      await createNullValueDate();
+    }
     let preDate = new Date(
       moment()
         .subtract(2, 'days')
         .format('YYYY-MM-DD 00:00:00'),
     ).toISOString();
     let endDate = new Date(moment().format('YYYY-MM-DD 00:00:00')).toISOString();
-    const filter = { AND: [] };
-    if (newFor) filter.AND = { ...filter.AND, cMonthStart: new Date(newFor) };
     const select = {
       id: true,
       cMonthStart: true,
@@ -836,6 +829,26 @@ async function saveReoprtCurrentMon() {
         });
       }
     }
+  }
+}
+/**
+ * 创建cValue=null的 Pems_MeterReporting_Month数据
+ */
+async function createNullValueDate() {
+  let monthList = [];
+  const meterIds = await getMeterId(null, null, null, null);
+  if (meterIds != null && meterIds != '' && meterIds.length > 0) {
+    meterIds.forEach(meterId => {
+      monthList.push({
+        cMonthStart: new Date(newFor),
+        cMonthEnd: new Date(end),
+        cValue: parseFloat(null),
+        cMeterFk: meterId.id,
+      });
+    });
+    await prisma.Pems_MeterReporting_Month.createMany({
+      data: monthList,
+    });
   }
 }
 /**
