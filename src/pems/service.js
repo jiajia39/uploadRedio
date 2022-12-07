@@ -101,7 +101,7 @@ async function setMeterRecordingAndSave() {
         new Date(
           moment(startDate)
             .subtract(1, 'hour')
-            .format('YYYY-MM-DD HH:mm:00'),
+            .format('YYYY-MM-DD HH:00:00'),
         ).getTime() +
           8 * 60 * 60 * 1000,
       );
