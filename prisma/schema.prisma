@@ -151,7 +151,7 @@ model Pems_EnergyFees {
   cEndTime               String?                 @db.VarChar(50)
   cModel                 String?                 @db.VarChar(50)
   cEnergySubstituteFk    Int?
-  Pems_Energy_Substitute Pems_Energy_Substitute? @relation(fields: [cEnergySubstituteFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Energy_Substitute_fee")
+  Pems_Energy_Substitute Pems_Energy_Substitute? @relation(fields: [cEnergySubstituteFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "constraint_name")
 }
 
 model Pems_Meter {
@@ -188,8 +188,7 @@ model Pems_MeterValues {
 
 model Pems_MeterRecording {
   id          Int         @id(map: "PK_Pems_MeterRecording") @default(autoincrement())
-  dStartTime  DateTime?   @db.DateTime
-  dEndTime    DateTime?   @db.DateTime
+  dRecordTime DateTime?   @db.DateTime
   cRecordDate DateTime?   @db.Date
   cValue      Float?
   cMeterFk    Int?
