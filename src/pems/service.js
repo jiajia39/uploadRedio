@@ -105,14 +105,8 @@ async function setMeterRecordingAndSave() {
         ).getTime() +
           8 * 60 * 60 * 1000,
       );
-      const startTime = new Date(
-        moment(endTime)
-          .subtract(15, 'minutes')
-          .format('YYYY-MM-DD HH:mm:00'),
-      );
       list.push({
-        dStartTime: startTime,
-        dEndTime: endTime,
+        dRecordTime: endTime,
         cRecordDate: dateTime,
         cValue: null,
         cMeterFk: Number(meters[j].id),
@@ -122,29 +116,21 @@ async function setMeterRecordingAndSave() {
         new Date(moment(influxData[0].time).format('YYYY-MM-DD HH:mm:ss')).getTime() +
           8 * 60 * 60 * 1000,
       );
-      const startTime = new Date(
-        new Date(
-          moment(influxData[0].time)
-            .subtract(1, 'h')
-            .format('YYYY-MM-DD HH:mm:ss'),
-        ).getTime() +
-          8 * 60 * 60 * 1000,
-      );
       dateTime = new Date(moment(influxData[0].time).format('YYYY-MM-DD'));
       const cValue = parseFloat(influxData[0].value).toFixed(2);
       list.push({
-        dStartTime: startTime,
-        dEndTime: endTime,
+        dRecordTime: endTime,
         cRecordDate: dateTime,
         cValue: parseFloat(cValue),
         cMeterFk: Number(meters[j].id),
       });
     }
   }
+  console.log(list);
   if (list != null && list.length > 0) {
     const record = await prisma.Pems_MeterRecording.findFirst({
       where: {
-        dEndTime: list[0].dEndTime,
+        dRecordTime: list[0].dRecordTime,
       },
     });
     if (record == null) {
