@@ -232,12 +232,32 @@ async function setMeterRecordingAndSave() {
  * @param {*} cPositionFk PositionId
  * @returns meterId
  */
-async function getMeterId(id, cType, cPositionFk, cProductionLineFk) {
+async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine) {
   const filter = { AND: [] };
   if (id) filter.AND.push({ id: parseInt(id) });
   if (cType) filter.AND.push({ cType });
-  if (cPositionFk) filter.AND.push({ cPositionFk: parseInt(cPositionFk) });
-  if (cProductionLineFk) filter.AND.push({ cProductionLineFk: parseInt(cProductionLineFk) });
+  if (productLine == 'false' && (cPositionFk == null || cPositionFk == '')) {
+    console.log('a');
+    filter.AND = {
+      ...filter.AND,
+      cPositionFk: {
+        not: null,
+      },
+    };
+  } else {
+    if (cPositionFk) filter.AND.push({ cPositionFk: parseInt(cPositionFk) });
+  }
+  if (productLine == 'true' && (cProductionLineFk == null || cProductionLineFk == '')) {
+    console.log('a');
+    filter.AND = {
+      ...filter.AND,
+      cProductionLineFk: {
+        not: null,
+      },
+    };
+  } else {
+    if (cProductionLineFk) filter.AND.push({ cProductionLineFk: parseInt(cProductionLineFk) });
+  }
   if (filter.AND.length < 1) {
     const data = await prisma.Pems_Meter.groupBy({ by: ['id'] });
     return data;
@@ -337,7 +357,7 @@ async function saveReportDay() {
   let list;
   const now = new Date(moment().format('YYYY-MM-DD'));
   if (report == null || report == '') {
-    list = await statisticalMeterData(null, null, null, null, null, null);
+    list = await statisticalMeterData(null, null, null, null, null, null, null);
   } else {
     const preDate = new Date(
       moment()
@@ -345,7 +365,7 @@ async function saveReportDay() {
         .format('YYYY-MM-DD'),
     ).toISOString();
     console.log(preDate);
-    list = await statisticalMeterData(null, null, null, preDate, null, null);
+    list = await statisticalMeterData(null, null, null, preDate, null, null, null);
   }
 
   const dayList = [];
@@ -462,7 +482,7 @@ async function saveReoprtWeekHistory() {
  */
 async function createInitializationWeek(startMon, endSun) {
   let weekList = [];
-  const meterIds = await getMeterId(null, null, null, null);
+  const meterIds = await getMeterId(null, null, null, null, null);
   if (meterIds != null && meterIds != '' && meterIds.length > 0) {
     meterIds.forEach(meterId => {
       weekList.push({
@@ -822,7 +842,7 @@ async function saveReoprtCurrentMon() {
  */
 async function createNullValueDate() {
   let monthList = [];
-  const meterIds = await getMeterId(null, null, null, null);
+  const meterIds = await getMeterId(null, null, null, null, null);
   if (meterIds != null && meterIds != '' && meterIds.length > 0) {
     meterIds.forEach(meterId => {
       monthList.push({
@@ -890,8 +910,9 @@ async function statisticalMeterData(
   cRecordDate,
   cRecordType,
   cProductionLineFk,
+  productLine,
 ) {
-  let meterIdList = await getMeterId(id, cType, cPositionFk, cProductionLineFk);
+  let meterIdList = await getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine);
   let dateList = [];
   if (cRecordDate == null || cRecordDate == '') {
     dateList = null;

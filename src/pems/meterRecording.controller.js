@@ -47,7 +47,7 @@ const controller = (() => {
           new Date(moment(startDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
         );
       }
-      let meterIdsList = await service.getMeterId(id, cType, cPositionFk, cProductionLineFk);
+      let meterIdsList = await service.getMeterId(id, cType, cPositionFk, cProductionLineFk, null);
       let meterIds = [];
       meterIdsList.forEach(element => {
         meterIds.push(element.id);

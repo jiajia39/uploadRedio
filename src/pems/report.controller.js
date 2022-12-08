@@ -117,6 +117,7 @@ const controller = (() => {
         cRecordType,
         cProductionLineFk,
         isAll,
+        productLine,
       } = req.query;
       if (page == null) {
         page = 1;
@@ -135,6 +136,7 @@ const controller = (() => {
           cRecordDate,
           cRecordType,
           cProductionLineFk,
+          productLine,
         );
         if (date != null && date.length != 0) {
           let pageList;
@@ -145,6 +147,11 @@ const controller = (() => {
           }
           pageList.forEach(element => {
             element.cRecordDate = moment(element.cDate).format('YYYY-MM-DD');
+            if (productLine == 'true' || (cProductionLineFk != null && cProductionLineFk != '')) {
+              element.productLine = true;
+            } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
+              element.productLine = false;
+            }
           });
           const { totalEnergyConsumptionDay } = date[date.length - 1];
           const { totalEnergyConsumptionNight } = date[date.length - 1];
@@ -167,7 +174,13 @@ const controller = (() => {
         }
       } else {
         cRecordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
-        let meterIdList = await service.getMeterId(id, cType, cPositionFk, cProductionLineFk);
+        let meterIdList = await service.getMeterId(
+          id,
+          cType,
+          cPositionFk,
+          cProductionLineFk,
+          productLine,
+        );
         let meterReport = await service.getMeterReportingDayData(
           page,
           row,
@@ -194,6 +207,11 @@ const controller = (() => {
         if (meterReport.rstdata != null && meterReport.rstdata.length > 0) {
           const shiftDate = await prisma.Pems_Shift.findMany();
           let statisticalMeter = [];
+          if (productLine == 'true' || (cProductionLineFk != null && cProductionLineFk != '')) {
+            productLine = true;
+          } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
+            productLine = false;
+          }
           meterReport.rstdata.forEach(element => {
             let shiftTime = null;
             shiftDate.forEach(shift => {
@@ -215,6 +233,7 @@ const controller = (() => {
               energyConsumption,
               cValue,
               Pems_Meter,
+              productLine,
             });
           });
           res.json({
@@ -471,7 +490,17 @@ const controller = (() => {
   router.get(
     '/statisticalMeterWeek',
     catchAsync(async (req, res) => {
-      let { row, page, startWeek, id, cType, cPositionFk, isAll, cProductionLineFk } = req.query;
+      let {
+        row,
+        page,
+        startWeek,
+        id,
+        cType,
+        cPositionFk,
+        isAll,
+        cProductionLineFk,
+        productLine,
+      } = req.query;
       if (startWeek == null || startWeek == '') {
         startWeek = new Date();
       }
@@ -487,7 +516,13 @@ const controller = (() => {
         .add(7 - endWeekOfday, 'days')
         .format('YYYYMMDD');
 
-      let meterIdList = await service.getMeterId(id, cType, cPositionFk, cProductionLineFk);
+      let meterIdList = await service.getMeterId(
+        id,
+        cType,
+        cPositionFk,
+        cProductionLineFk,
+        productLine,
+      );
       let endWeek;
       page = Number(page) || 1;
       row = Number(row) || 5;
@@ -529,6 +564,15 @@ const controller = (() => {
           orderBy: {
             cMeterFk: 'asc',
           },
+        });
+      }
+      if (productLine == 'true' || (cProductionLineFk != null && cProductionLineFk != '')) {
+        rstdata.forEach(element => {
+          element.productLine = true;
+        });
+      } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
+        rstdata.forEach(element => {
+          element.productLine = false;
         });
       }
 
@@ -610,7 +654,17 @@ const controller = (() => {
   router.get(
     '/statisticalMeterMon',
     catchAsync(async (req, res) => {
-      let { row, page, startMonth, id, cType, cPositionFk, isAll, cProductionLineFk } = req.query;
+      let {
+        row,
+        page,
+        startMonth,
+        id,
+        cType,
+        cPositionFk,
+        isAll,
+        cProductionLineFk,
+        productLine,
+      } = req.query;
       if (startMonth == null || startMonth == '') {
         startMonth = new Date();
       }
@@ -622,7 +676,13 @@ const controller = (() => {
         .endOf('month')
         .format('YYYY-MM-DD');
       console.log(startMonth);
-      let meterIdList = await service.getMeterId(id, cType, cPositionFk, cProductionLineFk);
+      let meterIdList = await service.getMeterId(
+        id,
+        cType,
+        cPositionFk,
+        cProductionLineFk,
+        productLine,
+      );
       page = Number(page) || 1;
       row = Number(row) || 5;
       let meterIds = [];
@@ -665,7 +725,15 @@ const controller = (() => {
           },
         });
       }
-
+      if (productLine == 'true' || (cProductionLineFk != null && cProductionLineFk != '')) {
+        rstdata.forEach(element => {
+          element.productLine = true;
+        });
+      } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
+        rstdata.forEach(element => {
+          element.productLine = false;
+        });
+      }
       const count = await prisma.Pems_MeterReporting_Month.count({
         where: filter,
       });
