@@ -254,7 +254,7 @@ async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine
       },
     };
   } else if (cProductionLineFk)
-    filter.AND = { ...filter.AND, cPositionFk: parseInt(cProductionLineFk) };
+    filter.AND = { ...filter.AND, cProductionLineFk: parseInt(cProductionLineFk) };
   if (filter.AND.length < 1) {
     const data = await prisma.Pems_Meter.groupBy({ by: ['id'] });
     return data;
