@@ -234,8 +234,8 @@ async function setMeterRecordingAndSave() {
  */
 async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine) {
   const filter = { AND: [] };
-  if (id) filter.AND.push({ id: parseInt(id) });
-  if (cType) filter.AND.push({ cType });
+  if (id) filter.AND = { ...filter.AND, id: parseInt(id) };
+  if (cType) filter.AND = { ...filter.AND, cType};
   if (productLine == 'false' && (cPositionFk == null || cPositionFk == '')) {
     console.log('a');
     filter.AND = {
