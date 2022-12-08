@@ -24,24 +24,34 @@ const controller = (() => {
     catchAsync(async (req, res) => {
       let { page, row, startDate } = req.query;
       const { id, cType, cPositionFk, cProductionLineFk, endDate } = req.query;
-      if (page == null) {
-        page = 1;
+      let endTime;
+
+      if (endDate == null || endDate == '') {
+        endTime = new Date(
+          new Date(moment().format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
+        );
+      } else {
+        endTime = new Date(
+          new Date(moment(endDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
+        );
       }
-      if (row == null) {
-        row = 5;
+
+      if (startDate == null || startDate == '') {
+        startDate = new Date(
+          moment(endTime)
+            .subtract(3, 'hours')
+            .format('YYYY-MM-DD HH:mm:ss'),
+        );
+      } else {
+        startDate = new Date(
+          new Date(moment(startDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
+        );
       }
-      startDate = new Date(
-        new Date(moment(startDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
-      );
-      let endTime = new Date(
-        new Date(moment(endDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
-      );
       let meterIdsList = await service.getMeterId(id, cType, cPositionFk, cProductionLineFk);
       let meterIds = [];
       meterIdsList.forEach(element => {
         meterIds.push(element.id);
       });
-
       const filter = {
         AND: {
           dRecordTime: { gte: startDate, lte: endTime },
@@ -84,6 +94,7 @@ const controller = (() => {
       });
       //获取meterId
       let meterIdList = [];
+      console.log(filter);
       if (data != null && data.length > 0) {
         data.forEach(element => {
           meterIdList.push(element.Pems_Meter.id);
@@ -145,7 +156,19 @@ const controller = (() => {
           }
         }
         // });
-        res.json(list);
+        // res.json(list);
+        res.json({
+          data: list,
+          total: count,
+          message: 'Data obtained.',
+          productLine: true,
+        });
+      } else {
+        res.json({
+          data: [],
+          total: count,
+          message: 'Data Empty.',
+        });
       }
     }),
   );
