@@ -22,7 +22,7 @@ const controller = (() => {
   router.get(
     '/getMeterRecording',
     catchAsync(async (req, res) => {
-      let { page, row, startDate } = req.query;
+      let { page, row, startDate, productLine } = req.query;
       const { id, cType, cPositionFk, cProductionLineFk, endDate } = req.query;
       let endTime;
 
@@ -47,7 +47,13 @@ const controller = (() => {
           new Date(moment(startDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
         );
       }
-      let meterIdsList = await service.getMeterId(id, cType, cPositionFk, cProductionLineFk, null);
+      let meterIdsList = await service.getMeterId(
+        id,
+        cType,
+        cPositionFk,
+        cProductionLineFk,
+        productLine,
+      );
       let meterIds = [];
       meterIdsList.forEach(element => {
         meterIds.push(element.id);
@@ -101,7 +107,12 @@ const controller = (() => {
         });
         meterIdList = [...new Set(meterIdList)];
         let list = [];
-        // meterIdList.forEach(meterId => {
+        if (productLine == 'true' || (cProductionLineFk != null && cProductionLineFk != '')) {
+          productLine = true;
+        } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
+          productLine = false;
+        }
+        console.log(productLine);
         for (let j = 0; j < meterIdList.length; j++) {
           let meterId = meterIdList[j];
           let ele = [];
@@ -136,7 +147,7 @@ const controller = (() => {
                     .toNumber();
                 }
               }
-              list.push({ meterRecord, energyConsumption });
+              list.push({ meterRecord, energyConsumption, productLine });
             } else {
               const predate = new Date(
                 moment(meterRecord.dRecordTime)
@@ -148,9 +159,9 @@ const controller = (() => {
                 energyConsumption = new Decimal(meterRecord.cValue)
                   .sub(new Decimal(ele[i - 1].cValue))
                   .toNumber();
-                list.push({ meterRecord, energyConsumption });
+                list.push({ meterRecord, energyConsumption, productLine });
               } else {
-                list.push({ meterRecord, energyConsumption: null });
+                list.push({ meterRecord, energyConsumption: null, productLine });
               }
             }
           }
@@ -161,7 +172,6 @@ const controller = (() => {
           data: list,
           total: count,
           message: 'Data obtained.',
-          productLine: true,
         });
       } else {
         res.json({
