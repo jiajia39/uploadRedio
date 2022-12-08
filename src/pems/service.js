@@ -235,7 +235,7 @@ async function setMeterRecordingAndSave() {
 async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine) {
   const filter = { AND: [] };
   if (id) filter.AND = { ...filter.AND, id: parseInt(id) };
-  if (cType) filter.AND = { ...filter.AND, cType};
+  if (cType) filter.AND = { ...filter.AND, cType };
   if (productLine == 'false' && (cPositionFk == null || cPositionFk == '')) {
     console.log('a');
     filter.AND = {
@@ -244,9 +244,7 @@ async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine
         not: null,
       },
     };
-  } else {
-    if (cPositionFk) filter.AND.push({ cPositionFk: parseInt(cPositionFk) });
-  }
+  } else if (cPositionFk) filter.AND = { ...filter.AND, cPositionFk: parseInt(cPositionFk) };
   if (productLine == 'true' && (cProductionLineFk == null || cProductionLineFk == '')) {
     console.log('a');
     filter.AND = {
@@ -255,9 +253,8 @@ async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine
         not: null,
       },
     };
-  } else {
-    if (cProductionLineFk) filter.AND.push({ cProductionLineFk: parseInt(cProductionLineFk) });
-  }
+  } else if (cProductionLineFk)
+    filter.AND = { ...filter.AND, cPositionFk: parseInt(cProductionLineFk) };
   if (filter.AND.length < 1) {
     const data = await prisma.Pems_Meter.groupBy({ by: ['id'] });
     return data;
