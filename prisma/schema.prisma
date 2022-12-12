@@ -192,6 +192,8 @@ model Pems_MeterRecording {
   cRecordDate DateTime?   @db.Date
   cValue      Float?
   cMeterFk    Int?
+  cDiffValue  Float?
+  cFeeValue   Float?
   Pems_Meter  Pems_Meter? @relation(fields: [cMeterFk], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Pems_MeterRecording_MeterFk")
 }
 

@@ -66,6 +66,8 @@ async function setMeterValuesandSave() {
 
 async function setMeterRecordingAndSave() {
   const meters = await prisma.Pems_Meter.findMany();
+  const energyFees = await prisma.Pems_EnergyFees.findMany();
+
   let time;
   console.log('Meter Count:', meters.length);
   let list = [];
@@ -80,7 +82,7 @@ async function setMeterRecordingAndSave() {
       cType = 'TT';
     }
     const field = meters[j].cName + '.' + cType;
-    let start = '-1h';
+    let start = '-2h';
     let interval = '1h';
     const queryType = 'last';
 
@@ -113,15 +115,35 @@ async function setMeterRecordingAndSave() {
       });
     } else {
       const endTime = new Date(
-        new Date(moment(influxData[0].time).format('YYYY-MM-DD HH:mm:ss')).getTime() +
+        new Date(moment(influxData[1].time).format('YYYY-MM-DD HH:mm:ss')).getTime() +
           8 * 60 * 60 * 1000,
       );
-      dateTime = new Date(moment(influxData[0].time).format('YYYY-MM-DD'));
-      const cValue = parseFloat(influxData[0].value).toFixed(2);
+      console.log(influxData);
+      dateTime = new Date(moment(influxData[1].time).format('YYYY-MM-DD'));
+      let diff = new Decimal(influxData[1].value).sub(influxData[0].value).toNumber();
+      if (diff != null) {
+        diff = parseFloat(diff).toFixed(2);
+      }
+      const cValue = parseFloat(influxData[1].value).toFixed(2);
+      let fee = 0.0;
+      const hour = new Date(moment().format('YYYY-MM-DD HH:mm:ss')).getHours();
+      energyFees.forEach(element => {
+        const { cEnergySubstituteFk } = meters[j];
+        const startTime = parseInt(element.cStartTime.substring(0, 2));
+        const end = parseInt(element.cEndTime.substring(0, 2));
+        if (element.cEnergySubstituteFk == cEnergySubstituteFk) {
+          if (hour >= startTime && hour < end) {
+            fee = element.cPrice;
+          }
+        }
+      });
+      const cFeeValue = fee * diff;
       list.push({
         dRecordTime: endTime,
         cRecordDate: dateTime,
         cValue: parseFloat(cValue),
+        cFeeValue: parseFloat(cFeeValue),
+        cDiffValue: parseFloat(diff),
         cMeterFk: Number(meters[j].id),
       });
     }
@@ -133,6 +155,8 @@ async function setMeterRecordingAndSave() {
         dRecordTime: list[0].dRecordTime,
       },
     });
+    console.log(list[0].dRecordTime);
+    console.log(record);
     if (record == null) {
       await prisma.Pems_MeterRecording.createMany({
         data: list,
