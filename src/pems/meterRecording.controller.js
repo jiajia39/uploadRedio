@@ -72,6 +72,7 @@ const controller = (() => {
         dRecordTime: true,
         cRecordDate: true,
         cValue: true,
+        cDiffValue: true,
         Pems_Meter: {
           select: {
             id: true,
@@ -95,88 +96,49 @@ const controller = (() => {
         ],
       });
 
-      const count = await prisma.Pems_MeterRecording.count({
-        where: filter,
-      });
       //获取meterId
       let meterIdList = [];
       console.log(filter);
       if (data != null && data.length > 0) {
-        data.forEach(element => {
-          meterIdList.push(element.Pems_Meter.id);
+        const count = await prisma.Pems_MeterRecording.count({
+          where: filter,
         });
-        meterIdList = [...new Set(meterIdList)];
-        let list = [];
+        const dataDiffSum = await prisma.Pems_MeterRecording.aggregate({
+          where: filter,
+          _sum: {
+            cDiffValue: true,
+          },
+        });
+        const totalEnergyConsumption = dataDiffSum._sum.cDiffValue;
+        let feeSum = await prisma.Pems_MeterRecording.aggregate({
+          where: filter,
+          _sum: {
+            cFeeValue: true,
+          },
+        });
+        feeSum = feeSum._sum.cFeeValue;
         if (productLine == 'true' || (cProductionLineFk != null && cProductionLineFk != '')) {
-          productLine = true;
-        } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
-          productLine = false;
-        }
-        console.log(productLine);
-        for (let j = 0; j < meterIdList.length; j++) {
-          let meterId = meterIdList[j];
-          let ele = [];
-          data.forEach(record => {
-            if (record.Pems_Meter.id == meterId) {
-              ele.push(record);
-            }
+          data.forEach(element => {
+            element.productLine = true;
           });
-          let energyConsumption = null;
-          for (let i = 0; i < ele.length; i++) {
-            let meterRecord = ele[i];
-            if (i == 0) {
-              let time = new Date(
-                moment(meterRecord.dRecordTime)
-                  .subtract(1, 'hours')
-                  .format('YYYY-MM-DD HH:mm:ss'),
-              );
-              const preFilter = {
-                AND: {
-                  dRecordTime: time,
-                  cMeterFk: meterRecord.Pems_Meter.id,
-                },
-              };
-              let recordingDate = await prisma.Pems_MeterRecording.findFirst({
-                where: preFilter,
-              });
-              console.log(preFilter);
-              if (recordingDate != null && recordingDate != '') {
-                if (recordingDate.cValue != null) {
-                  energyConsumption = new Decimal(meterRecord.cValue)
-                    .sub(new Decimal(recordingDate.cValue))
-                    .toNumber();
-                }
-              }
-              list.push({ meterRecord, energyConsumption, productLine });
-            } else {
-              const predate = new Date(
-                moment(meterRecord.dRecordTime)
-                  .subtract(1, 'hour')
-                  .format('YYYY-MM-DD HH:mm:ss'),
-              ).getTime();
-
-              if (new Date(ele[i - 1].dRecordTime).getTime() == predate) {
-                energyConsumption = new Decimal(meterRecord.cValue)
-                  .sub(new Decimal(ele[i - 1].cValue))
-                  .toNumber();
-                list.push({ meterRecord, energyConsumption, productLine });
-              } else {
-                list.push({ meterRecord, energyConsumption: null, productLine });
-              }
-            }
-          }
+        } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
+          data.forEach(element => {
+            element.productLine = false;
+          });
         }
-        // });
-        // res.json(list);
         res.json({
-          data: list,
+          data,
           total: count,
+          totalEnergyConsumption: parseFloat(parseFloat(totalEnergyConsumption).toFixed(2)),
+          feeSum: parseFloat(parseFloat(feeSum).toFixed(2)),
           message: 'Data obtained.',
         });
       } else {
         res.json({
           data: [],
-          total: count,
+          total: 0,
+          totalEnergyConsumption: 0,
+          feeSum: 0,
           message: 'Data Empty.',
         });
       }
