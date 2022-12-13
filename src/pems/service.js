@@ -137,7 +137,8 @@ async function setMeterRecordingAndSave() {
           }
         }
       });
-      const cFeeValue = fee * diff;
+      let cFeeValue = fee * diff;
+      cFeeValue = parseFloat(cFeeValue).toFixed(2);
       list.push({
         dRecordTime: endTime,
         cRecordDate: dateTime,
