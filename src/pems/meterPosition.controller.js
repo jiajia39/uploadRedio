@@ -452,6 +452,7 @@ const controller = (() => {
         });
         rstdata.forEach(element => {
           element.productLine = false;
+          element.meterParentId = element.parentId;
         });
         res.json({
           data: rstdata,

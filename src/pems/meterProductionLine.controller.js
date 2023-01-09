@@ -51,15 +51,22 @@ const controller = (() => {
       res.status(400).json({ message: 'Please pass cDesc.' });
       return;
     }
-    if (!req.body.parentId) {
-      console.log('____________' + req.body.parentId);
+    if (!req.body.meterParentId) {
+      console.log('____________' + req.body.meterParentId);
       req.body.parentId = null;
     } else {
-      req.body.parentId = Number(req.body.parentId);
+      req.body.parentId = Number(req.body.meterParentId);
     }
     req.body.dAddTime = new Date();
+    const date = {
+      dAddTime: req.body.dAddTime,
+      parentId: req.body.parentId,
+      cDesc: req.body.cDesc,
+      cType: req.body.cType,
+      cName: req.body.cName,
+    };
     await prisma.Pems_MeterProductionLine.create({
-      data: req.body,
+      data: date,
     });
     res.json({ isok: true, message: 'EnergyFees saved' });
   });
@@ -427,6 +434,7 @@ const controller = (() => {
           },
         });
         rstdata.forEach(element => {
+          element.meterParentId = element.parentId;
           element.productLine = true;
         });
 

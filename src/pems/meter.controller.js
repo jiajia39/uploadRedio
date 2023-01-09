@@ -173,6 +173,8 @@ const controller = (() => {
         Pems_MeterProductionLine: true,
         Pems_Energy_Substitute: true,
         Pems_MeterPosition: true,
+        cProductionLineFk: true,
+        cEnergySubstituteFk: true,
       };
 
       if (count != null && count > 0) {

@@ -158,6 +158,7 @@ const controller = (() => {
         cStartTime: true,
         cEndTime: true,
         cModel: true,
+        cEnergySubstituteFk: true,
         Pems_Energy_Substitute: {
           select: {
             id: true,
