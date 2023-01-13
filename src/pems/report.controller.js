@@ -180,6 +180,8 @@ const controller = (() => {
           cPositionFk,
           cProductionLineFk,
           productLine,
+          null,
+          null,
         );
         let meterReport = await service.getMeterReportingDayData(
           page,
@@ -522,6 +524,8 @@ const controller = (() => {
         cPositionFk,
         cProductionLineFk,
         productLine,
+        null,
+        null,
       );
       let endWeek;
       page = Number(page) || 1;
@@ -682,6 +686,8 @@ const controller = (() => {
         cPositionFk,
         cProductionLineFk,
         productLine,
+        null,
+        null,
       );
       page = Number(page) || 1;
       row = Number(row) || 5;

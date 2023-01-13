@@ -257,11 +257,14 @@ async function setMeterRecordingAndSave() {
  * @param {*} cPositionFk PositionId
  * @returns meterId
  */
-async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine) {
+async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine, row, page) {
   const filter = { AND: [] };
   if (id) filter.AND = { ...filter.AND, id: parseInt(id) };
   if (cType) filter.AND = { ...filter.AND, cType };
-  if (productLine == 'false' && (cPositionFk == null || cPositionFk == '')) {
+  if (
+    productLine == 'false' &&
+    (cPositionFk == null || cPositionFk == '' || cPositionFk === undefined)
+  ) {
     console.log('a');
     filter.AND = {
       ...filter.AND,
@@ -270,8 +273,10 @@ async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine
       },
     };
   } else if (cPositionFk) filter.AND = { ...filter.AND, cPositionFk: parseInt(cPositionFk) };
-  if (productLine == 'true' && (cProductionLineFk == null || cProductionLineFk == '')) {
-    console.log('a');
+  if (
+    productLine == 'true' &&
+    (cProductionLineFk == null || cProductionLineFk == '' || cProductionLineFk == undefined)
+  ) {
     filter.AND = {
       ...filter.AND,
       cProductionLineFk: {
@@ -280,16 +285,65 @@ async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine
     };
   } else if (cProductionLineFk)
     filter.AND = { ...filter.AND, cProductionLineFk: parseInt(cProductionLineFk) };
-  if (filter.AND.length < 1) {
-    const data = await prisma.Pems_Meter.groupBy({ by: ['id'] });
-    return data;
+  const select = {
+    id: true,
+  };
+  let data = [];
+  let count = 0;
+  if (row != null && page != null) {
+    row = Number(row);
+    page = Number(page);
+
+    if (filter.AND.length < 1) {
+      count = await prisma.Pems_Meter.count();
+      data = await prisma.Pems_Meter.findMany({
+        select,
+        skip: (page - 1) * row,
+        take: Number(row),
+        orderBy: {
+          id: 'asc',
+        },
+      });
+    } else {
+      count = await prisma.Pems_Meter.count({
+        where: filter,
+      });
+      data = await prisma.Pems_Meter.findMany({
+        where: filter,
+        skip: (page - 1) * row,
+        take: row,
+        select,
+        orderBy: {
+          id: 'asc',
+        },
+      });
+    }
   } else {
-    const data = await prisma.Pems_Meter.groupBy({
-      where: filter,
-      by: ['id'],
-    });
-    return data;
+    if (filter.AND.length < 1) {
+      count = await prisma.Pems_Meter.count();
+      data = await prisma.Pems_Meter.findMany({
+        select,
+        orderBy: {
+          id: 'asc',
+        },
+      });
+    } else {
+      count = await prisma.Pems_Meter.count({
+        where: filter,
+      });
+      data = await prisma.Pems_Meter.findMany({
+        where: filter,
+        select,
+        orderBy: {
+          id: 'asc',
+        },
+      });
+    }
   }
+  console.log(filter);
+
+  data.count = count;
+  return data;
 }
 
 /**
@@ -504,7 +558,7 @@ async function saveReoprtWeekHistory() {
  */
 async function createInitializationWeek(startMon, endSun) {
   let weekList = [];
-  const meterIds = await getMeterId(null, null, null, null, null);
+  const meterIds = await getMeterId(null, null, null, null, null, null, null);
   if (meterIds != null && meterIds != '' && meterIds.length > 0) {
     meterIds.forEach(meterId => {
       weekList.push({
@@ -864,7 +918,7 @@ async function saveReoprtCurrentMon() {
  */
 async function createNullValueDate() {
   let monthList = [];
-  const meterIds = await getMeterId(null, null, null, null, null);
+  const meterIds = await getMeterId(null, null, null, null, null, null, null);
   if (meterIds != null && meterIds != '' && meterIds.length > 0) {
     meterIds.forEach(meterId => {
       monthList.push({
@@ -934,7 +988,15 @@ async function statisticalMeterData(
   cProductionLineFk,
   productLine,
 ) {
-  let meterIdList = await getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine);
+  let meterIdList = await getMeterId(
+    id,
+    cType,
+    cPositionFk,
+    cProductionLineFk,
+    productLine,
+    null,
+    null,
+  );
   let dateList = [];
   if (cRecordDate == null || cRecordDate == '') {
     dateList = null;
