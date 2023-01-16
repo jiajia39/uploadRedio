@@ -186,7 +186,7 @@ const controller = (() => {
           where: { id: Number(req.params.id) },
         }).then(() => 'MeterPosition deleted');
       }
-      res.json({ message });
+      res.json({ isok: true, message });
     }),
   );
 

@@ -438,7 +438,7 @@ const controller = (() => {
         where: { id: Number(id) },
       }).then(() => 'Pems_Meter deleted');
 
-      res.json({ message });
+      res.json({ isok: true, message });
     }),
   );
 
