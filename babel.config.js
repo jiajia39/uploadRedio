@@ -19,6 +19,7 @@ module.exports = (api) => {
       ],
       '@babel/plugin-proposal-class-properties',
       'lodash',
+      'transform-inline-environment-variables',
     ],
   };
 };

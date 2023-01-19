@@ -2,7 +2,7 @@ export const NODE_ENV = process.env.NODE_ENV || 'development';
 export const INDEX_NAME = process.env.INDEX_NAME || 'local';
 
 export const HOST = process.env.HOST || '0.0.0.0';
-export const PORT = NODE_ENV === 'production' ? 3001 : 3000;
+export const PORT = 3000;
 
 export const SECRET_KEY = process.env.SECRET_KEY || 'jbmpHPLoaV8N0nEpuLxlpT95FYakMPiu';
 
@@ -29,11 +29,20 @@ export const RATE_LIMIT = process.env.RATE_LIMIT || 0;
 
 export const SENTRY_DSN = process.env.SENTRY_DSN || null;
 
-export const INFLUX_URL = 'https://iad.raopc.com:7086/';
+// Define InlfuxDB Configurations
+export const INFLUX_URL =
+         NODE_ENV === 'development'
+           ? 'https://iad.raopc.com:7086/'
+           : 'http://10.232.229.155:8086/';
 
 export const INFLUX_TOKEN =
-      'kVAfPlHgzR-ssVptzXffkej9cBxxge4zCOOW7aGl9eCVniMlbnyyctMnnvHKMYLxdPVKL9tBMp3V-CbLyrid1g==';
+         NODE_ENV === 'development'
+           ? 'kVAfPlHgzR-ssVptzXffkej9cBxxge4zCOOW7aGl9eCVniMlbnyyctMnnvHKMYLxdPVKL9tBMp3V-CbLyrid1g=='
+           : 'Dwu2vyFmBTOFSGF1VF7JkDteY554MxPpw7euRhcA4x8snb1gAkDbfA8hk32HNLZbss_UZS7xcdF1octkmBtCnQ==';
 
 export const INFLUX_ORG = 'trz';
 
-export const INFLUX_BUCKET = 'L85PEMS';
+export const INFLUX_BUCKET = 
+          NODE_ENV === 'development'
+            ? 'L85PEMS' 
+            : 'trz_pems';

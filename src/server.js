@@ -3,12 +3,13 @@ import chalk from 'chalk';
 
 // import mongoose from '~/core/mongoose';
 
-import { PORT, HOST } from './env';
+import { PORT, HOST, NODE_ENV } from './env';
 import app from './app';
 
 const teal500 = chalk.hex('#009688');
 
 app.listen(Number(PORT), HOST, () => {
+  console.log(`App running on ${NODE_ENV}`);
   console.log(teal500('🚀  App: Bootstrap Succeeded'));
   console.log(teal500(`🚀  Host: http://${HOST}:${PORT}`));
 
