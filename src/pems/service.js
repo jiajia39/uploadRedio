@@ -842,7 +842,7 @@ async function saveReoprtCurrentMon() {
   if (Number(day) == 1) {
     //当前时间是月初 1号时，添加1号的数据月数据，并更新上月月末的数据
     //获取开始时间上月月末的日期
-    await createNullValueDate();
+    await createNullValueDate(newFor, end);
   } else {
     const filter = { AND: [] };
     if (newFor) filter.AND = { ...filter.AND, cMonthStart: new Date(newFor) };
@@ -850,7 +850,7 @@ async function saveReoprtCurrentMon() {
       where: filter,
     });
     if (date == null || date == '') {
-      await createNullValueDate();
+      await createNullValueDate(newFor, end);
     }
     let preDate = new Date(
       moment()
@@ -916,7 +916,7 @@ async function saveReoprtCurrentMon() {
 /**
  * 创建cValue=null的 Pems_MeterReporting_Month数据
  */
-async function createNullValueDate() {
+async function createNullValueDate(newFor, end) {
   let monthList = [];
   const meterIds = await getMeterId(null, null, null, null, null, null, null);
   if (meterIds != null && meterIds != '' && meterIds.length > 0) {
