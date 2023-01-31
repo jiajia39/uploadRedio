@@ -9,46 +9,8 @@ const fs = require('fs');
  * @param {*} data 需要插入excel的数据
  */
 function writexls(data) {
-  // const colConf = {
-  //   '!cols': [
-  //     {
-  //       // 设置每列的宽度
-  //       wch: 100,
-  //     },
-  //     {
-  //       wch: 130,
-  //     },
-  //     {
-  //       wch: 500,
-  //     },
-  //     {
-  //       wch: 80,
-  //     },
-  //     { wch: 80 },
-  //     { wch: 80 },
-  //   ],
-  // };
-
-  const colConf = { '!cols': [{ wch: 100 }, { wch: 100 }, { wch: 500 }, { wch: 80 }] };
-  const buffer = xlsx.build([{ name: 'shell1', data }], { colConf });
-  // const buffer = xlsx.build(
-  //   [
-  //     {
-  //       name: 'shell1',
-  //       data,
-  //     },
-  //   ],
-  //   { colConf },
-  //   // [
-  //   //   {
-  //   //     //设置居中
-  //   //     alignment: {
-  //   //       horizontal: 'center',
-  //   //       vertical: 'center',
-  //   //     },
-  //   //   },
-  //   // ],
-  // );
+  const colConf = { '!cols': [{ wch: 10 }, { wch: 15 }, { wch: 70 }, { wch: 25 }, { wch: 25 }] };
+  const buffer = xlsx.build([{ name: 'shell1', data }], { sheetOptions: colConf });
   const nowDate = moment()
     .subtract(1, 'day')
     .format('YYYY-MM-DD');
@@ -67,7 +29,7 @@ function writexls(data) {
  */
 async function exportExcel() {
   const nowDate = new Date(moment().format('YYYY-MM-DD 00:00:00'));
-  const nowFor = moment().format('YYYY-MM-DD 00:00:00');
+  const nowFor = moment().format('YYYY-MM-DD 00:00');
   const preDate = new Date(
     moment()
       .subtract(1, 'day')
