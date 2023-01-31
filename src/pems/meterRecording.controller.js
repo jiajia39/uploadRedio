@@ -157,23 +157,22 @@ const controller = (() => {
           new Date(moment(endDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
         );
       }
-      console.log(startDate);
       if (startDate == null || startDate == '') {
-        start = moment(endTime)
-          .subtract(3, 'hours')
-          .format('YYYY-MM-DD HH:mm');
         startDate = new Date(
           moment(endTime)
             .subtract(3, 'hours')
             .format('YYYY-MM-DD HH:mm:ss'),
         );
+        start = moment()
+          .subtract(3, 'hours')
+          .format('YYYY-MM-DD HH:mm');
       } else {
         start = moment(startDate).format('YYYY-MM-DD HH:mm');
         startDate = new Date(
           new Date(moment(startDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
         );
-        console.log(startDate);
       }
+
       const meterIdsList = await service.getMeterId(
         id,
         cType,
