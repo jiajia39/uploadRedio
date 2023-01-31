@@ -28,26 +28,21 @@ function writexls(data) {
  * 获取前一天的报表数据生成excel并保存到对应的位置
  */
 async function exportExcel() {
-  const nowDate = new Date(moment().format('YYYY-MM-DD 00:00:00'));
   const nowFor = moment().format('YYYY-MM-DD 00:00');
-  const preDate = new Date(
-    moment()
-      .subtract(1, 'day')
-      .format('YYYY-MM-DD 00:00'),
-  );
   const preFor = moment()
     .subtract(1, 'day')
     .format('YYYY-MM-DD 00:00');
   const preTime = new Date(
-    moment(nowDate)
+    moment()
       .subtract(1, 'day')
       .format('YYYY-MM-DD'),
   );
-  const data = await prisma.$queryRaw` select meter.cName,meter.cType,meter.cDesc, (select top(1) cValue from Pems_MeterRecording record where record.cMeterFk=meter.id and record.dRecordTime =${nowDate} ) as pre_value,
-  (select top(1) cValue from Pems_MeterRecording record where record.cMeterFk=meter.id and record.dRecordTime =${preDate} ) as value,PMRHD.cValue
+  const nowTime = new Date(moment().format('YYYY-MM-DD'));
+  const data = await prisma.$queryRaw` select meter.cName,meter.cType,meter.cDesc, (select top(1) cValue from Pems_MeterRecording record where record.cMeterFk=meter.id and record.dRecordTime =${preTime} ) as pre_value,
+  (select top(1) cValue from Pems_MeterRecording record where record.cMeterFk=meter.id and record.dRecordTime =${nowTime} ) as value,PMRHD.cValue
 from Pems_Meter meter
-left join Pems_MeterReportHistory_Day PMRHD on meter.id = PMRHD.cMeterFk and cDate=${preTime} order by  meter.cType asc  `;
-
+left join Pems_MeterReportHistory_Day PMRHD on meter.id = PMRHD.cMeterFk and cDate=${preTime} 
+order by  meter.cType asc  `;
   const end = `${nowFor} 读数`;
   const sta = `${preFor} 读数`;
   let dataList = [];
