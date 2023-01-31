@@ -9,6 +9,7 @@ import meterProductionLine from './meterProductionLine.controller';
 import engrgyService from './energy.service';
 import energySubstitute from './energySubstitute.controller';
 import meterRecording from './meterRecording.controller';
+import reportService from './report.service';
 
 export const CrudOperations = {
   engrgyService,
@@ -22,6 +23,7 @@ export const CrudOperations = {
   energySubstitute,
   shift,
   meterRecording,
+  reportService,
 };
 
 export default {
@@ -34,4 +36,5 @@ export default {
   meterProductionLine,
   energySubstitute,
   meterRecording,
+  reportService,
 };

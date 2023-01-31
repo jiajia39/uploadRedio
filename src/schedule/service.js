@@ -1,5 +1,7 @@
 import meterValue from '../pems/service';
 import energyService from '../pems/energy.service';
+import reportService from '../pems/report.service';
+
 const CronJob = require('node-cron');
 
 /**
@@ -92,4 +94,14 @@ exports.initScheduledJobs = async function() {
     // Add your custom logic here
   });
   scheduledJobForSaveDayHistory.start();
+
+  /**
+   * Automatically save daily data and energy consumption information to excel
+   */
+  const statisticsExcel = CronJob.schedule('0 40 0 * * *', () => {
+    console.log('Automatically save daily data and energy consumption information to excel');
+    reportService.exportExcel();
+    // Add your custom logic here
+  });
+  statisticsExcel.start();
 };
