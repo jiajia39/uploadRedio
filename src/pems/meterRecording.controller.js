@@ -147,15 +147,11 @@ const controller = (() => {
       let endTime;
 
       if (endDate == null || endDate == '') {
-        endTime = new Date(
-          new Date(moment().format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
-        );
+        endTime = new Date();
         end = moment().format('YYYY-MM-DD HH:mm');
       } else {
         end = moment(endDate).format('YYYY-MM-DD HH:mm');
-        endTime = new Date(
-          new Date(moment(endDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
-        );
+        endTime = new Date(endDate);
       }
       if (startDate == null || startDate == '') {
         startDate = new Date(
@@ -168,9 +164,7 @@ const controller = (() => {
           .format('YYYY-MM-DD HH:mm');
       } else {
         start = moment(startDate).format('YYYY-MM-DD HH:mm');
-        startDate = new Date(
-          new Date(moment(startDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
-        );
+        startDate = new Date(startDate);
       }
 
       const meterIdsList = await service.getMeterId(

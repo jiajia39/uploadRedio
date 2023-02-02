@@ -10,7 +10,6 @@ var moment = require('moment');
 async function setMeterValuesandSave() {
   const meters = await prisma.Pems_Meter.findMany();
   console.log('startig iteration.........');
-  console.log(meters);
   const shiftDate = await prisma.Pems_Shift.findMany({
     where: {
       cDesc: '白班',
@@ -30,7 +29,7 @@ async function setMeterValuesandSave() {
     const start = '-1h';
     const interval = '1h';
     const queryType = 'last';
-    const dateTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    const dateTime = new Date();
     const time = new Date();
     const date = dateFmt(time, '');
     const cRecordType = await isMorOrAft(shiftDate, time);
@@ -100,12 +99,9 @@ async function setMeterRecordingAndSave() {
       console.log('---');
       const startDate = moment(new Date());
       const endTime = new Date(
-        new Date(
-          moment(startDate)
-            .subtract(1, 'hour')
-            .format('YYYY-MM-DD HH:00:00'),
-        ).getTime() +
-          8 * 60 * 60 * 1000,
+        moment(startDate)
+          .subtract(1, 'hour')
+          .format('YYYY-MM-DD HH:00:00'),
       );
       list.push({
         dRecordTime: endTime,
@@ -114,10 +110,7 @@ async function setMeterRecordingAndSave() {
         cMeterFk: Number(meters[j].id),
       });
     } else {
-      const endTime = new Date(
-        new Date(moment(influxData[1].time).format('YYYY-MM-DD HH:mm:ss')).getTime() +
-          8 * 60 * 60 * 1000,
-      );
+      const endTime = new Date(moment(influxData[1].time).format('YYYY-MM-DD HH:mm:ss'));
       console.log(influxData);
       dateTime = new Date(moment(influxData[1].time).format('YYYY-MM-DD'));
       let diff = new Decimal(influxData[1].value).sub(influxData[0].value).toNumber();
