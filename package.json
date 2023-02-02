@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "serve": "set NODE_ENV=development&& nodemon src/server.js --exec babel-node --ignore **/__tests__/** --ignore **/__mocks__/**",
-    "serve:prod": "set NODE_ENV=production&& nodemon src/server.js --exec babel-node --ignore **/__tests__/** --ignore **/__mocks__/**",
+    "serve": "nodemon src/server.js --exec babel-node --ignore **/__tests__/** --ignore **/__mocks__/**",
     "build": "babel src -d dist --ignore **/__tests__/**,**/__mocks__/**",
+    "serve:dev": "env-cmd -f ./envs/dev.js yarn serve",
+    "serve:prod": "env-cmd -f ./envs/prod.js yarn serve",
     "build:dev": "env-cmd -f ./envs/dev.js yarn build",
     "build:prod": "env-cmd -f ./envs/prod.js yarn build",
     "lint": "eslint 'src/**/*.js'",
