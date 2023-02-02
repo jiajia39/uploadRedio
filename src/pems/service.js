@@ -155,7 +155,7 @@ async function setMeterRecordingAndSave() {
       await prisma.Pems_MeterRecording.createMany({
         data: list,
       });
-    // }
+    }
   }
   // return list;
 }
