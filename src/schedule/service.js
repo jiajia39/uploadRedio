@@ -108,7 +108,7 @@ exports.initScheduledJobs = async function () {
   /**
  * Automatically save the energy consumption data of last month to excel
  */
-  const statisticsMonExcel = CronJob.schedule('0 45 0 * * *', () => {
+  const statisticsMonExcel = CronJob.schedule('0 45 0 1 * *', () => {
     console.log('Automatically save the energy consumption data of last month to excel');
     reportService.saveExcel();
     // Add your custom logic here
