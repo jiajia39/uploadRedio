@@ -60,6 +60,9 @@ order by  meter.cType asc  `;
   });
   writexls(dataList);
 }
+/**
+ * 每月抄表记录(每月抄一次)
+ */
 async function getMonEnergyConsumption() {
   const preDay = moment()
     .date(1)
@@ -105,7 +108,7 @@ async function getMonEnergyConsumption() {
 }
 
 /**
- * 获取上一个月的报表数据生成excel并保存到对应的位置
+ * 上月仪器每日用电量
  */
 async function monthExportExcel() {
   //获取上月的第一天和最后一天
@@ -252,8 +255,35 @@ async function saveExcel() {
     // 加粗
     bold: true,
   };
+  //设置背景色
+  worksheet.getRow(2).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: '8DB4E2' },
+  };
 
+  const sheetLength = data.length;
+  worksheet.getRow(sheetLength).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: '8DB4E2' },
+  };
+
+  for (let j = 3; j <= 34; j++) {
+    worksheet.getColumn(j).width = 10;
+    worksheet.getColumn(j).alignment = {
+      vertical: 'middle',
+      horizontal: 'center',
+    };
+  }
+
+  // //行高
+  // worksheet.getRows(1, 553).height = 30;
   worksheet.getRow('2').font = {
+    // 字体大小
+    size: 14,
+  };
+  worksheet.getRow(sheetLength).font = {
     // 字体大小
     size: 14,
   };
@@ -278,9 +308,6 @@ async function saveExcel() {
   worksheet.getRow('2').border = {
     top: {
       style: 'double',
-      // color: {
-      //   argb: 'FF00FF00',
-      // },
     },
     left: {
       style: 'thin',
@@ -336,6 +363,13 @@ async function saveExcel() {
     vertical: 'middle',
     horizontal: 'center',
   };
+  //设置背景色
+
+  worksheet2.getRow(3).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: '8DB4E2' },
+  };  
   worksheet2.getCell('A1').font = {
     // 字体名
     name: 'Comic Sans MS',
@@ -372,9 +406,6 @@ async function saveExcel() {
   worksheet2.getRow('3').border = {
     top: {
       style: 'double',
-      // color: {
-      //   argb: 'FF00FF00',
-      // },
     },
     left: {
       style: 'thin',
@@ -392,7 +423,7 @@ async function saveExcel() {
     .subtract(1, 'month')
     .format('YYYY-MM');
   const path = './uploads/' + '读数统计' + `${nowDate}.xlsx`;
-  workbook.xlsx.writeFile(path).then(function() {
+  workbook.xlsx.writeFile(path).then(function () {
     // console.log('saved');
   });
 }
