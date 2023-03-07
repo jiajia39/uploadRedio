@@ -7,7 +7,7 @@ const CronJob = require('node-cron');
 /**
  * Automatically Recording Meter Values Every Shift
  */
-exports.initScheduledJobs = async function () {
+exports.initScheduledJobs = async function() {
   const hour = await meterValue.getShiftTime();
   if (hour != '') {
     const sch = `0 0 ${hour} * * * `;
@@ -106,8 +106,8 @@ exports.initScheduledJobs = async function () {
   statisticsExcel.start();
 
   /**
- * Automatically save the energy consumption data of last month to excel
- */
+   * Automatically save the energy consumption data of last month to excel
+   */
   const statisticsMonExcel = CronJob.schedule('0 45 0 1 * *', () => {
     console.log('Automatically save the energy consumption data of last month to excel');
     reportService.saveExcel();

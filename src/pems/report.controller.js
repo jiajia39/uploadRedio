@@ -1,9 +1,10 @@
 import e, { Router } from 'express';
 import prisma from '../core/prisma';
-import service from '../pems/service';
+import service from './service';
 import energyService from './energy.service';
-import catchAsync from './../utils/catchAsync';
-var moment = require('moment');
+import catchAsync from '../utils/catchAsync';
+
+const moment = require('moment');
 
 const controller = (() => {
   const router = Router();
@@ -106,7 +107,7 @@ const controller = (() => {
   router.get(
     '/statisticalMeterValue',
     catchAsync(async (req, res) => {
-      //isAll 是否展示所有数据 1展示
+      // isAll 是否展示所有数据 1展示
       let {
         page,
         row,
@@ -125,8 +126,8 @@ const controller = (() => {
       if (row == null) {
         row = 5;
       }
-      let now = new Date(moment().format('YYYY-MM-DD'));
-      let recordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
+      const now = new Date(moment().format('YYYY-MM-DD'));
+      const recordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
       if (cRecordDate == null || cRecordDate == '' || now.getTime() == recordDate.getTime()) {
         cRecordDate = new Date();
         const date = await service.statisticalMeterData(
@@ -174,7 +175,7 @@ const controller = (() => {
         }
       } else {
         cRecordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
-        let meterIdList = await service.getMeterId(
+        const meterIdList = await service.getMeterId(
           id,
           cType,
           cPositionFk,
@@ -183,7 +184,7 @@ const controller = (() => {
           null,
           null,
         );
-        let meterReport = await service.getMeterReportingDayData(
+        const meterReport = await service.getMeterReportingDayData(
           page,
           row,
           cRecordDate,
@@ -208,7 +209,7 @@ const controller = (() => {
         }
         if (meterReport.rstdata != null && meterReport.rstdata.length > 0) {
           const shiftDate = await prisma.Pems_Shift.findMany();
-          let statisticalMeter = [];
+          const statisticalMeter = [];
           if (productLine == 'true' || (cProductionLineFk != null && cProductionLineFk != '')) {
             productLine = true;
           } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
@@ -218,14 +219,14 @@ const controller = (() => {
             let shiftTime = null;
             shiftDate.forEach(shift => {
               if (shift.cDesc == element.cRecordType) {
-                shiftTime = shift.cStartTime + '---' + shift.cEndTime;
+                shiftTime = `${shift.cStartTime}---${shift.cEndTime}`;
               }
             });
-            let energyConsumption = element.cValue;
+            const energyConsumption = element.cValue;
             const cRecordDate = element.cDate;
-            const cMeterFk = element.cMeterFk;
-            const cRecordType = element.cRecordType;
-            const Pems_Meter = element.Pems_Meter;
+            const { cMeterFk } = element;
+            const { cRecordType } = element;
+            const { Pems_Meter } = element;
             const cValue = element.cMeterValue;
             statisticalMeter.push({
               shiftTime,
@@ -263,9 +264,9 @@ const controller = (() => {
   router.get(
     '/total/energy/consumption/echart/day',
     catchAsync(async (req, res) => {
-      let { cType } = req.query;
-      let meterIds = [];
-      //当前时间的前10天时间
+      const { cType } = req.query;
+      const meterIds = [];
+      // 当前时间的前10天时间
       const preTenDay = new Date(
         moment()
           .subtract(10, 'days')
@@ -276,8 +277,8 @@ const controller = (() => {
           .subtract(1, 'day')
           .format('YYYY-MM-DD'),
       );
-      let allDays = energyService.getAllDays(preTenDay, now);
-      let list = [];
+      const allDays = energyService.getAllDays(preTenDay, now);
+      const list = [];
       if (cType != null && cType != '') {
         const cPositionFk = [18, 19, 20];
         const filterMeter = { AND: [] };
@@ -294,7 +295,7 @@ const controller = (() => {
       }
       for (let i = 0; i < allDays.length; i++) {
         let totalEnergyConsumption = null;
-        let day = new Date(allDays[i]);
+        const day = new Date(allDays[i]);
         // if (new Date(day).getTime() == now.getTime()) {
         //   const date = await service.statisticalMeterData(null, cType, null, now, null);
         //   if (date != null && date.length > 0) {
@@ -342,14 +343,14 @@ const controller = (() => {
     '/total/energy/consumption/echart/week',
     catchAsync(async (req, res) => {
       const list = [];
-      let { cType } = req.query;
-      let meterIds = [];
-      //获取前7周的周一
-      let timeList = [];
-      let weekOfDay = parseInt(moment().format('E')); //计算今天是这周第几天
+      const { cType } = req.query;
+      const meterIds = [];
+      // 获取前7周的周一
+      const timeList = [];
+      const weekOfDay = parseInt(moment().format('E')); // 计算今天是这周第几天
       for (let i = 9; i >= 0; i--) {
-        //周一日期
-        let last_monday = new Date(
+        // 周一日期
+        const last_monday = new Date(
           moment()
             .subtract(weekOfDay + 7 * i - 1, 'days')
             .format('YYYY-MM-DD'),
@@ -386,12 +387,12 @@ const controller = (() => {
           },
         });
         totalEnergyConsumption = parseFloat(data._sum.cValue).toFixed(2);
-        //周日
+        // 周日
         const weekOfday = moment(monTime).format('E');
         const endSun = moment(monTime)
           .add(7 - weekOfday, 'days')
           .format('YYYY-MM-DD');
-        const weekTime = moment(monTime).format('YYYY-MM-DD') + '---' + endSun;
+        const weekTime = `${moment(monTime).format('YYYY-MM-DD')}---${endSun}`;
         list.push({
           date: weekTime,
           totalEnergyConsumption,
@@ -407,15 +408,15 @@ const controller = (() => {
     '/total/energy/consumption/echart/month',
     catchAsync(async (req, res) => {
       const list = [];
-      let { cType } = req.query;
-      let mon = new Date(
+      const { cType } = req.query;
+      const mon = new Date(
         moment()
           .subtract(9, 'months')
           .format('YYYY-MM-DD'),
       );
       const now = new Date(moment().format('YYYY-MM-DD'));
-      let monList = await service.getStaAndEndMon(mon, now);
-      let meterIds = [];
+      const monList = await service.getStaAndEndMon(mon, now);
+      const meterIds = [];
       if (cType != null && cType != '') {
         const cPositionFk = [18, 19, 20];
         const filterMeter = { AND: [] };
@@ -444,7 +445,7 @@ const controller = (() => {
           },
         });
         totalEnergyConsumption = parseFloat(data._sum.cValue).toFixed(2);
-        const monTime = monList[j].startTime + '---' + monList[j].endSun;
+        const monTime = `${monList[j].startTime}---${monList[j].endSun}`;
         list.push({
           date: monTime,
           totalEnergyConsumption,
@@ -452,6 +453,79 @@ const controller = (() => {
       }
       res.json({
         data: list,
+      });
+    }),
+  );
+
+  /**
+   * @swagger
+   * /api/pems/meterValues/statisticalMeterDay:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: Calculate Day energy consumption(计算每天耗能情况)
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: id
+   *         description: meter's id.
+   *         in: query
+   *         type: int
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *       - name: cPositionFk
+   *         description: meter's cPositionFk
+   *         in: query
+   *         type: int
+   *       - name: cRecordType
+   *         description: meterValues's cRecordType
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
+  router.get(
+    '/statisticalMeterDay',
+    catchAsync(async (req, res) => {
+      let {
+        row,
+        page,
+        date,
+        id,
+        cType,
+        cPositionFk,
+        isAll,
+        cProductionLineFk,
+        productLine,
+      } = req.query;
+      if (date == null || date == '') {
+        date = new Date(
+          moment()
+            .subtract(1, 'days')
+            .format('YYYY-MM-DD'),
+        );
+      } else {
+        date = new Date(moment(date).format('YYYY-MM-DD'));
+      }
+      const data = await service.getStatisticalMeterDay(
+        row,
+        page,
+        date,
+        id,
+        cType,
+        cPositionFk,
+        isAll,
+        cProductionLineFk,
+        productLine,
+      );
+      res.json({
+        data,
       });
     }),
   );
@@ -507,7 +581,7 @@ const controller = (() => {
         startWeek = new Date();
       }
       const weekOfday = moment(startWeek).format('E');
-      //开始时间的周一
+      // 开始时间的周一
       const cRecordDate = new Date(
         moment(startWeek)
           .subtract(weekOfday - 1, 'days')
@@ -518,7 +592,7 @@ const controller = (() => {
         .add(7 - endWeekOfday, 'days')
         .format('YYYYMMDD');
 
-      let meterIdList = await service.getMeterId(
+      const meterIdList = await service.getMeterId(
         id,
         cType,
         cPositionFk,
@@ -530,7 +604,7 @@ const controller = (() => {
       let endWeek;
       page = Number(page) || 1;
       row = Number(row) || 5;
-      let meterIds = [];
+      const meterIds = [];
       meterIdList.forEach(element => {
         meterIds.push(element.id);
       });
@@ -600,7 +674,7 @@ const controller = (() => {
         rstdata.forEach(element => {
           const start = moment(element.cWeekStart).format('YYYY-MM-DD');
           const end = moment(element.cWeekEnd).format('YYYY-MM-DD');
-          let date = start + '---' + end;
+          const date = `${start}---${end}`;
           element.cWeekStart = date;
         });
         res.json({
@@ -672,15 +746,15 @@ const controller = (() => {
       if (startMonth == null || startMonth == '') {
         startMonth = new Date();
       }
-      let startDate = moment(startMonth);
-      //月初
+      const startDate = moment(startMonth);
+      // 月初
       startMonth = new Date(startDate.format('YYYY-MM-01'));
-      //月末
-      let endMonth = moment(startMonth)
+      // 月末
+      const endMonth = moment(startMonth)
         .endOf('month')
         .format('YYYY-MM-DD');
       console.log(startMonth);
-      let meterIdList = await service.getMeterId(
+      const meterIdList = await service.getMeterId(
         id,
         cType,
         cPositionFk,
@@ -691,7 +765,7 @@ const controller = (() => {
       );
       page = Number(page) || 1;
       row = Number(row) || 5;
-      let meterIds = [];
+      const meterIds = [];
       meterIdList.forEach(element => {
         meterIds.push(element.id);
       });
@@ -762,7 +836,7 @@ const controller = (() => {
         rstdata.forEach(element => {
           const start = moment(element.cMonthStart).format('YYYY-MM-DD');
           const end = moment(element.cMonthEnd).format('YYYY-MM-DD');
-          let date = start + '---' + end;
+          const date = `${start}---${end}`;
           element.cMonthStart = date;
         });
         res.json({

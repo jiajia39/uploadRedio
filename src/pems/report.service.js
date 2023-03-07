@@ -1,6 +1,7 @@
 import xlsx from 'node-xlsx';
 import energyService from './energy.service';
 import prisma from '../core/prisma';
+
 const moment = require('moment');
 const fs = require('fs');
 
@@ -16,12 +17,12 @@ function writexls(data) {
     .format('YYYY-MM-DD');
 
   const path = `${'c:excel/' + '读数统计'}${nowDate}.xlsx`;
-  var dir = 'c:excel/';
-  //判断目录c:excel/是否存在如果不存在创建
+  const dir = 'c:excel/';
+  // 判断目录c:excel/是否存在如果不存在创建
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
   }
-  //创建并写入数据
+  // 创建并写入数据
   fs.writeFileSync(path, buffer, { flag: 'w' });
 }
 /**
@@ -45,11 +46,11 @@ left join Pems_MeterReportHistory_Day PMRHD on meter.id = PMRHD.cMeterFk and cDa
 order by  meter.cType asc  `;
   const end = `${nowFor} 读数`;
   const sta = `${preFor} 读数`;
-  let dataList = [];
+  const dataList = [];
   const title = ['名称', '类型', '描述', sta, end, '差值'];
   dataList.push(title);
   data.forEach(element => {
-    let arrinner = [];
+    const arrinner = [];
     arrinner.push(element.cName);
     arrinner.push(element.cType);
     arrinner.push(element.cDesc);
@@ -79,11 +80,11 @@ async function getMonEnergyConsumption() {
   const dataList = [];
   dataList.push(['每月抄表记录(每月抄一次)']);
   dataList.push([predate]);
-  let prePre = prePreDay + '表数';
-  let pre = preDay + '表数';
+  const prePre = `${prePreDay}表数`;
+  const pre = `${preDay}表数`;
 
-  let preMon = moment(predate).month();
-  let diffVal = Number(preMon) + 1 + '月用电数';
+  const preMon = moment(predate).month();
+  const diffVal = `${Number(preMon) + 1}月用电数`;
   const title = ['序号', '抄表地点', '位置', '名称', '倍率', prePre, pre, diffVal];
   dataList.push(title);
   let ind = 0;
@@ -111,7 +112,7 @@ async function getMonEnergyConsumption() {
  * 上月仪器每日用电量
  */
 async function monthExportExcel() {
-  //获取上月的第一天和最后一天
+  // 获取上月的第一天和最后一天
   const firstDay = moment()
     .subtract(1, 'months')
     .date(1)
@@ -125,14 +126,14 @@ async function monthExportExcel() {
     .format('YYYY-MM-DD');
   const month = moment(firstDay).month() + 1;
   const year = moment(firstDay).year();
-  const yearMonth = year + '年' + month + '月';
+  const yearMonth = `${year}年${month}月`;
   const days = await energyService.getAllDays(firstDay, endDay);
   let dayStr = '';
   days.forEach(element => {
     if (days[days.length - 1] == element) {
-      dayStr += '[' + element + ']';
+      dayStr += `[${element}]`;
     } else {
-      dayStr += '[' + element + ']' + ',';
+      dayStr += `[${element}]` + `,`;
     }
   });
   const data = await prisma.$queryRaw` exec [dbo].[report_Month] ${firstDay},${endDay}
@@ -188,12 +189,12 @@ async function monthExportExcel() {
       if (element[day] == undefined) {
         element[day] = null;
       } else {
-        value = value + element[day];
+        value += element[day];
       }
       arrinner.push(element[day]);
     });
     arrinner.push(value);
-    sumAll = sumAll + value;
+    sumAll += value;
     dataList.push(arrinner);
   });
   const dateSum = await prisma.$queryRaw`select day.cDate as ccDate, sum(cValue) as sumValue
@@ -227,19 +228,19 @@ async function monthExportExcel() {
  * 保存每月耗能数据excel
  */
 async function saveExcel() {
-  var Excel = require('exceljs');
-  var workbook = new Excel.Workbook();
+  const Excel = require('exceljs');
+  const workbook = new Excel.Workbook();
   // 标签创建
-  var worksheet = workbook.addWorksheet('上月仪器每日用电量');
+  const worksheet = workbook.addWorksheet('上月仪器每日用电量');
   // 带颜色的
-  var worksheet2 = workbook.addWorksheet('每月抄表记录(每月抄一次)', {
+  const worksheet2 = workbook.addWorksheet('每月抄表记录(每月抄一次)', {
     properties: {
       tabColor: {
         argb: 'FFC0000',
       },
     },
   });
-  let data = await this.monthExportExcel();
+  const data = await this.monthExportExcel();
 
   worksheet.addRows(data);
   // ===== 字体显示
@@ -255,7 +256,7 @@ async function saveExcel() {
     // 加粗
     bold: true,
   };
-  //设置背景色
+  // 设置背景色
   worksheet.getRow(2).fill = {
     type: 'pattern',
     pattern: 'solid',
@@ -320,9 +321,9 @@ async function saveExcel() {
     },
   };
 
-  //worksheet2
+  // worksheet2
 
-  let data2 = await this.getMonEnergyConsumption();
+  const data2 = await this.getMonEnergyConsumption();
   worksheet2.addRows(data2.dataList);
   // // 合并单元格
   const dateInfo = data2.data;
@@ -334,42 +335,42 @@ async function saveExcel() {
       if (name == dateInfo[i].postionName) {
         if (i == dateInfo.length - 1) {
           name = dateInfo[i - 1].postionName;
-          sum = sum + 1;
-          const col = 'B' + index + ':B' + sum;
+          sum += 1;
+          const col = `B${index}:B${sum}`;
           worksheet2.mergeCells(col);
           continue;
         }
-        sum = sum + 1;
+        sum += 1;
       } else {
         name = dateInfo[i].postionName;
-        const col = 'B' + index + ':B' + sum;
+        const col = `B${index}:B${sum}`;
         console.log(col);
         worksheet2.mergeCells(col);
         index = sum + 1;
-        sum = sum + 1;
+        sum += 1;
       }
     }
   }
-  //列宽
+  // 列宽
   worksheet2.getColumn(2).width = 20;
   worksheet2.getColumn(3).width = 70;
   worksheet2.getColumn(4).width = 16;
   worksheet2.getColumn(6).width = 20;
   worksheet2.getColumn(7).width = 20;
   worksheet2.getColumn(8).width = 18;
-  //行高
+  // 行高
   worksheet2.getRow(3).height = 25;
   worksheet2.getColumn('B').alignment = {
     vertical: 'middle',
     horizontal: 'center',
   };
-  //设置背景色
+  // 设置背景色
 
   worksheet2.getRow(3).fill = {
     type: 'pattern',
     pattern: 'solid',
     fgColor: { argb: '8DB4E2' },
-  };  
+  };
   worksheet2.getCell('A1').font = {
     // 字体名
     name: 'Comic Sans MS',
@@ -423,7 +424,7 @@ async function saveExcel() {
     .subtract(1, 'month')
     .format('YYYY-MM');
   const path = './uploads/' + '读数统计' + `${nowDate}.xlsx`;
-  workbook.xlsx.writeFile(path).then(function () {
+  workbook.xlsx.writeFile(path).then(function() {
     // console.log('saved');
   });
 }
