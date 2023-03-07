@@ -49,7 +49,7 @@ const controller = (() => {
   });
 
   /**
-   * Update the Monthly Energy Consumption per Day to the Energy Week Table
+   * Update the Monthly Energy Consumption per Day to the Energy Month Table
    * Executed Every Day at Midnight, can be referred at Schedule Service
    * This Controller is for Test Purpose and will not be used in the Production Env
    */

@@ -12,7 +12,7 @@ function Environment() {
 
   this.INFLUX_ORG = 'trz';
 
-  this.INFLUX_BUCKET = 'L85PEMS';
+  this.INFLUX_BUCKET = 'trz_pems';
   
 }
 
