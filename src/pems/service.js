@@ -1442,15 +1442,6 @@ async function getStatisticalMeterDay(
     },
   };
   let rstdata;
-  if (productLine == 'true' || (cProductionLineFk != null && cProductionLineFk != '')) {
-    rstdata.forEach(element => {
-      element.productLine = true;
-    });
-  } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
-    rstdata.forEach(element => {
-      element.productLine = false;
-    });
-  }
   const count = await prisma.Pems_MeterReportHistory_Day.count({
     where: filter,
   });
@@ -1476,7 +1467,15 @@ async function getStatisticalMeterDay(
         },
       });
     }
-
+    if (productLine == 'true' || (cProductionLineFk != null && cProductionLineFk != '')) {
+      rstdata.forEach(element => {
+        element.productLine = true;
+      });
+    } else if (productLine == 'false' || (cPositionFk != null && cPositionFk != '')) {
+      rstdata.forEach(element => {
+        element.productLine = false;
+      });
+    }
     let feeSum = null;
     let totalEnergyConsumption = null;
     if (cType != null && cType != '') {
