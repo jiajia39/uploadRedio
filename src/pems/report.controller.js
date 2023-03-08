@@ -496,7 +496,7 @@ const controller = (() => {
       let {
         row,
         page,
-        date,
+        cRecordDate,
         id,
         cType,
         cPositionFk,
@@ -504,19 +504,19 @@ const controller = (() => {
         cProductionLineFk,
         productLine,
       } = req.query;
-      if (date == null || date == '') {
-        date = new Date(
+      if (cRecordDate == null || cRecordDate == '') {
+        cRecordDate = new Date(
           moment()
             .subtract(1, 'days')
             .format('YYYY-MM-DD'),
         );
       } else {
-        date = new Date(moment(date).format('YYYY-MM-DD'));
+        cRecordDate = new Date(moment(cRecordDate).format('YYYY-MM-DD'));
       }
       const data = await service.getStatisticalMeterDay(
         row,
         page,
-        date,
+        cRecordDate,
         id,
         cType,
         cPositionFk,
@@ -524,9 +524,7 @@ const controller = (() => {
         cProductionLineFk,
         productLine,
       );
-      res.json({
-        data,
-      });
+      res.json(data);
     }),
   );
 
