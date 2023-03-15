@@ -429,10 +429,104 @@ async function saveExcel() {
   });
 }
 
+async function getEchartDay(cType) {
+  let meterId;
+  // 当前时间的前10天时间
+  const preTenDay = moment()
+    .startOf('months')
+    .format('YYYY-MM-DD');
+  const endDay = moment()
+    .endOf('months')
+    .format('YYYY-MM-DD');
+  let positionName = '';
+  const allDays = energyService.getAllDays(preTenDay, endDay);
+  const list = [];
+  if (cType != null && cType != '') {
+    if (cType == 'Electricity') {
+      positionName = '10KV工作电源柜';
+    }
+    if (cType == 'Water') {
+      positionName = '10KV工作电源柜';
+    }
+    if (cType == 'Steam') {
+      positionName = '10KV工作电源柜';
+    }
+  }
+  const position = await prisma.Pems_MeterPosition.findFirst({
+    where: {
+      cName: positionName,
+    },
+  });
+  if (position != null) {
+    const meter = await prisma.Pems_Meter.findFirst({
+      filter: {
+        cPositionFk: position.id,
+      },
+    });
+    if (meter != null) {
+      meterId = meter.id;
+    }
+  }
+
+  const filter = { AND: [] };
+  if (preTenDay) filter.AND.push({ cDate: { gte: new Date(preTenDay) } });
+  if (endDay) filter.AND.push({ cDate: { lte: new Date(endDay) } });
+  if (meterId != null) filter.AND = { ...filter.AND, cMeterFk: meterId };
+  const data = await prisma.Pems_MeterReportHistory_Day.findMany({
+    where: filter,
+  });
+  // if (data != null) {
+  //   totalEnergyConsumption = parseFloat(data.cValue).toFixed(2);
+  // }
+
+  // 费用
+  const filterFeeValue = { AND: [] };
+  if (preTenDay) filterFeeValue.AND.push({ cRecordDate: { gte: new Date(preTenDay) } });
+  if (endDay) filterFeeValue.AND.push({ cRecordDate: { lte: new Date(endDay) } });
+  if (meterId != null) filterFeeValue.AND = { ...filterFeeValue.AND, cMeterFk: meterId };
+  const feeData = await prisma.Pems_EnergyFeeValues.findMany({
+    where: filterFeeValue,
+  });
+  for (let i = 0; i < allDays.length; i++) {
+    let totalEnergyConsumption = null;
+    let feeSum = null;
+    const day = new Date(allDays[i]);
+    if (data != null && data.length > 0) {
+      for (let report = 0; report < data.length; report++) {
+        const element = data[report];
+        if (day.getTime() == element.cDate.getTime()) {
+          if (element.cValue != null) {
+            totalEnergyConsumption = parseFloat(element.cValue).toFixed(2);
+          }
+          break;
+        }
+      }
+    }
+    if (feeData != null && feeData.length > 0) {
+      for (let fee = 0; fee < feeData.length; fee++) {
+        const element = feeData[fee];
+
+        if (day.getTime() == element.cRecordDate.getTime()) {
+          if (element.cValue != null) {
+            feeSum = parseFloat(element.cValue).toFixed(2);
+          }
+          break;
+        }
+      }
+    }
+    list.push({
+      date: moment(day).format('YYYY-MM-DD'),
+      totalEnergyConsumption,
+      feeSum,
+    });
+  }
+  return list;
+}
 export default {
   exportExcel,
   monthExportExcel,
   writexls,
   saveExcel,
   getMonEnergyConsumption,
+  getEchartDay,
 };
