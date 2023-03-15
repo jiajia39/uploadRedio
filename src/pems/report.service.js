@@ -36,9 +36,9 @@ async function exportExcel() {
   const preTime = new Date(
     moment()
       .subtract(1, 'day')
-      .format('YYYY-MM-DD'),
+      .format('YYYY-MM-DD 00:00:00'),
   );
-  const nowTime = new Date(moment().format('YYYY-MM-DD'));
+  const nowTime = new Date(moment().format('YYYY-MM-DD 00:00:00'));
   const data = await prisma.$queryRaw` select meter.cName,meter.cType,meter.cDesc, (select top(1) cValue from Pems_MeterRecording record where record.cMeterFk=meter.id and record.dRecordTime =${preTime} ) as pre_value,
   (select top(1) cValue from Pems_MeterRecording record where record.cMeterFk=meter.id and record.dRecordTime =${nowTime} ) as value,PMRHD.cValue
 from Pems_Meter meter

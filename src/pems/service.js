@@ -66,7 +66,6 @@ async function setMeterValuesandSave() {
 async function setMeterRecordingAndSave() {
   const meters = await prisma.Pems_Meter.findMany();
   const energyFees = await prisma.Pems_EnergyFees.findMany();
-
   let time;
   console.log('Meter Count:', meters.length);
   const list = [];
@@ -96,22 +95,18 @@ async function setMeterRecordingAndSave() {
     // 当前时间
     let dateTime = new Date(moment(new Date()).format('YYYY-MM-DD'));
     if (influxData.length == 0) {
-      console.log('---');
       const startDate = moment(new Date());
-      const endTime = new Date(
-        moment(startDate)
-          .subtract(1, 'hour')
-          .format('YYYY-MM-DD HH:00:00'),
-      );
+      const endTime = new Date(moment(startDate).format('YYYY-MM-DD HH:00:00'));
       list.push({
         dRecordTime: endTime,
         cRecordDate: dateTime,
         cValue: null,
+        cFeeValue: null,
+        cDiffValue: null,
         cMeterFk: Number(meters[j].id),
       });
     } else {
       const endTime = new Date(moment(influxData[1].time).format('YYYY-MM-DD HH:mm:ss'));
-      console.log(influxData);
       dateTime = new Date(moment(influxData[1].time).format('YYYY-MM-DD'));
       let diff = new Decimal(influxData[1].value).sub(influxData[0].value).toNumber();
       if (diff != null) {
@@ -142,15 +137,13 @@ async function setMeterRecordingAndSave() {
       });
     }
   }
-  console.log(list);
+  console.log(list.length);
   if (list != null && list.length > 0) {
     const record = await prisma.Pems_MeterRecording.findFirst({
       where: {
         dRecordTime: list[0].dRecordTime,
       },
     });
-    console.log(list[0].dRecordTime);
-    console.log(record);
     if (record == null) {
       await prisma.Pems_MeterRecording.createMany({
         data: list,
