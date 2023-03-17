@@ -273,9 +273,25 @@ const controller = (() => {
 
   router.get(
     '/total/energy/consumption/echart/perDate/position',
-    catchAsync(async (req, res) => {}),
+    catchAsync(async (req, res) => {
+      const list = await reportService.getEchartByPosition();
+      res.json({ data: list });
+    }),
+  );
+  router.get(
+    '/total/energy/consumption/echart/perDate/productionLine',
+    catchAsync(async (req, res) => {
+      const list = await reportService.getEchartByProductionLine();
+      res.json({ data: list });
+    }),
   );
 
+  router.get(
+    '/total/energy/consumption/excel/save/month/report',
+    catchAsync(async (req, res) => {
+      reportService.saveExcel();
+    }),
+  );
   router.get(
     '/total/energy/consumption/echart/week',
     catchAsync(async (req, res) => {

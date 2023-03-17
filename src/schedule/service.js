@@ -3,7 +3,8 @@ import energyService from '../pems/energy.service';
 import reportService from '../pems/report.service';
 
 const CronJob = require('node-cron');
-
+const moment = require('moment');
+const fs = require('fs');
 /**
  * Automatically Recording Meter Values Every Shift
  */
@@ -108,9 +109,16 @@ exports.initScheduledJobs = async function() {
   /**
    * Automatically save the energy consumption data of last month to excel
    */
-  const statisticsMonExcel = CronJob.schedule('0 45 0 1 * *', () => {
+  const statisticsMonExcel = CronJob.schedule('0 45 0 * * *', () => {
     console.log('Automatically save the energy consumption data of last month to excel');
-    reportService.saveExcel();
+    const nowDate = moment()
+      .subtract(1, 'month')
+      .format('YYYY-MM');
+    const path = './uploads/' + '读数统计' + `${nowDate}.xlsx`;
+    if (!fs.existsSync(path)) {
+      reportService.saveExcel();
+    }
+
     // Add your custom logic here
   });
   statisticsMonExcel.start();

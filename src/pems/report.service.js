@@ -428,6 +428,67 @@ async function saveExcel() {
     // console.log('saved');
   });
 }
+async function getEchartByProductionLine() {
+  // 前一天数据
+  const preDate = new Date(
+    moment()
+      .subtract(1, 'days')
+      .format('YYYY-MM-DD'),
+  );
+  // 主配进线
+  const data = await prisma.$queryRaw`select sum(value) as value,cProductionLineFk,cName from (
+select cProductionLineFk,pmrhd.cvalue as value ,mp.cName from
+  (
+select id,cProductionLineFk,cName from Pems_Meter where cProductionLineFk in
+(select id from Pems_MeterProductionLine ))meter
+left join Pems_MeterReportHistory_Day pmrhd on meter.id=pmrhd.cMeterFk and pmrhd.cDate=${preDate}
+left join Pems_MeterProductionLine mp on mp.id=meter.cProductionLineFk
+)aa group by cProductionLineFk,cName
+ `;
+  const list = [];
+  if (data != null && data.length > 0) {
+    data.forEach(element => {
+      console.log(element.value);
+      const value = element.value === null ? 0 : parseFloat(element.value).toFixed(2);
+      const name = element.cName;
+      list.push({
+        value,
+        name,
+      });
+    });
+  }
+  return list;
+}
+async function getEchartByPosition() {
+  // 前一天数据
+  const preDate = new Date(
+    moment()
+      .subtract(1, 'days')
+      .format('YYYY-MM-DD'),
+  );
+  // 主配进线
+  const data = await prisma.$queryRaw`select sum(value) as value,cPositionFk,cName from (
+    select cPositionFk,pmrhd.cvalue as value ,mp.cName from
+        (
+    select id,cPositionFk,cName from Pems_Meter where cPositionFk in
+    (select id from Pems_MeterPosition where parentId in(select id from Pems_MeterPosition where cName='主配进线')))meter
+    left join Pems_MeterReportHistory_Day pmrhd on meter.id=pmrhd.cMeterFk and pmrhd.cDate=${preDate}
+    left join Pems_MeterPosition mp on mp.id=meter.cPositionFk
+     )aa group by cPositionFk,cName
+ `;
+  const list = [];
+  if (data != null && data.length > 0) {
+    data.forEach(element => {
+      const value = element.value === null ? 0 : parseFloat(element.cValue).toFixed(2);
+      const name = element.cName;
+      list.push({
+        value,
+        name,
+      });
+    });
+  }
+  return list;
+}
 
 async function getEchartDay(cType) {
   let meterId;
@@ -529,4 +590,6 @@ export default {
   saveExcel,
   getMonEnergyConsumption,
   getEchartDay,
+  getEchartByPosition,
+  getEchartByProductionLine,
 };
