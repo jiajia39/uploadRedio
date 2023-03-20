@@ -265,7 +265,7 @@ const controller = (() => {
    *   get:
    *     security:
    *       - Authorization: []
-   *     description:展示当月每天的水电气的耗能和花费
+   *     description: Show the daily energy consumption and cost of water and electricity for the month
    *     tags: [pems]
    *     produces:
    *       - application/json
@@ -296,7 +296,7 @@ const controller = (() => {
    *   get:
    *     security:
    *       - Authorization: []
-   *     description:前一日各区域用电分布
+   *     description: Distribution of electricity consumption by region on the previous day
    *     tags: [pems]
    *     produces:
    *       - application/json
@@ -319,7 +319,7 @@ const controller = (() => {
    *   get:
    *     security:
    *       - Authorization: []
-   *     description:前一日各生产线用电分布
+   *     description: Power consumption distribution of each production line on the previous day
    *     tags: [pems]
    *     produces:
    *       - application/json
@@ -342,7 +342,7 @@ const controller = (() => {
    *   get:
    *     security:
    *       - Authorization: []
-   *     description:保存excel--上月每天耗能
+   *     description: Save Excel - Daily energy consumption last month
    *     tags: [pems]
    *     produces:
    *       - application/json
