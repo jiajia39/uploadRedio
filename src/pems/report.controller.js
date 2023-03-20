@@ -259,7 +259,27 @@ const controller = (() => {
       }
     }),
   );
-
+  /**
+   * @swagger
+   *  /api/pems/reporting/total/energy/consumption/echart/day:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description:展示当月每天的水电气的耗能和花费
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
   router.get(
     '/total/energy/consumption/echart/day',
     catchAsync(async (req, res) => {
@@ -270,7 +290,22 @@ const controller = (() => {
       });
     }),
   );
-
+  /**
+   * @swagger
+   *  /api/pems/reporting/total/energy/consumption/echart/perDate/position:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description:前一日各区域用电分布
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
   router.get(
     '/total/energy/consumption/echart/perDate/position',
     catchAsync(async (req, res) => {
@@ -278,6 +313,22 @@ const controller = (() => {
       res.json({ data: list });
     }),
   );
+  /**
+   * @swagger
+   *  /api/pems/reporting/total/energy/consumption/echart/perDate/productionLine:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description:前一日各生产线用电分布
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
   router.get(
     '/total/energy/consumption/echart/perDate/productionLine',
     catchAsync(async (req, res) => {
@@ -285,7 +336,22 @@ const controller = (() => {
       res.json({ data: list });
     }),
   );
-
+  /**
+   * @swagger
+   *  /api/pems/reporting/total/energy/consumption/echart/perDate/productionLine:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description:保存excel--上月每天耗能
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
   router.get(
     '/total/energy/consumption/excel/save/month/report',
     catchAsync(async (req, res) => {

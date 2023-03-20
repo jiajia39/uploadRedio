@@ -502,49 +502,60 @@ async function getEchartDay(cType) {
   let positionName = '';
   const allDays = energyService.getAllDays(preTenDay, endDay);
   const list = [];
+  let position = null;
   if (cType != null && cType != '') {
     if (cType == 'Electricity') {
-      positionName = '10KV工作电源柜';
+      positionName = '主配进线';
     }
-    if (cType == 'Water') {
-      positionName = '10KV工作电源柜';
-    }
-    if (cType == 'Steam') {
-      positionName = '10KV工作电源柜';
-    }
-  }
-  const position = await prisma.Pems_MeterPosition.findFirst({
-    where: {
-      cName: positionName,
-    },
-  });
-  if (position != null) {
-    const meter = await prisma.Pems_Meter.findFirst({
-      filter: {
-        cPositionFk: position.id,
+    position = await prisma.Pems_MeterPosition.findFirst({
+      where: {
+        cName: positionName,
       },
     });
-    if (meter != null) {
-      meterId = meter.id;
+  }
+  let meterName = null;
+  if (position == null) {
+    if (cType == 'Water') {
+      meterName = '自来水泵房总表';
+    }
+    if (cType == 'Steam') {
+      meterName = '分气缸蒸汽出气总管';
     }
   }
+  const meterFilter = { AND: [] };
+  if (position != null) {
+    meterFilter.AND = { ...meterFilter.AND, cPositionFk: position.id };
+  }
+  if (meterName != null) {
+    meterFilter.AND = { ...meterFilter.AND, cDesc: meterName };
+  }
 
-  const filter = { AND: [] };
-  if (preTenDay) filter.AND.push({ cDate: { gte: new Date(preTenDay) } });
-  if (endDay) filter.AND.push({ cDate: { lte: new Date(endDay) } });
-  if (meterId != null) filter.AND = { ...filter.AND, cMeterFk: meterId };
+  const meter = await prisma.Pems_Meter.findMany({
+    where: meterFilter,
+  });
+  if (meter != null && meter.length > 0) {
+    meter.forEach(element => {
+      meterId = element.id;
+    });
+  }
+  const filter = {
+    AND: {
+      cDate: { gte: new Date(preTenDay), lte: new Date(endDay) },
+      cMeterFk: { in: meterId },
+    },
+  };
+
   const data = await prisma.Pems_MeterReportHistory_Day.findMany({
     where: filter,
   });
-  // if (data != null) {
-  //   totalEnergyConsumption = parseFloat(data.cValue).toFixed(2);
-  // }
 
   // 费用
-  const filterFeeValue = { AND: [] };
-  if (preTenDay) filterFeeValue.AND.push({ cRecordDate: { gte: new Date(preTenDay) } });
-  if (endDay) filterFeeValue.AND.push({ cRecordDate: { lte: new Date(endDay) } });
-  if (meterId != null) filterFeeValue.AND = { ...filterFeeValue.AND, cMeterFk: meterId };
+  const filterFeeValue = {
+    AND: {
+      cRecordDate: { gte: new Date(preTenDay), lte: new Date(endDay) },
+      cMeterFk: { in: meterId },
+    },
+  };
   const feeData = await prisma.Pems_EnergyFeeValues.findMany({
     where: filterFeeValue,
   });
