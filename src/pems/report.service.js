@@ -3,6 +3,7 @@ import energyService from './energy.service';
 import prisma from '../core/prisma';
 
 const moment = require('moment');
+const Decimal = require('decimal.js');
 const fs = require('fs');
 
 /**
@@ -448,7 +449,6 @@ left join Pems_MeterProductionLine mp on mp.id=meter.cProductionLineFk
   const list = [];
   if (data != null && data.length > 0) {
     data.forEach(element => {
-      console.log(element.value);
       const value = element.value === null ? 0 : parseFloat(element.value).toFixed(2);
       const name = element.cName;
       list.push({
@@ -491,7 +491,7 @@ async function getEchartByPosition() {
 }
 
 async function getEchartDay(cType) {
-  let meterId;
+  const meterIds = [];
   // 当前时间的前10天时间
   const preTenDay = moment()
     .startOf('months')
@@ -500,7 +500,8 @@ async function getEchartDay(cType) {
     .endOf('months')
     .format('YYYY-MM-DD');
   let positionName = '';
-  const allDays = energyService.getAllDays(preTenDay, endDay);
+  // const allDays = energyService.getAllDays(preTenDay, endDay);
+  const allDays = ['2023-03-20'];
   const list = [];
   let position = null;
   if (cType != null && cType != '') {
@@ -535,13 +536,13 @@ async function getEchartDay(cType) {
   });
   if (meter != null && meter.length > 0) {
     meter.forEach(element => {
-      meterId = element.id;
+      meterIds.push(element.id);
     });
   }
   const filter = {
     AND: {
       cDate: { gte: new Date(preTenDay), lte: new Date(endDay) },
-      cMeterFk: { in: meterId },
+      cMeterFk: { in: meterIds },
     },
   };
 
@@ -553,24 +554,27 @@ async function getEchartDay(cType) {
   const filterFeeValue = {
     AND: {
       cRecordDate: { gte: new Date(preTenDay), lte: new Date(endDay) },
-      cMeterFk: { in: meterId },
+      cMeterFk: { in: meterIds },
     },
   };
   const feeData = await prisma.Pems_EnergyFeeValues.findMany({
     where: filterFeeValue,
   });
   for (let i = 0; i < allDays.length; i++) {
-    let totalEnergyConsumption = null;
-    let feeSum = null;
+    let totalEnergyConsumption = 0;
+    let feeSum = 0;
     const day = new Date(allDays[i]);
     if (data != null && data.length > 0) {
       for (let report = 0; report < data.length; report++) {
         const element = data[report];
         if (day.getTime() == element.cDate.getTime()) {
           if (element.cValue != null) {
-            totalEnergyConsumption = parseFloat(element.cValue).toFixed(2);
+            totalEnergyConsumption = new Decimal(totalEnergyConsumption)
+              .add(new Decimal(element.cValue))
+              .toNumber();
+            totalEnergyConsumption = parseFloat(totalEnergyConsumption).toFixed(2);
+            // totalEnergyConsumption = parseFloat(element.cValue).toFixed(2);
           }
-          break;
         }
       }
     }
@@ -580,13 +584,14 @@ async function getEchartDay(cType) {
 
         if (day.getTime() == element.cRecordDate.getTime()) {
           if (element.cValue != null) {
-            feeSum = parseFloat(element.cValue).toFixed(2);
+            feeSum = new Decimal(feeSum).add(new Decimal(element.cValue)).toNumber();
+            feeSum = parseFloat(feeSum).toFixed(2);
           }
-          break;
         }
       }
     }
     list.push({
+      data,
       date: moment(day).format('YYYY-MM-DD'),
       totalEnergyConsumption,
       feeSum,
