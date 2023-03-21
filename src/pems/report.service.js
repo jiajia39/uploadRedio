@@ -479,7 +479,7 @@ async function getEchartByPosition() {
   const list = [];
   if (data != null && data.length > 0) {
     data.forEach(element => {
-      const value = element.value === null ? 0 : parseFloat(element.cValue).toFixed(2);
+      const value = element.value === null ? 0 : parseFloat(element.value).toFixed(2);
       const name = element.cName;
       list.push({
         value,
