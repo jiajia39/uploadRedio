@@ -500,8 +500,7 @@ async function getEchartDay(cType) {
     .endOf('months')
     .format('YYYY-MM-DD');
   let positionName = '';
-  // const allDays = energyService.getAllDays(preTenDay, endDay);
-  const allDays = ['2023-03-20'];
+  const allDays = energyService.getAllDays(preTenDay, endDay);
   const list = [];
   let position = null;
   if (cType != null && cType != '') {
@@ -591,7 +590,6 @@ async function getEchartDay(cType) {
       }
     }
     list.push({
-      data,
       date: moment(day).format('YYYY-MM-DD'),
       totalEnergyConsumption,
       feeSum,
