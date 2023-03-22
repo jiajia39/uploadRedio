@@ -1,7 +1,8 @@
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
-var Decimal = require('decimal.js');
-var moment = require('moment');
+
+const Decimal = require('decimal.js');
+const moment = require('moment');
 
 /**
  * 根据所传仪表以及能源费用类型关联查询计算能源费用
@@ -11,25 +12,25 @@ var moment = require('moment');
  * @returns 所耗费用
  */
 async function getEnergyFeeValues(meters, energyFeesEle, date) {
-  let energyFeeValues = [];
+  const energyFeeValues = [];
   for (let me = 0; me < meters.length; me++) {
     let valueSum = null;
     const meter = meters[me];
     let influxDate;
     for (let en = 0; en < energyFeesEle.length; en++) {
       const fees = energyFeesEle[en];
-      let cStartTime = fees.cStartTime;
-      let price = fees.cPrice;
-      const startTime = ' ' + cStartTime + ':00';
-      const endTime = ' ' + fees.cEndTime + ':00';
+      const { cStartTime } = fees;
+      const price = fees.cPrice;
+      const startTime = ` ${cStartTime}:00`;
+      const endTime = ` ${fees.cEndTime}:00`;
       const start = new Date(
         moment(date + startTime)
           .subtract(1, 'hour')
           .format('YYYY-MM-DD  HH:mm:ss'),
       ).toISOString();
       const end = new Date(moment(date + endTime).format('YYYY-MM-DD  HH:mm:ss')).toISOString();
-      let hour = parseInt(moment(end).diff(start, 'hours')) - 1 + 'h';
-      const measurement = meter.cName + '-' + meter.cDesc;
+      const hour = `${parseInt(moment(end).diff(start, 'hours')) - 1}h`;
+      const measurement = meter.cName;
       let cType = '';
       if (meter.cType == 'Electricity' || meter.cType == '电表') {
         cType = 'EP';
@@ -37,8 +38,8 @@ async function getEnergyFeeValues(meters, energyFeesEle, date) {
       if (meter.cType == 'Water' || meter.cType == 'Steam' || meter.cType == '水表') {
         cType = 'TT';
       }
-      const field = meter.cName + '.' + cType;
-      let interval = hour;
+      const field = `${meter.cName}.${cType}`;
+      const interval = hour;
       const queryType = 'last';
       // 查询infulxDb数据
       influxDate = await influxservice.getInfluxDifferenceData(
@@ -51,7 +52,7 @@ async function getEnergyFeeValues(meters, energyFeesEle, date) {
       );
 
       if (influxDate != null && influxDate != '' && influxDate.length > 0) {
-        let value = influxDate[0].value;
+        let { value } = influxDate[0];
         // if (value != null && value != '') {
         //   console.log('/////');
         if (valueSum == null) {
@@ -86,7 +87,7 @@ async function saveValue(date) {
   const energySubstituteList = await prisma.Pems_Energy_Substitute.findMany();
   let list;
   for (let i = 0; i < energySubstituteList.length; i++) {
-    let energySubstitute = energySubstituteList[i];
+    const energySubstitute = energySubstituteList[i];
     const energyFilter = { AND: {} };
     energyFilter.AND = {
       ...energyFilter.AND,
@@ -112,13 +113,13 @@ async function saveValue(date) {
  */
 async function setEnergyFeeValuesAndSaveHistory() {
   const isExist = await prisma.Pems_EnergyFeeValues.findFirst();
-  let date = moment()
+  const date = moment()
     .subtract(1, 'day')
     .format('YYYY-MM-DD');
   if (isExist != null && isExist != '') {
     await saveValue(date);
   } else {
-    let meterValue = await prisma.Pems_MeterValues.findMany({
+    const meterValue = await prisma.Pems_MeterValues.findMany({
       orderBy: {
         cRecordDate: 'asc',
       },
@@ -142,14 +143,14 @@ async function setEnergyFeeValuesAndSaveHistory() {
 async function getFeeSum(meterIds, startDate, endDate) {
   const filter = { AND: [] };
   let cRecordDate;
-  //查询某天耗能
+  // 查询某天耗能
   if (endDate == null) {
     cRecordDate = new Date(moment(startDate).format('YYYY-MM-DD'));
     if (cRecordDate) filter.AND.push({ cRecordDate });
   } else {
-    //查询某个时间段的耗能
-    let start = new Date(moment(startDate).format('YYYY-MM-DD'));
-    let end = new Date(moment(endDate).format('YYYY-MM-DD'));
+    // 查询某个时间段的耗能
+    const start = new Date(moment(startDate).format('YYYY-MM-DD'));
+    const end = new Date(moment(endDate).format('YYYY-MM-DD'));
     if (start) filter.AND.push({ cRecordDate: { gte: start } });
     if (end) filter.AND.push({ cRecordDate: { lte: end } });
   }
@@ -171,8 +172,8 @@ async function getFeeSum(meterIds, startDate, endDate) {
  */
 function getAllDays(startDate, endDate) {
   let tempTimestamp = moment(startDate).format('YYYYMMDD');
-  let endTimestamp = moment(endDate).format('YYYYMMDD');
-  let resultArr = [];
+  const endTimestamp = moment(endDate).format('YYYYMMDD');
+  const resultArr = [];
   while (tempTimestamp <= endTimestamp) {
     resultArr.push(moment(tempTimestamp).format('YYYY-MM-DD'));
     // 增加一天

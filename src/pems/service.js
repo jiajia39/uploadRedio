@@ -17,7 +17,7 @@ async function setMeterValuesandSave() {
   });
   for (let i = 0; i < meters.length; i++) {
     // 从meter 中获取 measurement和field 来进行查询influxDb的数据
-    const measurement = `${meters[i].cName}-${meters[i].cDesc}`;
+    const measurement = `${meters[i].cName}`;
     let cType = '';
     if (meters[i].cType == 'Electricity' || meters[i].cType == '电表') {
       cType = 'EP';
@@ -71,7 +71,7 @@ async function setMeterRecordingAndSave() {
   const list = [];
   for (let j = 0; j < meters.length; j++) {
     // 从meter 中获取 measurement和field 来进行查询influxDb的数据
-    const measurement = `${meters[j].cName}-${meters[j].cDesc}`;
+    const measurement = `${meters[j].cName}`;
     let cType = '';
     if (meters[j].cType == 'Electricity' || meters[j].cType == '电表') {
       cType = 'EP';
@@ -137,7 +137,6 @@ async function setMeterRecordingAndSave() {
       });
     }
   }
-  console.log(list.length);
   if (list != null && list.length > 0) {
     const record = await prisma.Pems_MeterRecording.findFirst({
       where: {
@@ -251,7 +250,6 @@ async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine
     productLine == 'false' &&
     (cPositionFk == null || cPositionFk == '' || cPositionFk === undefined)
   ) {
-    console.log('a');
     filter.AND = {
       ...filter.AND,
       cPositionFk: {
@@ -324,7 +322,6 @@ async function getMeterId(id, cType, cPositionFk, cProductionLineFk, productLine
       },
     });
   }
-  console.log(filter);
 
   data.count = count;
   return data;
@@ -424,7 +421,6 @@ async function saveReportDay() {
         .subtract(1, 'days')
         .format('YYYY-MM-DD'),
     ).toISOString();
-    console.log(preDate);
     list = await statisticalMeterData(null, null, null, preDate, null, null, null);
   }
 
@@ -444,7 +440,6 @@ async function saveReportDay() {
       });
     }
   }
-  console.log(list);
   if (dayList != null && dayList != '' && dayList.length > 0) {
     await prisma.Pems_MeterReporting_Day.createMany({ data: dayList });
   }
@@ -469,7 +464,6 @@ async function saveReoprtWeekHistory() {
       const endDate = moment()
         .subtract(weekOfDay, 'days')
         .format('YYYY-MM-DD');
-      console.log(endDate);
       const timeList = await this.getMonAndSunDayList(preDate, endDate);
       for (let i = 0; i < timeList.length; i++) {
         const startWeek = timeList[i].startTime;
@@ -516,7 +510,6 @@ async function saveReoprtWeekHistory() {
         cValue: true,
       },
     });
-    console.log(`${startWeek}--${endWeek}`);
     if (data != null && data.length > 0) {
       const weekList = [];
       for (let i = 0; i < data.length; i++) {
@@ -574,7 +567,6 @@ async function saveReoprtCurrentWeek() {
       cWeekStart: new Date(startMon),
     },
   });
-  console.log(weekInfo);
   // 判断是否是周一
   if (moment().weekday() == 1) {
     if (weekInfo == null || weekInfo == '') {
@@ -696,7 +688,7 @@ async function saveReoprtHistoryDay() {
  * @param {*} element meter的信息
  */
 async function getInfluxDifferenceData(preDate, endDate, element) {
-  const measurement = `${element.cName}-${element.cDesc}`;
+  const measurement = `${element.cName}`;
   let cType = '';
   if (element.cType == 'Electricity' || element.cType == '电表') {
     cType = 'EP';
@@ -1438,8 +1430,6 @@ async function getStatisticalMeterDay(
   const count = await prisma.Pems_MeterReportHistory_Day.count({
     where: filter,
   });
-  console.log(filter);
-  console.log(count);
   if (count > 0) {
     if (isAll == 1) {
       rstdata = await prisma.Pems_MeterReportHistory_Day.findMany({
