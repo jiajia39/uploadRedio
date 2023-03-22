@@ -39,11 +39,16 @@ async function exportExcel() {
       .subtract(1, 'day')
       .format('YYYY-MM-DD 00:00:00'),
   );
+  const preDate = new Date(
+    moment()
+      .subtract(1, 'day')
+      .format('YYYY-MM-DD'),
+  );
   const nowTime = new Date(moment().format('YYYY-MM-DD 00:00:00'));
   const data = await prisma.$queryRaw` select meter.cName,meter.cType,meter.cDesc, (select top(1) cValue from Pems_MeterRecording record where record.cMeterFk=meter.id and record.dRecordTime =${preTime} ) as pre_value,
   (select top(1) cValue from Pems_MeterRecording record where record.cMeterFk=meter.id and record.dRecordTime =${nowTime} ) as value,PMRHD.cValue
 from Pems_Meter meter
-left join Pems_MeterReportHistory_Day PMRHD on meter.id = PMRHD.cMeterFk and cDate=${preTime} 
+left join Pems_MeterReportHistory_Day PMRHD on meter.id = PMRHD.cMeterFk and cDate=${preDate} 
 order by  meter.cType asc  `;
   const end = `${nowFor} 读数`;
   const sta = `${preFor} 读数`;
