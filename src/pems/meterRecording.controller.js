@@ -3,8 +3,9 @@ import prisma from '../core/prisma';
 import service from './service';
 import catchAsync from '../utils/catchAsync';
 
-var Decimal = require('decimal.js');
-var moment = require('moment');
+const Decimal = require('decimal.js');
+const moment = require('moment');
+
 const controller = (() => {
   const router = Router();
 
@@ -37,7 +38,7 @@ const controller = (() => {
           new Date(moment(startDate).format('YYYY-MM-DD HH:mm:ss')).getTime() + 8 * 60 * 60 * 1000,
         );
       }
-      let meterIdsList = await service.getMeterId(
+      const meterIdsList = await service.getMeterId(
         id,
         cType,
         cPositionFk,
@@ -46,7 +47,7 @@ const controller = (() => {
         null,
         null,
       );
-      let meterIds = [];
+      const meterIds = [];
       meterIdsList.forEach(element => {
         meterIds.push(element.id);
       });
@@ -88,8 +89,8 @@ const controller = (() => {
         ],
       });
 
-      //获取meterId
-      let meterIdList = [];
+      // 获取meterId
+      const meterIdList = [];
       console.log(filter);
       if (data != null && data.length > 0) {
         const count = await prisma.Pems_MeterRecording.count({
@@ -182,11 +183,10 @@ const controller = (() => {
       });
       const filter = {
         AND: {
-          dRecordTime: { gte: startDate, lte: endTime },
+          dRecordTime: { gt: startDate, lte: endTime },
           cMeterFk: { in: meterIds },
         },
       };
-      console.log(filter);
       page = Number(page) || 1;
       row = Number(row) || 5;
       const select = {
@@ -216,13 +216,13 @@ const controller = (() => {
           },
         ],
       });
-      //获取meterId
-      let meterIdList = [];
-      let dataList = [];
+      // 获取meterId
+      const meterIdList = [];
+      const dataList = [];
       if (data != null && data.length > 0) {
         meterIds.forEach(element => {
-          let arr = [];
-          let diff = [];
+          const arr = [];
+          const diff = [];
           data.forEach(recording => {
             if (recording.cMeterFk == element) {
               arr.push(recording);
