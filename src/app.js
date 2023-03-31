@@ -15,7 +15,12 @@ import routes from '~/core/routes';
 import passport from '~/core/passport';
 import winston from '~/core/winston';
 import { authorizeKeyCloak } from './core/jwt';
-import { NODE_ENV, SECRET_KEY, RATE_LIMIT, SENTRY_DSN } from './env';
+// import { NODE_ENV, SECRET_KEY, RATE_LIMIT, SENTRY_DSN } from './env';
+
+const NODE_ENV = process.env.NODE_ENV;
+const SECRET_KEY = process.env.SECRET_KEY;
+const RATE_LIMIT = process.env.RATE_LIMIT;
+const SENTRY_DSN = process.env.SENTRY_DSN;
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./error/error.controller');
@@ -28,7 +33,7 @@ const options = {
   definition: {
     openapi: '3.0.3',
     info: {
-      title: 'Express Web API',
+      title: 'TRZ PEMS Web API',
       version: '1.0.0',
     },
     components: {
