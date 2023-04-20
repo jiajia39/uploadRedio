@@ -9,10 +9,10 @@ import {
 } from '@influxdata/influxdb-client';
 
 // Init INFLUXDB configuration with defined env profile
-const INFLUX_URL = process.env.INFLUX_URL;
-const INFLUX_TOKEN = process.env.INFLUX_TOKEN;
-const INFLUX_ORG = process.env.INFLUX_ORG;
-const INFLUX_BUCKET = process.env.INFLUX_BUCKET;
+const { INFLUX_URL } = process.env;
+const { INFLUX_TOKEN } = process.env;
+const { INFLUX_ORG } = process.env;
+const { INFLUX_BUCKET } = process.env;
 
 let client = null;
 let clientOptions = null;
@@ -46,8 +46,8 @@ function getInfluxData(measurement, field, start, interval, queryType) {
         next(row, tableMeta) {
           const o = tableMeta.toObject(row);
           // console.log(o);
-          let date = new Date(o._time);
-          let dateFormatted = dateFmt('yyyy-MM-dd hh:mm:ss', date);
+          const date = new Date(o._time);
+          const dateFormatted = dateFmt('yyyy-MM-dd hh:mm:ss', date);
           result.push({
             time: dateFormatted,
             value: o._value,
@@ -57,7 +57,7 @@ function getInfluxData(measurement, field, start, interval, queryType) {
           reject(error);
         },
         complete() {
-          //value值按照时间正序排列
+          // value值按照时间正序排列
           result.sort(function(a, b) {
             return b.createTime < a.createTime ? -1 : 1;
           });
@@ -69,7 +69,67 @@ function getInfluxData(measurement, field, start, interval, queryType) {
     }
   });
 }
-
+function getInfluxDataByTime(measurement, field, start, end, interval, queryType) {
+  let startFormatted;
+  let endFormatted;
+  if (start.charAt(0) === '-') {
+    startFormatted = fluxDuration(`${start}`);
+  } else {
+    startFormatted = fluxDateTime(`${start}`);
+  }
+  if (end != null && end != '') {
+    if (end.charAt(0) === '-') {
+      endFormatted = fluxDuration(`${end}`);
+    } else {
+      endFormatted = fluxDateTime(`${end}`);
+    }
+  }
+  const intervalFormatted = fluxDuration(`${interval}`);
+  const queryTypeFormatted = fluxExpression(`${queryType}`);
+  return new Promise(function(resolve, reject) {
+    let query;
+    if (endFormatted == null) {
+      query = flux`from(bucket: ${INFLUX_BUCKET})
+  |> range(start: ${startFormatted})
+  |> filter(fn: (r) => r["_measurement"] == ${measurement})
+  |> filter(fn: (r) => r["_field"] == ${field})
+  |> aggregateWindow(every: ${intervalFormatted}, fn: ${queryTypeFormatted}, createEmpty: false, offset:-8h)`;
+    } else {
+      query = flux`from(bucket: ${INFLUX_BUCKET})
+      |> range(start: ${startFormatted},stop: ${endFormatted})
+      |> filter(fn: (r) => r["_measurement"] == ${measurement})
+      |> filter(fn: (r) => r["_field"] == ${field})
+      |> aggregateWindow(every: ${intervalFormatted}, fn: ${queryTypeFormatted}, createEmpty: false, offset:-8h)`;
+    }
+    console.log(query);
+    try {
+      const result = [];
+      queryApi.queryRows(query, {
+        next(row, tableMeta) {
+          const o = tableMeta.toObject(row);
+          const date = new Date(o._time);
+          const dateFormatted = dateFmt('yyyy-MM-dd hh:mm:ss', date);
+          result.push({
+            time: dateFormatted,
+            value: o._value,
+          });
+        },
+        error(error) {
+          reject(error);
+        },
+        complete() {
+          // value值按照时间正序排列
+          result.sort(function(a, b) {
+            return b.createTime < a.createTime ? -1 : 1;
+          });
+          resolve(result);
+        },
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
 function getInfluxDifferenceData(measurement, field, start, end, interval, queryType) {
   let startFormatted;
   let endFormatted;
@@ -110,8 +170,8 @@ function getInfluxDifferenceData(measurement, field, start, end, interval, query
       queryApi.queryRows(query, {
         next(row, tableMeta) {
           const o = tableMeta.toObject(row);
-          let date = new Date(o._time);
-          let dateFormatted = dateFmt('yyyy-MM-dd hh:mm:ss', date);
+          const date = new Date(o._time);
+          const dateFormatted = dateFmt('yyyy-MM-dd hh:mm:ss', date);
           result.push({
             time: dateFormatted,
             value: o._value,
@@ -121,7 +181,7 @@ function getInfluxDifferenceData(measurement, field, start, end, interval, query
           reject(error);
         },
         complete() {
-          //value值按照时间正序排列
+          // value值按照时间正序排列
           result.sort(function(a, b) {
             return b.createTime < a.createTime ? -1 : 1;
           });
@@ -135,10 +195,10 @@ function getInfluxDifferenceData(measurement, field, start, end, interval, query
 }
 
 function queryInfluxMeasurement() {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function(resolve, reject) {
     let query;
-      query = flux`import "influxdata/influxdb/schema"
-                   schema.measurements(bucket: ${INFLUX_BUCKET})`; 
+    query = flux`import "influxdata/influxdb/schema"
+                   schema.measurements(bucket: ${INFLUX_BUCKET})`;
     try {
       const result = [];
       queryApi.queryRows(query, {
@@ -154,30 +214,30 @@ function queryInfluxMeasurement() {
         complete() {
           resolve(result);
         },
-      });  
+      });
     } catch (error) {
-        reject(error);
+      reject(error);
     }
   });
 }
 
 function dateFmt(fmt, date) {
-  var o = {
-    'M+': date.getMonth() + 1, //月份
-    'd+': date.getDate(), //日
-    'h+': date.getHours(), //小时
-    'm+': date.getMinutes(), //分
-    's+': date.getSeconds(), //秒
-    'q+': Math.floor((date.getMonth() + 3) / 3), //季度
-    S: date.getMilliseconds(), //毫秒
+  const o = {
+    'M+': date.getMonth() + 1, // 月份
+    'd+': date.getDate(), // 日
+    'h+': date.getHours(), // 小时
+    'm+': date.getMinutes(), // 分
+    's+': date.getSeconds(), // 秒
+    'q+': Math.floor((date.getMonth() + 3) / 3), // 季度
+    S: date.getMilliseconds(), // 毫秒
   };
   if (/(y+)/.test(fmt))
-    fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
-  for (var k in o)
-    if (new RegExp('(' + k + ')').test(fmt))
+    fmt = fmt.replace(RegExp.$1, `${date.getFullYear()}`.substr(4 - RegExp.$1.length));
+  for (const k in o)
+    if (new RegExp(`(${k})`).test(fmt))
       fmt = fmt.replace(
         RegExp.$1,
-        RegExp.$1.length == 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length),
+        RegExp.$1.length == 1 ? o[k] : `00${o[k]}`.substr(`${o[k]}`.length),
       );
   return fmt;
 }
@@ -186,4 +246,5 @@ export default {
   getInfluxData,
   getInfluxDifferenceData,
   queryInfluxMeasurement,
+  getInfluxDataByTime,
 };

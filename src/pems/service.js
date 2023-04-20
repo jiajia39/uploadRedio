@@ -1,4 +1,5 @@
 import { Log } from '@influxdata/influxdb-client';
+import { truncate } from 'lodash';
 import { format } from 'morgan';
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
@@ -80,21 +81,28 @@ async function setMeterRecordingAndSave() {
       cType = 'TT';
     }
     const field = `${meters[j].cName}.${cType}`;
-    const start = '-2h';
+    const start = new Date(
+      moment()
+        .subtract(2, 'h')
+        .format('YYYY-MM-DD HH:00:00'),
+    ).toISOString();
+    const end = new Date(moment().format('YYYY-MM-DD HH:00:00')).toISOString();
+
     const interval = '1h';
     const queryType = 'last';
 
     // 查询infulxDb数据
-    const influxData = await influxservice.getInfluxData(
+    const influxData = await influxservice.getInfluxDataByTime(
       measurement,
       field,
       start,
+      end,
       interval,
       queryType,
     );
     // 当前时间
     let dateTime = new Date(moment(new Date()).format('YYYY-MM-DD'));
-    if (influxData.length == 0) {
+    if (influxData.length < 2) {
       const startDate = moment(new Date());
       const endTime = new Date(moment(startDate).format('YYYY-MM-DD HH:00:00'));
       list.push({
@@ -137,6 +145,7 @@ async function setMeterRecordingAndSave() {
       });
     }
   }
+  console.log(list[0]);
   if (list != null && list.length > 0) {
     const record = await prisma.Pems_MeterRecording.findFirst({
       where: {
@@ -150,6 +159,109 @@ async function setMeterRecordingAndSave() {
     }
   }
   // return list;
+}
+/**
+ * 新增某个时间段的Recording数据
+ * @param {*} dStartTime 开始时间
+ * @param {*} dEndTime 结束时间
+ * @returns 成功
+ */
+async function setMeterRecordingByTime(dStartTime, dEndTime) {
+  const meters = await prisma.Pems_Meter.findMany();
+  const energyFees = await prisma.Pems_EnergyFees.findMany();
+  console.log('Meter Count:', meters.length);
+  const list = [];
+  for (let j = 0; j < meters.length; j++) {
+    // 从meter 中获取 measurement和field 来进行查询influxDb的数据
+    const measurement = `${meters[j].cName}`;
+    let cType = '';
+    if (meters[j].cType == 'Electricity' || meters[j].cType == '电表') {
+      cType = 'EP';
+    }
+    if (meters[j].cType == 'Water' || meters[j].cType == 'Steam' || meters[j].cType == '水表') {
+      cType = 'TT';
+    }
+    const field = `${meters[j].cName}.${cType}`;
+    const start = new Date(
+      moment(dStartTime)
+        .subtract(1, 'h')
+        .format('YYYY-MM-DD HH:00:00'),
+    ).toISOString();
+    const end = new Date(moment(dEndTime).format('YYYY-MM-DD HH:00:00')).toISOString();
+
+    const interval = '1h';
+    const queryType = 'last';
+
+    // 查询infulxDb数据
+    const influxData = await influxservice.getInfluxDataByTime(
+      measurement,
+      field,
+      start,
+      end,
+      interval,
+      queryType,
+    );
+    // 当前时间
+    let dateTime = new Date(moment(new Date()).format('YYYY-MM-DD'));
+    if (influxData.length < 2) {
+      const startDate = moment(new Date());
+      const endTime = new Date(moment(startDate).format('YYYY-MM-DD HH:00:00'));
+      list.push({
+        dRecordTime: endTime,
+        cRecordDate: dateTime,
+        cValue: null,
+        cFeeValue: null,
+        cDiffValue: null,
+        cMeterFk: Number(meters[j].id),
+      });
+    } else {
+      list.length = 0;
+      for (let i = 1; i < influxData.length; i++) {
+        const endTime = new Date(moment(influxData[i].time).format('YYYY-MM-DD HH:mm:ss'));
+        dateTime = new Date(moment(influxData[i].time).format('YYYY-MM-DD'));
+        let diff = new Decimal(influxData[i].value).sub(influxData[i - 1].value).toNumber();
+        if (diff != null) {
+          diff = parseFloat(diff).toFixed(2);
+        }
+        const cValue = parseFloat(influxData[i].value).toFixed(2);
+        let fee = 0.0;
+        const hour = new Date(moment(influxData[i].time).format('YYYY-MM-DD HH:mm:ss')).getHours();
+        energyFees.forEach(element => {
+          const { cEnergySubstituteFk } = meters[j];
+          const startTime = parseInt(element.cStartTime.substring(0, 2));
+          const end = parseInt(element.cEndTime.substring(0, 2));
+          if (element.cEnergySubstituteFk == cEnergySubstituteFk) {
+            if (hour >= startTime && hour < end) {
+              fee = element.cPrice;
+            }
+          }
+        });
+        let cFeeValue = fee * diff;
+        cFeeValue = parseFloat(cFeeValue).toFixed(2);
+        list.push({
+          dRecordTime: endTime,
+          cRecordDate: dateTime,
+          cValue: parseFloat(cValue),
+          cFeeValue: parseFloat(cFeeValue),
+          cDiffValue: parseFloat(diff),
+          cMeterFk: Number(meters[j].id),
+        });
+      }
+    }
+    // if (list != null && list.length > 0) {
+    //   const record = await prisma.Pems_MeterRecording.findFirst({
+    //     where: {
+    //       dRecordTime: list[0].dRecordTime,
+    //     },
+    //   });
+    //   if (record == null) {
+    await prisma.Pems_MeterRecording.createMany({
+      data: list,
+    });
+    //   }
+    // }
+  }
+  return true;
 }
 
 /**
@@ -1478,7 +1590,9 @@ async function getStatisticalMeterDay(
           cValue: true,
         },
       });
-      feeSum = parseFloat(value._sum.cValue).toFixed(2);
+      if (value._sum.cValue != null) {
+        feeSum = parseFloat(value._sum.cValue).toFixed(2);
+      }
     }
     return {
       totalEnergyConsumption,
@@ -1547,4 +1661,5 @@ export default {
   getShiftTime,
   saveReoprtHistoryDay,
   getStatisticalMeterDay,
+  setMeterRecordingByTime,
 };
