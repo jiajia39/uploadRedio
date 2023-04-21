@@ -2,10 +2,11 @@ import { Router } from 'express';
 import prisma from '../core/prisma';
 import service from './service';
 import energyFeeService from './energy.service';
-import catchAsync from './../utils/catchAsync';
-import AppError from './../utils/appError';
+import catchAsync from '../utils/catchAsync';
+import AppError from '../utils/appError';
 
-var moment = require('moment');
+const moment = require('moment');
+
 const controller = (() => {
   const router = Router();
 
@@ -24,11 +25,19 @@ const controller = (() => {
     catchAsync(async (req, res) => {
       // let meterIds = await service.getMeterId(null, null, 8);
       // let data = await service.getMeterValuesData(null, null, meterIds);
-      let dateList = await prisma.Pems_EnergyFeeValues.findFirst();
+      const dateList = await prisma.Pems_EnergyFeeValues.findFirst();
       res.json(dateList);
     }),
   );
+  router.get(
+    '/setMeterRecordingByTime',
+    catchAsync(async (req, res) => {
+      const { start, end } = req.query;
+      const com = await service.setMeterRecordingByTime(start, end);
 
+      res.json(com);
+    }),
+  );
   /**
    * @swagger
    * /api/pems/meterValues/statisticalMeterValue:
@@ -86,7 +95,7 @@ const controller = (() => {
         cRecordType,
       );
       if (date != null && date.length != 0) {
-        let pageList = service.getPageDate(date, row, page);
+        const pageList = service.getPageDate(date, row, page);
         const { totalEnergyConsumption } = date[date.length - 1];
         res.json({
           totalEnergyConsumption,
