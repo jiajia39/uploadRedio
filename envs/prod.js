@@ -12,7 +12,7 @@ function Environment() {
 
   this.INFLUX_ORG = 'trz';
 
-  this.INFLUX_BUCKET = 'trz_pems_proc';
+  this.INFLUX_BUCKET = 'trz_pems_prod';
   
 }
 
