@@ -18,7 +18,6 @@ function writexls(data) {
     .format('YYYY-MM-DD');
 
   const path = `${'c:excel/' + '读数统计'}${nowDate}.xlsx`;
-  const dir = 'c:excel/';
   // 判断目录c:excel/是否存在如果不存在创建
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
@@ -496,7 +495,7 @@ async function getEchartByPosition() {
 }
 
 async function getEchartDay(cType) {
-  const meterIds = [];
+  const meterIds = await getMeterIdsByType(cType);
   // 当前时间的前10天时间
   const preTenDay = moment()
     .startOf('months')
@@ -504,45 +503,8 @@ async function getEchartDay(cType) {
   const endDay = moment()
     .endOf('months')
     .format('YYYY-MM-DD');
-  let positionName = '';
   const allDays = energyService.getAllDays(preTenDay, endDay);
   const list = [];
-  let position = null;
-  if (cType != null && cType != '') {
-    if (cType == 'Electricity') {
-      positionName = '主配进线';
-    }
-    position = await prisma.Pems_MeterPosition.findFirst({
-      where: {
-        cName: positionName,
-      },
-    });
-  }
-  let meterName = null;
-  if (position == null) {
-    if (cType == 'Water') {
-      meterName = '自来水泵房总表';
-    }
-    if (cType == 'Steam') {
-      meterName = '分气缸蒸汽出气总管';
-    }
-  }
-  const meterFilter = { AND: [] };
-  if (position != null) {
-    meterFilter.AND = { ...meterFilter.AND, cPositionFk: position.id };
-  }
-  if (meterName != null) {
-    meterFilter.AND = { ...meterFilter.AND, cDesc: meterName };
-  }
-
-  const meter = await prisma.Pems_Meter.findMany({
-    where: meterFilter,
-  });
-  if (meter != null && meter.length > 0) {
-    meter.forEach(element => {
-      meterIds.push(element.id);
-    });
-  }
   const filter = {
     AND: {
       cDate: { gte: new Date(preTenDay), lte: new Date(endDay) },
@@ -602,8 +564,137 @@ async function getEchartDay(cType) {
   }
   return list;
 }
+
+/**
+ *
+ * @param {Date or String} date1 日期1
+ * @param {Date or String} date2 日期2
+ * @returns 两个日期相差的月份数
+ */
+function monthNumber(date1, date2) {
+  // 第一个日期的年和月
+  const yearOne = date1.getFullYear();
+  const monthOne = date1.getMonth() + 1;
+  // 第二个日期的年和月
+  const yearTwo = date2.getFullYear();
+  const monthTwo = date2.getMonth() + 1;
+  // 两个日期的月份数
+  const oneMonthNum = yearOne * 12 + monthOne;
+  const twoMonthNum = yearTwo * 12 + monthTwo;
+  return Math.abs(oneMonthNum - twoMonthNum);
+}
+/**
+ *
+ * @param {Date or String} date1 日期1
+ * @param {Date or String} date2 日期2
+ * @returns 两个日期相差的月份数
+ */
+function getMonthByDate(date1, date2) {
+  const dateOne = new Date(date1);
+  const dateTwo = new Date(date2);
+  // 两个日期相差的月份数
+  const list = [];
+  list.push(dateOne);
+  const num = monthNumber(dateOne, dateTwo);
+  let chaDate = date1;
+  for (let i = 0; i < num; i++) {
+    const month = new Date(
+      moment(chaDate)
+        .add(1, 'month')
+        .format('YYYY-MM-DD'),
+    );
+    list.push(month);
+    chaDate = month;
+  }
+
+  return list;
+}
+
+async function getMeterIdsByType(cType) {
+  const meterIds = [];
+
+  let positionName = '';
+
+  let position = null;
+  if (cType != null && cType != '') {
+    if (cType == 'Electricity') {
+      positionName = '主配进线';
+    }
+    position = await prisma.Pems_MeterPosition.findFirst({
+      where: {
+        cName: positionName,
+      },
+    });
+  }
+  let meterName = null;
+  if (position == null) {
+    if (cType == 'Water') {
+      meterName = '自来水泵房总表';
+    }
+    if (cType == 'Steam') {
+      meterName = '分气缸蒸汽出气总管';
+    }
+  }
+  const meterFilter = { AND: [] };
+  if (position != null) {
+    meterFilter.AND = { ...meterFilter.AND, cPositionFk: position.id };
+  }
+  if (meterName != null) {
+    meterFilter.AND = { ...meterFilter.AND, cDesc: meterName };
+  }
+
+  const meter = await prisma.Pems_Meter.findMany({
+    where: meterFilter,
+  });
+  if (meter != null && meter.length > 0) {
+    meter.forEach(element => {
+      meterIds.push(element.id);
+    });
+  }
+  return meterIds;
+}
+/**
+ * 根据日期计算这段日期每月的耗能
+ * @param {*} cType 类型
+ * @param {*} date1 日期
+ * @param {*} date2 日期
+ * @returns 这段日期每月的耗能
+ */
+
+async function getMonthEnergyConsumption(cType, date1, date2) {
+  const meterIds = await getMeterIdsByType(cType);
+
+  // 当前时间的前10天时间
+  const startMon = moment(date1).format('YYYY-MM-DD');
+  const endMon = moment(date2).format('YYYY-MM-DD');
+  const allMonths = getMonthByDate(date1, date2);
+  const list = [];
+  const filter = {
+    AND: {
+      cMonthStart: { gte: new Date(startMon), lte: new Date(endMon) },
+      cMeterFk: { in: meterIds },
+    },
+  };
+
+  const data = await prisma.Pems_MeterReporting_Month.findMany({
+    where: filter,
+  });
+  for (let i = 0; i < allMonths.length; i++) {
+    let monthstart;
+    let sumValue = 0;
+    for (let j = 0; j < data.length; j++) {
+      monthstart = data[j].cMonthStart;
+      if (allMonths[i].getTime() == monthstart.getTime()) {
+        sumValue += data[j].cValue;
+      }
+    }
+    list.push({ date: allMonths[i], value: sumValue });
+  }
+  return list;
+}
 export default {
   exportExcel,
+  getMonthByDate,
   monthExportExcel,
   writexls,
   saveExcel,
@@ -611,4 +702,5 @@ export default {
   getEchartDay,
   getEchartByPosition,
   getEchartByProductionLine,
+  getMonthEnergyConsumption,
 };

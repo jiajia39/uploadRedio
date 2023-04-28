@@ -875,6 +875,54 @@ const controller = (() => {
     }),
   );
 
+  /**
+   * @swagger
+   * /api/pems/reporting/getMonthEnergyConsumption:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: 根据日期计算这段日期每月的耗能
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - startDate: id
+   *         description: startDate
+   *         in: query
+   *         type: date
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *       - name: endDate
+   *         description: endDate
+   *         in: query
+   *         type: date
+   *     responses:
+   *       200:
+   *         description: meterValues
+   *         schema:
+   *           type: object
+   */
+  router.get(
+    '/getMonthEnergyConsumption',
+    catchAsync(async (req, res) => {
+      const { startDate, endDate, cType } = req.query;
+      console.log(startDate);
+      if (startDate == null || startDate == '' || startDate == 'undefined') {
+        res.json({ isok: false, message: '开始时间不能为空' });
+      }
+      if (endDate == null || endDate == '' || endDate == 'undefined') {
+        res.json({ isok: false, message: '结束时间不能为空' });
+      }
+      if (cType == null || cType == '' || cType == 'undefined') {
+        res.json({ isok: false, message: '类型不能为空' });
+      }
+      const aa = await reportService.getMonthEnergyConsumption(cType, startDate, endDate);
+      res.json(aa);
+    }),
+  );
+
   return router;
 })();
 
