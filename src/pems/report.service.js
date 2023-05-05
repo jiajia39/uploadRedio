@@ -448,7 +448,7 @@ select id,cProductionLineFk,cName from Pems_Meter where cProductionLineFk in
 (select id from Pems_MeterProductionLine ))meter
 left join Pems_MeterReportHistory_Day pmrhd on meter.id=pmrhd.cMeterFk and pmrhd.cDate=${preDate}
 left join Pems_MeterProductionLine mp on mp.id=meter.cProductionLineFk
-)aa group by cProductionLineFk,cName
+)aa group by cProductionLineFk,cName order by value
  `;
   const list = [];
   if (data != null && data.length > 0) {
@@ -478,7 +478,7 @@ async function getEchartByPosition() {
     (select id from Pems_MeterPosition where parentId in(select id from Pems_MeterPosition where cName='主配进线')))meter
     left join Pems_MeterReportHistory_Day pmrhd on meter.id=pmrhd.cMeterFk and pmrhd.cDate=${preDate}
     left join Pems_MeterPosition mp on mp.id=meter.cPositionFk
-     )aa group by cPositionFk,cName
+     )aa group by cPositionFk,cName  order by value
  `;
   const list = [];
   if (data != null && data.length > 0) {
@@ -491,6 +491,7 @@ async function getEchartByPosition() {
       });
     });
   }
+  console.log(list);
   return list;
 }
 
