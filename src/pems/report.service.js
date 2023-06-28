@@ -2,6 +2,7 @@ import xlsx from 'node-xlsx';
 import energyService from './energy.service';
 import prisma from '../core/prisma';
 
+const Excel = require('exceljs');
 const moment = require('moment');
 const Decimal = require('decimal.js');
 const fs = require('fs');
@@ -228,6 +229,129 @@ async function monthExportExcel() {
   dataList.push(arr);
   // console.log(dataList[1]);
   return dataList;
+}
+/**
+ * 上月仪器每日用电量
+ */
+async function dayDate() {
+  const dataList = [];
+  // 前一天数据
+  const preDate = new Date(
+    moment()
+      .subtract(1, 'days')
+      .format('YYYY-MM-DD'),
+  );
+  const row3 = ['制表人：', '', '', '', '', '', '', '', '', '', '', '', '审核人：'];
+  const row4 = ['项 目', '电表代码', '电力'];
+  // dataList.push([yearMonth]);
+  const row5 = ['', '', '有功Kwh', '峰Kwh', '', '', '平Kwh', '', '', '谷Kwh', '', '', '无功Kvarh'];
+  const row6 = [
+    '',
+    '',
+    '0:00-24:00',
+    '0:00-24:00',
+    '8:00-11:00',
+    '17:00-22:00',
+    '0:00-24:00',
+    '5:00-8:00',
+    '11:00-17:00',
+    '0:00-24:00',
+    '22:00-24:00',
+    '0:00-5:00',
+    '0:00-24:00',
+  ];
+  dataList.push(['10KV进线']);
+  dataList.push([preDate]);
+  dataList.push(row3);
+  dataList.push(row4);
+  dataList.push(row5);
+  dataList.push(row6);
+  return dataList;
+}
+async function saveDayExcel() {
+  const workbook = new Excel.Workbook();
+
+  const data = await this.dayDate();
+  this.excelHeader(workbook, data, '10KV进线');
+  const path = './uploads/' + '读数统计' + `10KV进线.xlsx`;
+  workbook.xlsx.writeFile(path).then(function() {});
+}
+/**
+ * 表格格式
+ */
+async function excelHeader(workbook, data, sheetName) {
+  // 标签创建
+  const worksheet = workbook.addWorksheet(`${sheetName}`);
+
+  worksheet.addRows(data);
+  // ===== 字体显示
+  worksheet.getCell('A1').font = {
+    // Font family for fallback. An integer value.
+    family: 4,
+    // 字体大小
+    size: 16,
+    // 加粗
+    bold: true,
+  };
+  // 合并单元格
+  worksheet.mergeCells(`A${1}:M${1}`);
+  worksheet.mergeCells(`A${2}:M${2}`);
+  worksheet.mergeCells(`A${4}:A${6}`);
+  worksheet.mergeCells(`B${4}:B${6}`);
+  worksheet.mergeCells(`C${4}:M${4}`);
+  worksheet.mergeCells(`D${5}:F${5}`);
+  worksheet.mergeCells(`G${5}:I${5}`);
+  worksheet.mergeCells(`J${5}:L${5}`);
+
+  const endRow = worksheet.rowCount;
+  const columnCount = worksheet.actualColumnCount; // 获取实际列数
+
+  for (let i = 1; i <= columnCount; i++) {
+    // 设置行高
+    worksheet.getRow(i).height = 25;
+    // 设置列宽，垂直对齐方式为居中
+    const column = worksheet.getColumn(i);
+    column.width = 12;
+    column.alignment = {
+      vertical: 'middle',
+      horizontal: 'center',
+    };
+  }
+
+  // 设置指定单元格的对齐方式
+  worksheet.getCell(`A${3}`).alignment = {
+    horizontal: 'left',
+    vertical: 'middle',
+  };
+  worksheet.getCell(`M${3}`).alignment = {
+    horizontal: 'left',
+    vertical: 'middle',
+  };
+  // //行高
+  worksheet.getRows(1, 553).height = 30;
+  // 单元格宽度
+  worksheet.getColumn(1).width = 30;
+  worksheet.getColumn(2).width = 25;
+  // ===== 边框
+  const startRow = 4;
+  const startColumn = 1;
+  const endColumn = 13;
+  for (let row = startRow; row <= endRow; row++) {
+    for (let col = startColumn; col <= endColumn; col++) {
+      const cell = worksheet.getCell(row, col);
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
+      };
+      if (row === 4 || row === 5) {
+        cell.font = {
+          bold: true,
+        };
+      }
+    }
+  }
 }
 /**
  * 保存每月耗能数据excel
@@ -699,6 +823,9 @@ export default {
   monthExportExcel,
   writexls,
   saveExcel,
+  dayDate,
+  excelHeader,
+  saveDayExcel,
   getMonEnergyConsumption,
   getEchartDay,
   getEchartByPosition,
