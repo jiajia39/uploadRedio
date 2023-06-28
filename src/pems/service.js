@@ -1,6 +1,7 @@
 import { Log } from '@influxdata/influxdb-client';
 import { truncate } from 'lodash';
 import { format } from 'morgan';
+import service from '../sys/service';
 import prisma from '../core/prisma';
 import influxservice from '../influx/service';
 import energyService from './energy.service';
@@ -1637,6 +1638,32 @@ function getPageDate(dateList, row, page) {
   }
   return dateList.slice(fromIndex, toIndex);
 }
+/**
+ * 获取位置树形信息
+ * @returns 位置树形信息
+ */
+async function getMeterPositionTree() {
+  const data = await prisma.Pems_MeterPosition.findMany();
+  const treeOption = {
+    enable: true, // 是否开启转tree插件数据
+    keyField: 'key', // 标识字段名称
+    valueField: 'value', // 值字段名称
+    titleField: 'title', // 标题字段名称
+
+    keyFieldBind: 'id', // 标识字段绑定字段名称
+    valueFieldBind: 'id', // 值字段名称绑定字段名称
+    titleFieldBind: 'cName', // 标题字段名称绑定字段名称
+  };
+  const treeData = await service.toTreeByRecursion(
+    data,
+    'id',
+    'parentId',
+    null,
+    'children',
+    treeOption,
+  );
+  return treeData;
+}
 
 export default {
   setMeterValuesandSave,
@@ -1662,4 +1689,5 @@ export default {
   saveReoprtHistoryDay,
   getStatisticalMeterDay,
   setMeterRecordingByTime,
+  getMeterPositionTree,
 };

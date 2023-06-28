@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import service from './../sys/service';
+import service from './service';
 import prisma from '../core/prisma';
 import catchAsync from '../utils/catchAsync';
 
@@ -49,7 +49,7 @@ const controller = (() => {
       res.status(400).json({ message: 'Please pass cDesc.' });
     }
     if (!req.body.parentId) {
-      console.log('____________' + req.body.parentId);
+      console.log(`____________${req.body.parentId}`);
       req.body.parentId = null;
     } else {
       req.body.parentId = Number(req.body.parentId);
@@ -113,7 +113,7 @@ const controller = (() => {
     '/edit/:id',
     catchAsync(async (req, res) => {
       if (!req.body.parentId) {
-        console.log('____________' + req.body.parentId);
+        console.log(`____________${req.body.parentId}`);
         req.body.parentId = null;
       } else {
         req.body.parentId = Number(req.body.parentId);
@@ -171,7 +171,7 @@ const controller = (() => {
           where: { id: Number(req.params.id) },
         }).then(() => 'MeterPosition deleted');
       } else {
-        let position = await prisma.Pems_MeterPosition.findFirst({
+        const position = await prisma.Pems_MeterPosition.findFirst({
           where: {
             parentId: Number(req.params.id),
           },
@@ -314,25 +314,7 @@ const controller = (() => {
   router.get(
     '/gettreenodes',
     catchAsync(async (req, res) => {
-      const data = await prisma.Pems_MeterPosition.findMany();
-      const treeOption = {
-        enable: true, // 是否开启转tree插件数据
-        keyField: 'key', // 标识字段名称
-        valueField: 'value', // 值字段名称
-        titleField: 'title', // 标题字段名称
-
-        keyFieldBind: 'id', // 标识字段绑定字段名称
-        valueFieldBind: 'id', // 值字段名称绑定字段名称
-        titleFieldBind: 'cName', // 标题字段名称绑定字段名称
-      };
-      const treeData = service.toTreeByRecursion(
-        data,
-        'id',
-        'parentId',
-        null,
-        'children',
-        treeOption,
-      );
+      const treeData = await service.getMeterPositionTree();
       res.json({ treeData, message: 'Data obtained.', productLine: false });
     }),
   );
