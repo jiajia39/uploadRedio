@@ -233,36 +233,39 @@ async function monthExportExcel() {
 /**
  * 上月仪器每日用电量
  */
-async function dayDate(name) {
-  // const dataList = [];
+async function dayDate(excelname) {
+  const dataList = [];
   // 前一天数据
   const preDate = new Date(
     moment()
       .subtract(1, 'days')
       .format('YYYY-MM-DD'),
   );
-  const dataList = [
-    [`${name}日报表`],
-    [`${preDate}`],
-    ['制表人：', '', '', '', '', '', '', '', '', '', '', '', '审核人：'],
-    ['项 目', '电表代码', '电力'],
-    ['', '', '有功Kwh', '峰Kwh', '', '', '平Kwh', '', '', '谷Kwh', '', '', '无功Kvarh'],
-    [
-      '',
-      '',
-      '0:00-24:00',
-      '0:00-24:00',
-      '8:00-11:00',
-      '17:00-22:00',
-      '0:00-24:00',
-      '5:00-8:00',
-      '11:00-17:00',
-      '0:00-24:00',
-      '22:00-24:00',
-      '0:00-5:00',
-      '0:00-24:00',
-    ],
+  const row3 = ['制表人：', '', '', '', '', '', '', '', '', '', '', '', '审核人：'];
+  const row4 = ['项 目', '电表代码', '电力'];
+  // dataList.push([yearMonth]);
+  const row5 = ['', '', '有功Kwh', '峰Kwh', '', '', '平Kwh', '', '', '谷Kwh', '', '', '无功Kvarh'];
+  const row6 = [
+    '',
+    '',
+    '0:00-24:00',
+    '0:00-24:00',
+    '8:00-11:00',
+    '17:00-22:00',
+    '0:00-24:00',
+    '5:00-8:00',
+    '11:00-17:00',
+    '0:00-24:00',
+    '22:00-24:00',
+    '0:00-5:00',
+    '0:00-24:00',
   ];
+  dataList.push([excelname]);
+  dataList.push([preDate]);
+  dataList.push(row3);
+  dataList.push(row4);
+  dataList.push(row5);
+  dataList.push(row6);
   return dataList;
 }
 async function processChildren(children, workbook) {
@@ -270,6 +273,20 @@ async function processChildren(children, workbook) {
     // 位置有子类
     if (child.children && child.children.length > 0) {
       const data = await dayDate(child.cName);
+      const date = new Date(
+        moment()
+          .subtract(1, 'day')
+          .format('YYYY-MM-DD'),
+      );
+
+      // 获取父类位置的耗能数据
+      await GetPowerConsumptionDuringTheTimePeriod(data, child, date);
+      if (child.children.length > 0) {
+        for (const childPosition of child.children) {
+          await GetPowerConsumptionDuringTheTimePeriod(data, childPosition, date);
+        }
+      }
+      console.log(data);
       await excelHeader(workbook, data, child.cName);
       await processChildren(child.children, workbook); // 递归调用处理子节点的子节点
     }
@@ -282,6 +299,20 @@ async function saveDayExcel() {
     for (const meterPosition of treeData) {
       // const meterPosition = treeData[i];
       const data = await this.dayDate(meterPosition.cName);
+      const date = new Date(
+        moment()
+          .subtract(1, 'day')
+          .format('YYYY-MM-DD'),
+      );
+      // 获取父类位置的耗能数据
+      await GetPowerConsumptionDuringTheTimePeriod(data, meterPosition, date);
+      if (meterPosition.children.length > 0) {
+        // meterPosition.children.forEach(element => {
+        for (const childPosition of meterPosition.children) {
+          await GetPowerConsumptionDuringTheTimePeriod(data, childPosition, date);
+        }
+        // });
+      }
       await excelHeader(workbook, data, meterPosition.cName);
       // 位置有子类
       if (meterPosition.children.length > 0) {
@@ -290,7 +321,33 @@ async function saveDayExcel() {
     }
   }
   const path = './uploads/' + '读数统计' + `10KV进线.xlsx`;
-  workbook.xlsx.writeFile(path).then(function() {});
+  workbook.xlsx.writeFile(path).then(function() {
+    console.log('aaaa');
+  });
+}
+
+async function GetPowerConsumptionDuringTheTimePeriod(data, meterPosition, date) {
+  data.push([meterPosition.cName]);
+  const powerConsumptionDate = await prisma.$queryRaw`exec GetPowerConsumptionDuringTheTimePeriod ${meterPosition.id},${date}`;
+  powerConsumptionDate.forEach(element => {
+    const arrinner = [
+      element.cDesc,
+      element.cName,
+      '',
+      '',
+      element.TotalDiffValue1,
+      element.TotalDiffValue2,
+      '',
+      element.TotalDiffValue3,
+      element.TotalDiffValue4,
+      '',
+      element.TotalDiffValue5,
+      element.TotalDiffValue6,
+      '',
+    ];
+    data.push(arrinner);
+  });
+  data.push(['']);
 }
 /**
  * 表格格式
@@ -325,15 +382,32 @@ async function excelHeader(workbook, data, sheetName) {
   for (let i = 1; i <= columnCount; i++) {
     // 设置行高
     worksheet.getRow(i).height = 25;
-    // 设置列宽，垂直对齐方式为居中
+    // 设置列宽，垂直对齐方式为居中\
     const column = worksheet.getColumn(i);
     column.width = 12;
-    column.alignment = {
-      vertical: 'middle',
-      horizontal: 'center',
-    };
   }
-
+  for (let row = 1; row <= endRow; row++) {
+    const rowData = worksheet.getRow(row);
+    if (row < 7) {
+      rowData.alignment = {
+        vertical: 'middle',
+        horizontal: 'center',
+      };
+    } else {
+      rowData.alignment = {
+        vertical: 'middle',
+        horizontal: 'left',
+      };
+    }
+    // 如果上一行的数据为空，则将当前行的字体加粗
+    if (row > 1) {
+      const previousRow = worksheet.getRow(row - 1);
+      const currentRow = worksheet.getRow(row);
+      if (previousRow.getCell(1).value === null || previousRow.getCell(1).value === '') {
+        currentRow.font = { bold: true };
+      }
+    }
+  }
   // 设置指定单元格的对齐方式
   worksheet.getCell(`A${3}`).alignment = {
     horizontal: 'left',
@@ -361,7 +435,7 @@ async function excelHeader(workbook, data, sheetName) {
         bottom: { style: 'thin' },
         right: { style: 'thin' },
       };
-      if (row === 4 || row === 5) {
+      if (row === 4 || row === 5 || row === 7 || row > endRow - 2) {
         cell.font = {
           bold: true,
         };
