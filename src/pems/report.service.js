@@ -1,5 +1,6 @@
 import xlsx from 'node-xlsx';
 import energyService from './energy.service';
+import service from './service';
 import prisma from '../core/prisma';
 
 const Excel = require('exceljs');
@@ -227,52 +228,67 @@ async function monthExportExcel() {
   });
   arr.push(sumAll);
   dataList.push(arr);
-  // console.log(dataList[1]);
   return dataList;
 }
 /**
  * 上月仪器每日用电量
  */
-async function dayDate() {
-  const dataList = [];
+async function dayDate(name) {
+  // const dataList = [];
   // 前一天数据
   const preDate = new Date(
     moment()
       .subtract(1, 'days')
       .format('YYYY-MM-DD'),
   );
-  const row3 = ['制表人：', '', '', '', '', '', '', '', '', '', '', '', '审核人：'];
-  const row4 = ['项 目', '电表代码', '电力'];
-  // dataList.push([yearMonth]);
-  const row5 = ['', '', '有功Kwh', '峰Kwh', '', '', '平Kwh', '', '', '谷Kwh', '', '', '无功Kvarh'];
-  const row6 = [
-    '',
-    '',
-    '0:00-24:00',
-    '0:00-24:00',
-    '8:00-11:00',
-    '17:00-22:00',
-    '0:00-24:00',
-    '5:00-8:00',
-    '11:00-17:00',
-    '0:00-24:00',
-    '22:00-24:00',
-    '0:00-5:00',
-    '0:00-24:00',
+  const dataList = [
+    [`${name}日报表`],
+    [`${preDate}`],
+    ['制表人：', '', '', '', '', '', '', '', '', '', '', '', '审核人：'],
+    ['项 目', '电表代码', '电力'],
+    ['', '', '有功Kwh', '峰Kwh', '', '', '平Kwh', '', '', '谷Kwh', '', '', '无功Kvarh'],
+    [
+      '',
+      '',
+      '0:00-24:00',
+      '0:00-24:00',
+      '8:00-11:00',
+      '17:00-22:00',
+      '0:00-24:00',
+      '5:00-8:00',
+      '11:00-17:00',
+      '0:00-24:00',
+      '22:00-24:00',
+      '0:00-5:00',
+      '0:00-24:00',
+    ],
   ];
-  dataList.push(['10KV进线']);
-  dataList.push([preDate]);
-  dataList.push(row3);
-  dataList.push(row4);
-  dataList.push(row5);
-  dataList.push(row6);
   return dataList;
+}
+async function processChildren(children, workbook) {
+  for (const child of children) {
+    // 位置有子类
+    if (child.children && child.children.length > 0) {
+      const data = await dayDate(child.cName);
+      await excelHeader(workbook, data, child.cName);
+      await processChildren(child.children, workbook); // 递归调用处理子节点的子节点
+    }
+  }
 }
 async function saveDayExcel() {
   const workbook = new Excel.Workbook();
-
-  const data = await this.dayDate();
-  this.excelHeader(workbook, data, '10KV进线');
+  const treeData = await service.getMeterPositionTree();
+  if (treeData != null && treeData.length > 0) {
+    for (const meterPosition of treeData) {
+      // const meterPosition = treeData[i];
+      const data = await this.dayDate(meterPosition.cName);
+      await excelHeader(workbook, data, meterPosition.cName);
+      // 位置有子类
+      if (meterPosition.children.length > 0) {
+        await processChildren(meterPosition.children, workbook);
+      }
+    }
+  }
   const path = './uploads/' + '读数统计' + `10KV进线.xlsx`;
   workbook.xlsx.writeFile(path).then(function() {});
 }
@@ -473,7 +489,6 @@ async function saveExcel() {
       } else {
         name = dateInfo[i].postionName;
         const col = `B${index}:B${sum}`;
-        console.log(col);
         worksheet2.mergeCells(col);
         index = sum + 1;
         sum += 1;
@@ -553,9 +568,7 @@ async function saveExcel() {
     .subtract(1, 'month')
     .format('YYYY-MM');
   const path = './uploads/' + '读数统计' + `${nowDate}.xlsx`;
-  workbook.xlsx.writeFile(path).then(function() {
-    // console.log('saved');
-  });
+  workbook.xlsx.writeFile(path).then(function() {});
 }
 async function getEchartByProductionLine() {
   // 前一天数据
@@ -615,7 +628,6 @@ async function getEchartByPosition() {
       });
     });
   }
-  console.log(list);
   return list;
 }
 
