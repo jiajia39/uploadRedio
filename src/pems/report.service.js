@@ -5,6 +5,7 @@ import prisma from '../core/prisma';
 
 const Excel = require('exceljs');
 const moment = require('moment');
+const dayjs = require('dayjs');
 const Decimal = require('decimal.js');
 const fs = require('fs');
 
@@ -705,15 +706,24 @@ async function getEchartByPosition() {
   return list;
 }
 
-async function getEchartDay(cType) {
+async function getEchartDay(cType, cMonth) {
   const meterIds = await getMeterIdsByType(cType);
   // 当前时间的前10天时间
-  const preTenDay = moment()
+  let preTenDay = moment()
     .startOf('months')
     .format('YYYY-MM-DD');
-  const endDay = moment()
+  let endDay = moment()
     .endOf('months')
     .format('YYYY-MM-DD');
+  if (cMonth != null || cMonth != undefined) {
+    preTenDay = moment(cMonth)
+    .startOf('months')
+    .format('YYYY-MM-DD');
+    endDay = moment(cMonth)
+    .endOf('months')
+    .format('YYYY-MM-DD');
+  }
+
   const allDays = energyService.getAllDays(preTenDay, endDay);
   const list = [];
   const filter = {
@@ -864,6 +874,7 @@ async function getMeterIdsByType(cType) {
   }
   return meterIds;
 }
+
 /**
  * 根据日期计算这段日期每月的耗能
  * @param {*} cType 类型
@@ -903,6 +914,45 @@ async function getMonthEnergyConsumption(cType, date1, date2) {
   }
   return list;
 }
+
+async function getYesterdayEnergyConsumption(req, res) {
+  const yesterDay = dayjs().startOf('day').subtract(1, 'day').toDate();
+  const cType = req.query.cType;
+  const meterList = [];
+  if (cType == 'Electricity') {
+    const meterListEl = await prisma.Pems_Meter.findMany({
+      where: { cPositionFk: 27 },
+    });
+    meterListEl.forEach(el => {
+      meterList.push(el.id);
+    })
+  }
+  if (cType === 'Water') {
+    const meterListEl = await prisma.Pems_Meter.findMany({
+      where: { cDesc: '自来水泵房总表' }
+    })
+    meterListEl.forEach(el => {
+      meterList.push(el.id);
+    })
+  }
+  const matchedData = await prisma.Pems_MeterReportHistory_Day.findMany({
+    where: {
+      AND: {
+        cMeterFk: { in: meterList },
+        cDate: { gte: yesterDay },
+      } 
+    }
+  })
+  let resValue = 0;
+  matchedData.forEach(el => {
+    resValue += el.cValue
+  })
+  return {
+    yesterDayConsumption: parseFloat(resValue.toFixed(2)),
+    energyType: cType,
+  }
+}
+
 export default {
   exportExcel,
   getMonthByDate,
@@ -917,4 +967,5 @@ export default {
   getEchartByPosition,
   getEchartByProductionLine,
   getMonthEnergyConsumption,
+  getYesterdayEnergyConsumption
 };

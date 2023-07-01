@@ -274,6 +274,10 @@ const controller = (() => {
    *         description: meter's cType
    *         in: query
    *         type: string
+   *       - name: cMonth
+   *         description: month format as YYYY-MM
+   *         in: query
+   *         type: string
    *     responses:
    *       200:
    *         description: meterValues
@@ -284,7 +288,8 @@ const controller = (() => {
     '/total/energy/consumption/echart/day',
     catchAsync(async (req, res) => {
       const { cType } = req.query;
-      const list = await reportService.getEchartDay(cType);
+      const { cMonth } = req.query;
+      const list = await reportService.getEchartDay(cType, cMonth);
       res.json({
         data: list,
       });
@@ -932,6 +937,35 @@ const controller = (() => {
       res.json(aa);
     }),
   );
+
+    /**
+   * @swagger
+   * /api/pems/reporting/yesterdayConsumption:
+   *   get:
+   *     security:
+   *       - Authorization: []
+   *     description: 获取前一天能源消耗
+   *     tags: [pems]
+   *     produces:
+   *       - application/json
+   *     parameters:
+   *       - name: cType
+   *         description: meter's cType
+   *         in: query
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: Energy Consumption Yesterday
+   *         schema:
+   *           type: object
+   */
+    router.get(
+      '/yesterdayConsumption',
+      catchAsync(async (req, res) => {
+        const data = await reportService.getYesterdayEnergyConsumption(req);
+        res.json(data);
+      }),
+    );
 
   return router;
 })();

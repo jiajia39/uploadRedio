@@ -9,10 +9,10 @@ import {
 } from '@influxdata/influxdb-client';
 
 // Init INFLUXDB configuration with defined env profile
-const { INFLUX_URL } = process.env;
-const { INFLUX_TOKEN } = process.env;
-const { INFLUX_ORG } = process.env;
-const { INFLUX_BUCKET } = process.env;
+const  INFLUX_URL  = process.env.INFLUX_URL;
+const  INFLUX_TOKEN  = process.env.INFLUX_TOKEN;
+const  INFLUX_ORG  = process.env.INFLUX_ORG;
+const  INFLUX_BUCKET = process.env.INFLUX_BUCKET;
 
 let client = null;
 let clientOptions = null;
