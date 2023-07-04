@@ -232,7 +232,7 @@ async function monthExportExcel() {
   return dataList;
 }
 /**
- * 上月仪器每日用电量
+ * excel中每个sheetd的表头数据
  */
 async function dayDate(excelname) {
   const dataList = [];
@@ -269,68 +269,205 @@ async function dayDate(excelname) {
   dataList.push(row6);
   return dataList;
 }
+/**
+ * 给子类位置创建sheet,并赋值，如果子类有子类的话，递归创建sheet
+ * @param {*} children 子类位置
+ * @param {*} workbook Workbook
+ */
 async function processChildren(children, workbook) {
   for (const child of children) {
     // 位置有子类
     if (child.children && child.children.length > 0) {
       const data = await dayDate(child.cName);
-      const date = new Date(
-        moment()
-          .subtract(1, 'day')
-          .format('YYYY-MM-DD'),
-      );
 
       // 获取父类位置的耗能数据
-      await GetPowerConsumptionDuringTheTimePeriod(data, child, date);
-      if (child.children.length > 0) {
-        for (const childPosition of child.children) {
-          await GetPowerConsumptionDuringTheTimePeriod(data, childPosition, date);
-        }
-      }
-      console.log(data);
+      await setDate(data, child);
       await excelHeader(workbook, data, child.cName);
       await processChildren(child.children, workbook); // 递归调用处理子节点的子节点
     }
   }
 }
+/**
+ * 生成日报表excel
+ */
 async function saveDayExcel() {
+  // 创建workbook
   const workbook = new Excel.Workbook();
+  // 获取位置的树形数据
   const treeData = await service.getMeterPositionTree();
   if (treeData != null && treeData.length > 0) {
+    // 如果给当前位置创建sheet  如果位置有子类，给子类创建
     for (const meterPosition of treeData) {
-      // const meterPosition = treeData[i];
+      // sheet的表头数据
       const data = await this.dayDate(meterPosition.cName);
-      const date = new Date(
-        moment()
-          .subtract(1, 'day')
-          .format('YYYY-MM-DD'),
-      );
-      // 获取父类位置的耗能数据
-      await GetPowerConsumptionDuringTheTimePeriod(data, meterPosition, date);
-      if (meterPosition.children.length > 0) {
-        // meterPosition.children.forEach(element => {
-        for (const childPosition of meterPosition.children) {
-          await GetPowerConsumptionDuringTheTimePeriod(data, childPosition, date);
-        }
-        // });
-      }
+      // sheet的实际数据
+      await setDate(data, meterPosition);
       await excelHeader(workbook, data, meterPosition.cName);
-      // 位置有子类
+      // 位置有子类，给子类创建sheet
       if (meterPosition.children.length > 0) {
         await processChildren(meterPosition.children, workbook);
       }
     }
   }
-  const path = './uploads/' + '读数统计' + `10KV进线.xlsx`;
+  const date = moment()
+    .subtract(1, 'day')
+    .format('YYYY-MM-DD');
+  const path = './uploads/' + '日报表' + `${date}.xlsx`;
   workbook.xlsx.writeFile(path).then(function() {
     console.log('aaaa');
   });
 }
 
+async function setDate(data, meterPosition) {
+  const date = new Date(
+    moment()
+      .subtract(1, 'day')
+      .format('YYYY-MM-DD'),
+  );
+  // 获取 父类位置的仪表的耗能数据
+  const parentDate = await GetPowerConsumptionDuringTheTimePeriod(data, meterPosition, date);
+  const parentDateSum = [
+    '上游总量',
+    '',
+    '',
+    '',
+    parentDate[0].TotalDiffValue1,
+    parentDate[0].TotalDiffValue2,
+    '',
+    parentDate[0].TotalDiffValue3,
+    parentDate[0].TotalDiffValue4,
+    '',
+    parentDate[0].TotalDiffValue5,
+    parentDate[0].TotalDiffValue6,
+    '',
+  ];
+  data.push(parentDateSum);
+  let childDate1 = 0;
+  let childDate2 = 0;
+  let childDate3 = 0;
+  let childDate4 = 0;
+  let childDate5 = 0;
+  let childDate6 = 0;
+  // 获取子类位置的仪表的耗能数据
+  if (meterPosition.children.length > 0) {
+    for (const childPosition of meterPosition.children) {
+      const childDate = await GetPowerConsumptionDuringTheTimePeriod(data, childPosition, date);
+      childDate1 = childDate[0].TotalDiffValue1 + childDate1;
+      childDate2 = childDate[0].TotalDiffValue2 + childDate2;
+      childDate3 = childDate[0].TotalDiffValue3 + childDate3;
+      childDate4 = childDate[0].TotalDiffValue4 + childDate4;
+      childDate5 = childDate[0].TotalDiffValue5 + childDate5;
+      childDate6 = childDate[0].TotalDiffValue6 + childDate6;
+    }
+  }
+  const childDateSum = [
+    '下游总量',
+    '',
+    '',
+    '',
+    childDate1,
+    childDate2,
+    '',
+    childDate3,
+    childDate4,
+    '',
+    childDate5,
+    childDate6,
+    '',
+  ];
+  data.push(childDateSum);
+  const diff = [];
+  const diffRate = ['损失率', '', '', ''];
+  diff.push('损失量');
+  diff.push('');
+  diff.push('');
+  diff.push('');
+  // 设置损失率的值
+  if (parentDate[0].TotalDiffValue1 > 0 && childDate1 > 0) {
+    diff.push(childDate1 - parentDate[0].TotalDiffValue1);
+    let rate = (childDate1 - parentDate[0].TotalDiffValue1) / childDate1;
+    rate = parseFloat(rate * 100).toFixed(2);
+    diffRate.push(`${rate}%`);
+  } else {
+    diff.push('');
+    diffRate.push('');
+  }
+  if (parentDate[0].TotalDiffValue2 > 0 && childDate2 > 0) {
+    diff.push(childDate2 - parentDate[0].TotalDiffValue2);
+    let rate = (childDate2 - parentDate[0].TotalDiffValue2) / childDate2;
+    rate = parseFloat(rate * 100).toFixed(2);
+    diffRate.push(`${rate}%`);
+  } else {
+    diff.push('');
+    diffRate.push('');
+  }
+  diff.push('');
+  diffRate.push('');
+  if (parentDate[0].TotalDiffValue3 > 0 && childDate3 > 0) {
+    diff.push(childDate3 - parentDate[0].TotalDiffValue3);
+    let rate = (childDate3 - parentDate[0].TotalDiffValue3) / childDate3;
+    rate = parseFloat(rate * 100).toFixed(2);
+    diffRate.push(`${rate}%`);
+  } else {
+    diff.push('');
+    diffRate.push('');
+  }
+  if (parentDate[0].TotalDiffValue4 > 0 && childDate4 > 0) {
+    diff.push(childDate4 - parentDate[0].TotalDiffValue4);
+    let rate = (childDate4 - parentDate[0].TotalDiffValue4) / childDate4;
+    rate = parseFloat(rate * 100).toFixed(2);
+    diffRate.push(`${rate}%`);
+  } else {
+    diff.push('');
+    diffRate.push('');
+  }
+  diff.push('');
+  diffRate.push('');
+  if (parentDate[0].TotalDiffValue5 > 0 && childDate5 > 0) {
+    diff.push(childDate5 - parentDate[0].TotalDiffValue5);
+    let rate = (childDate5 - parentDate[0].TotalDiffValue5) / childDate5;
+    rate = parseFloat(rate * 100).toFixed(2);
+    diffRate.push(`${rate}%`);
+  } else {
+    diff.push('');
+    diffRate.push('');
+  }
+  if (parentDate[0].TotalDiffValue6 > 0 && childDate6 > 0) {
+    diff.push(childDate6 - parentDate[0].TotalDiffValue6);
+    let rate = (childDate6 - parentDate[0].TotalDiffValue6) / childDate6;
+    rate = parseFloat(rate * 100).toFixed(2);
+    diffRate.push(`${rate}%`);
+  } else {
+    diff.push('');
+    diffRate.push('');
+  }
+  data.push(diff);
+  data.push(diffRate);
+}
+/**
+ * 获取sheet中的实际数据（每个位置对应的 仪表的某个时间段的耗电信息）
+ * @param {*} data sheet的数据
+ * @param {*} meterPosition 某个位置的信息
+ * @param {*} date 日期
+ * @returns 每个时间段的耗能信息
+ */
 async function GetPowerConsumptionDuringTheTimePeriod(data, meterPosition, date) {
   data.push([meterPosition.cName]);
   const powerConsumptionDate = await prisma.$queryRaw`exec GetPowerConsumptionDuringTheTimePeriod ${meterPosition.id},${date}`;
+  let TotalDiffValue1 = 0;
+  let TotalDiffValue2 = 0;
+  let TotalDiffValue3 = 0;
+  let TotalDiffValue4 = 0;
+  let TotalDiffValue5 = 0;
+  let TotalDiffValue6 = 0;
   powerConsumptionDate.forEach(element => {
+    TotalDiffValue1 += element.TotalDiffValue1;
+    TotalDiffValue2 += element.TotalDiffValue2;
+    TotalDiffValue3 += element.TotalDiffValue3;
+    TotalDiffValue4 += element.TotalDiffValue4;
+    TotalDiffValue5 += element.TotalDiffValue5;
+    TotalDiffValue6 += element.TotalDiffValue6;
+
     const arrinner = [
       element.cDesc,
       element.cName,
@@ -349,6 +486,16 @@ async function GetPowerConsumptionDuringTheTimePeriod(data, meterPosition, date)
     data.push(arrinner);
   });
   data.push(['']);
+  return [
+    {
+      TotalDiffValue1,
+      TotalDiffValue2,
+      TotalDiffValue3,
+      TotalDiffValue4,
+      TotalDiffValue5,
+      TotalDiffValue6,
+    },
+  ];
 }
 /**
  * 表格格式
@@ -717,11 +864,11 @@ async function getEchartDay(cType, cMonth) {
     .format('YYYY-MM-DD');
   if (cMonth != null || cMonth != undefined) {
     preTenDay = moment(cMonth)
-    .startOf('months')
-    .format('YYYY-MM-DD');
+      .startOf('months')
+      .format('YYYY-MM-DD');
     endDay = moment(cMonth)
-    .endOf('months')
-    .format('YYYY-MM-DD');
+      .endOf('months')
+      .format('YYYY-MM-DD');
   }
 
   const allDays = energyService.getAllDays(preTenDay, endDay);
@@ -916,8 +1063,11 @@ async function getMonthEnergyConsumption(cType, date1, date2) {
 }
 
 async function getYesterdayEnergyConsumption(req, res) {
-  const yesterDay = dayjs().startOf('day').subtract(1, 'day').toDate();
-  const cType = req.query.cType;
+  const yesterDay = dayjs()
+    .startOf('day')
+    .subtract(1, 'day')
+    .toDate();
+  const { cType } = req.query;
   const meterList = [];
   if (cType == 'Electricity') {
     const meterListEl = await prisma.Pems_Meter.findMany({
@@ -925,32 +1075,32 @@ async function getYesterdayEnergyConsumption(req, res) {
     });
     meterListEl.forEach(el => {
       meterList.push(el.id);
-    })
+    });
   }
   if (cType === 'Water') {
     const meterListEl = await prisma.Pems_Meter.findMany({
-      where: { cDesc: '自来水泵房总表' }
-    })
+      where: { cDesc: '自来水泵房总表' },
+    });
     meterListEl.forEach(el => {
       meterList.push(el.id);
-    })
+    });
   }
   const matchedData = await prisma.Pems_MeterReportHistory_Day.findMany({
     where: {
       AND: {
         cMeterFk: { in: meterList },
         cDate: { gte: yesterDay },
-      } 
-    }
-  })
+      },
+    },
+  });
   let resValue = 0;
   matchedData.forEach(el => {
-    resValue += el.cValue
-  })
+    resValue += el.cValue;
+  });
   return {
     yesterDayConsumption: parseFloat(resValue.toFixed(2)),
     energyType: cType,
-  }
+  };
 }
 
 export default {
@@ -967,5 +1117,5 @@ export default {
   getEchartByPosition,
   getEchartByProductionLine,
   getMonthEnergyConsumption,
-  getYesterdayEnergyConsumption
+  getYesterdayEnergyConsumption,
 };

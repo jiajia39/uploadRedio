@@ -366,7 +366,7 @@ const controller = (() => {
   router.get(
     '/total/energy/consumption/excel/save/month/report2',
     catchAsync(async (req, res) => {
-      reportService.saveDayExcel();
+     await reportService.saveDayExcel();
       res.json({
         message: '成功',
       });
