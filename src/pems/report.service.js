@@ -317,7 +317,11 @@ async function saveDayExcel() {
     console.log('aaaa');
   });
 }
-
+/**
+ * 设置sheet的数据（包含上、下游总量，损失量、损失率）
+ * @param {*} data 表头数据
+ * @param {*} meterPosition 位置
+ */
 async function setDate(data, meterPosition) {
   const date = new Date(
     moment()
@@ -575,6 +579,7 @@ async function excelHeader(workbook, data, sheetName) {
   const startColumn = 1;
   const endColumn = 13;
   for (let row = startRow; row <= endRow; row++) {
+    let rowPar = 0;
     for (let col = startColumn; col <= endColumn; col++) {
       const cell = worksheet.getCell(row, col);
       cell.border = {
@@ -583,11 +588,33 @@ async function excelHeader(workbook, data, sheetName) {
         bottom: { style: 'thin' },
         right: { style: 'thin' },
       };
+      if (row == endRow - 2) {
+        worksheet.getRow(row).height = 30;
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'F79646' },
+        };
+      }
+      if (cell.value == '上游总量') {
+        worksheet.getRow(row).height = 30;
+        rowPar = row;
+      }
+
       if (row === 4 || row === 5 || row === 7 || row > endRow - 2) {
         cell.font = {
           bold: true,
         };
       }
+    }
+    for (let col = startColumn; col <= endColumn; col++) {
+      const cell = worksheet.getCell(rowPar, col);
+
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'F79646' },
+      };
     }
   }
 }

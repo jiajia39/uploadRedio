@@ -364,9 +364,9 @@ const controller = (() => {
     }),
   );
   router.get(
-    '/total/energy/consumption/excel/save/month/report2',
+    '/total/energy/consumption/excel/save/day/report',
     catchAsync(async (req, res) => {
-     await reportService.saveDayExcel();
+      await reportService.saveDayExcel();
       res.json({
         message: '成功',
       });
@@ -938,7 +938,7 @@ const controller = (() => {
     }),
   );
 
-    /**
+  /**
    * @swagger
    * /api/pems/reporting/yesterdayConsumption:
    *   get:
@@ -959,13 +959,13 @@ const controller = (() => {
    *         schema:
    *           type: object
    */
-    router.get(
-      '/yesterdayConsumption',
-      catchAsync(async (req, res) => {
-        const data = await reportService.getYesterdayEnergyConsumption(req);
-        res.json(data);
-      }),
-    );
+  router.get(
+    '/yesterdayConsumption',
+    catchAsync(async (req, res) => {
+      const data = await reportService.getYesterdayEnergyConsumption(req);
+      res.json(data);
+    }),
+  );
 
   return router;
 })();
