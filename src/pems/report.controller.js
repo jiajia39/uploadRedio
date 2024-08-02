@@ -360,7 +360,10 @@ const controller = (() => {
   router.get(
     '/total/energy/consumption/excel/save/month/report',
     catchAsync(async (req, res) => {
-      reportService.saveExcel();
+      await reportService.saveExcel();
+      res.json({
+        message: '成功',
+      });
     }),
   );
   router.get(

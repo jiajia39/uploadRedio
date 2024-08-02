@@ -1,28 +1,27 @@
 variables:
   GIT_CLEAN_FLAGS: -f -e node_modules/**
   PUBLIC_KEY: /root/.ssh/raiadkey/AzureVM02_key.pem
-  PORT: 3001
+  PORT: 3000
   TARGET_FOLDER: /home/raiad/node/trz_pems_backend/
 
 stages:
-    - build
-    # - deploy
+  - build
+  # - deploy
 
 build:
-    stage: build
-    script:
-        - echo 'Start Building'
-        - npm install
-        - npm run build
-    artifacts:
-        paths:
-            - dist/
-        expire_in: 7 days
-    only:
-        - master
-    tags:
-        - IADDEV01
-
+  stage: build
+  script:
+    - echo 'Start Building'
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 7 days
+  only:
+    - master
+  tags:
+    - IADDEV01
 # deploy:
 #     stage: deploy
 #     script:
