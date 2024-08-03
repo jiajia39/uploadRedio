@@ -68,7 +68,9 @@ const controller = (() => {
    */
   router.post('/UserRegister', async (req, res) => {
     const { username, password, email, phone } = req.body;
-    const userexist = await prisma.Sys_User.findFirst({
+
+    // Check if the user already exists
+    const userexist = await prisma.sys_user.findFirst({
       where: {
         username,
       },
@@ -81,11 +83,13 @@ const controller = (() => {
       return;
     }
 
+    // Generate a random salt and hash the password
     const csalt = uuidv4().toLowerCase();
     const hash256 = crypto.createHash('sha256');
     hash256.update(password + csalt, 'utf8');
     const passwordHash = hash256.digest('base64');
 
+    // Call the stored procedure to register the user
     const rst = await prisma.$queryRaw`exec usp_User_Register ${username},${email},${csalt}, ${passwordHash}, ${phone}`;
 
     if (rst != null && rst.length > 0) {
@@ -138,86 +142,84 @@ const controller = (() => {
    */
   router.post('/Authenticate', async (req, res) => {
     const { username, password } = req.body;
-    try {
-      const user = await prisma.Sys_User.findFirst({
-        where: {
-          username,
-        },
-      }).catch(e => {
-        console.error(e);
-      });
-      if (user == null) {
-        res.status(200).json({ isok: false, message: '用户不存在' });
-        return;
-      }
-      const hash256 = crypto.createHash('sha256');
-      const pwdsha256 = await hash256
-        .update(password + user.salt.toLowerCase(), 'utf8')
-        .digest('base64');
-      const passwordsMatch = pwdsha256 === user.passwordHash;
+    // try {
+    const user = await prisma.sys_user.findFirst({
+      where: {
+        username,
+      },
+    })
+    //   .catch(e => {
+    //   console.error(e);
+    // });
+    console.log("user", user);
+    if (user == null) {
+      res.status(200).json({ isok: false, message: '用户不存在' });
+      return;
+    }
+    const hash256 = crypto.createHash('sha256');
+    const pwdsha256 = await hash256
+      .update(password + user.salt.toLowerCase(), 'utf8')
+      .digest('base64');
+    const passwordsMatch = pwdsha256 === user.passwordHash;
 
-      if (passwordsMatch) {
-        const payload = {
+    if (passwordsMatch) {
+      const payload = {
+        username: user.username,
+        // timestamp second
+        exp: Date.now() / 1000 + 6 * 60,
+      };
+
+      req.login(payload, { session: false }, async error => {
+        if (error) res.status(400).json({ message: error });
+        // TODO: expiresIn
+        const accessToken = jwt.sign(JSON.stringify(payload), SECRET_KEY, {
+          header: {
+            typ: 'JWT',
+          },
+        });
+
+        const nguser = {
+          id: user.id,
+          userid: user.userid,
           username: user.username,
-
-          // TODO: remove it
-          expires: Date.now() + 5 * 60 * 1000,
+          name: (user.lastname || '') + (user.firstname || ' '),
+          avatar: user.avatar,
+          email: user.email,
+          token: accessToken,
+          expired: Date.now() + 5 * 60 * 1000,
+          role: user.role ?? 'user',
         };
 
-        req.login(payload, { session: false }, async error => {
-          if (error) res.status(400).json({ message: error });
-          // TODO: expiresIn
-          const accessToken = jwt.sign(JSON.stringify(payload), SECRET_KEY, {
-            // expiresIn: 360000,
-          });
+        const ngtoken = {
+          token: accessToken,
+          expired: Date.now() + 5 * 60 * 1000,
+        };
 
-          // TODO: refreshToken
-          const refreshToken = service.generateRefreshToken(user, req.ip);
-
-          const nguser = {
-            id: user.id,
-            userid: user.userid,
-            username: user.username,
-            name: (user.lastname || '') + (user.firstname || ' '),
-            avatar: user.avatar,
-            email: user.email,
-            token: accessToken,
-            expired: Date.now() + 6 * 60 * 1000,
-            role: user.role ?? 'user',
-          };
-
-          const ngtoken = {
-            token: accessToken,
-            expired: Date.now() + 6 * 60 * 1000,
-          };
-
-          res.json({
-            isok: true,
-            nguser,
-            ngtoken,
-            refreshToken,
-            message: '登录成功',
-          });
+        res.json({
+          isok: true,
+          nguser,
+          ngtoken,
+          message: '登录成功',
         });
-      } else {
-        res.status(200).json({ isok: false, message: 'Incorrect Username / Password' });
-      }
-    } catch (error) {
-      res.status(400).json({ isok: false, message: error });
+      });
+    } else {
+      res.status(200).json({ isok: false, message: 'Incorrect Username / Password' });
     }
+    // } catch (error) {
+    //   res.status(400).json({ isok: false, message: error });
+    // }
   });
 
   router.get('/AuthByKeyCloakAndAutoGen', async (req, res) => {
     const { username } = req.query;
     try {
-      const userexist = await prisma.Sys_User.findFirst({
+      const userexist = await prisma.sys_user.findFirst({
         where: {
           username,
         },
       });
       if (userexist != null) {
         // TODO: refreshToken
-        const refreshToken = service.generateRefreshToken(userexist, req.ip);
 
         const nguser = {
           id: userexist.id,
@@ -227,20 +229,19 @@ const controller = (() => {
           avatar: userexist.avatar,
           email: userexist.email,
           token: '',
-          expired: Date.now() + 6 * 60 * 1000,
+          expired: Date.now() + 5 * 60 * 1000,
           role: userexist.role ?? 'user',
         };
 
         const ngtoken = {
           token: '',
-          expired: Date.now() + 6 * 60 * 1000,
+          expired: Date.now() + 5 * 60 * 1000,
         };
 
         res.json({
           isok: true,
           nguser,
           ngtoken,
-          refreshToken,
           message: '登录成功',
         });
 
@@ -250,11 +251,21 @@ const controller = (() => {
       const hash256 = crypto.createHash('sha256');
       const passwordHash = await hash256.update(`123456${csalt}`, 'utf8').digest('base64');
       const email = `${username}@raopc.com`;
-      const userNew = await prisma.Sys_User.create({ username, password: passwordHash, email });
 
-      const refreshToken = service.generateRefreshToken(userNew, req.ip);
+      const userNew = await prisma.$queryRaw`exec usp_User_Register ${username},${email},${csalt}, ${passwordHash}, ''`;
 
-      const userRegistered = await prisma.Sys_User.findFirst({
+      // Automatic Register
+      if (userNew != null && userNew.length > 0) {
+        if (!userNew[0].isOK) {
+          res.status(200).json({ isok: false, message: userNew[0].cErrorMessage });
+          return;
+        }
+      } else {
+        res.status(200).json({ isok: false, message: 'DB Error' });
+        return;
+      }
+
+      const userRegistered = await prisma.sys_user.findFirst({
         where: {
           username,
         },
@@ -267,20 +278,19 @@ const controller = (() => {
         avatar: userRegistered.avatar,
         email: userRegistered.email,
         token: '',
-        expired: Date.now() + 6 * 60 * 1000,
+        expired: Date.now() + 5 * 60 * 1000,
         role: userRegistered.role ?? 'user',
       };
 
       const ngtoken = {
         token: '',
-        expired: Date.now() + 6 * 60 * 1000,
+        expired: Date.now() + 5 * 60 * 1000,
       };
 
       res.json({
         isok: true,
         nguser,
         ngtoken,
-        refreshToken,
         message: '登录成功',
       });
     } catch (error) {
@@ -315,7 +325,7 @@ const controller = (() => {
     const { userid } = req.query;
 
     try {
-      const userRst = await prisma.Sys_User.findFirst({
+      const userRst = await prisma.sys_user.findFirst({
         where: {
           userid,
         },
@@ -327,20 +337,16 @@ const controller = (() => {
 
       const payload = {
         username: userRst.username,
-
-        // TODO: remove it
-        expires: Date.now() + 5 * 60 * 1000,
+        // timestamp second
+        exp: Date.now() / 1000 + 6 * 60,
       };
 
       req.login(payload, { session: false }, async error => {
         if (error) res.status(400).json({ message: error });
         // TODO: expiresIn
         const accessToken = jwt.sign(JSON.stringify(payload), SECRET_KEY, {
-          // expiresIn: 360000,
+          header: { typ: 'JWT' },
         });
-
-        // TODO: refreshToken
-        // const refreshToken = service.generateRefreshToken(user, req.ip);
 
         const user = {
           id: userRst.id,
@@ -468,12 +474,15 @@ const controller = (() => {
   router.get('/getabilitybyrolename', async (req, res) => {
     const { role } = req.query;
 
+    // Find the role based on the given role name
     const rowdata = await prisma.Sys_Role.findFirst({
       where: {
         cRoleName: role,
       },
     });
+
     if (rowdata != null) {
+      // Find the role menu entries where bSelect is true for the given role
       const data = await prisma.Sys_RoleMenu.findMany({
         where: {
           AND: { cRoleGuid: rowdata.cGuid, bSelect: true },
@@ -482,7 +491,10 @@ const controller = (() => {
           ability: true,
         },
       });
+
+      // Extract the ability values from the retrieved data
       const ability = data.map(item => item.ability);
+
       res.json({ ability, message: 'Data obtained.' });
     } else {
       res.json({ message: 'Data empty.' });
@@ -567,15 +579,15 @@ const controller = (() => {
    *           type: object
    */
   router.put('/item/:cGuid', async (req, res) => {
-    const message = await prisma.Sys_User.update({
+    const message = await prisma.sys_user.update({
       where: {
         cGuid_userid: {
-          cGuid: req.params.cGuid,
-          userid: req.query.userid,
+          cGuid: req.params.cGuid, // Retrieve the cGuid from the request parameters
+          userid: req.query.userid, // Retrieve the userid from the query parameters
         },
       },
-      data: req.body,
-    }).then(() => 'SysRole updated');
+      data: req.body, // Update the record with the data from the request body
+    }).then(() => 'SysRole updated'); // Return the string 'SysRole updated' after the update is successful
 
     res.json({ isok: true, message });
   });
@@ -621,7 +633,7 @@ const controller = (() => {
     const { userid, orgpwd, newpwd } = req.body;
 
     try {
-      const user = await prisma.Sys_User.findFirst({ where: { userid } });
+      const user = await prisma.sys_user.findFirst({ where: { userid } });
       if (user == null) {
         res.status(200).json({ isok: false, message: '用户不存在' });
         return;
@@ -639,7 +651,7 @@ const controller = (() => {
           .update(newpwd + user.salt.toLowerCase(), 'utf8')
           .digest('base64');
         user.password = passwordHash;
-        await prisma.Sys_User.update({
+        await prisma.sys_user.update({
           where: {
             cGuid_userid: {
               cGuid: user.cGuid,
@@ -700,7 +712,7 @@ const controller = (() => {
     const { userid } = req.body;
 
     try {
-      const user = await prisma.Sys_User.findFirst({ where: { userid } });
+      const user = await prisma.sys_user.findFirst({ where: { userid } });
       if (user == null) {
         res.status(200).json({ isok: false, message: '用户不存在' });
         return;
@@ -712,7 +724,7 @@ const controller = (() => {
         .update(`123456${user.salt.toLowerCase()}`, 'utf8')
         .digest('base64');
       user.password = passwordHash;
-      await prisma.Sys_User.update({
+      await prisma.sys_user.update({
         where: {
           cGuid_userid: {
             cGuid: user.cGuid,
@@ -738,7 +750,7 @@ const controller = (() => {
    *     produces:
    *       - application/json
    *     parameters:
-   *       - name: role
+   *       - name: username
    *         description: user's name.
    *         in: query
    *         type: string
@@ -750,7 +762,7 @@ const controller = (() => {
    */
   router.get('/UserExists', async (req, res) => {
     const { username } = req.query;
-    const user = await prisma.Sys_User.findFirst({ where: { username } });
+    const user = await prisma.sys_user.findFirst({ where: { username } });
     if (user == null) {
       res.status(200).json({ isok: false, message: '用户不存在' });
     } else {
@@ -818,7 +830,7 @@ const controller = (() => {
    *           type: object
    */
   router.get('/item/:userid', async (req, res) => {
-    const data = await prisma.Sys_User.findFirst({ where: { userid: req.params.userid } });
+    const data = await prisma.sys_user.findFirst({ where: { userid: req.params.userid } });
     res.json({ data, message: 'Data obtained.' });
   });
 

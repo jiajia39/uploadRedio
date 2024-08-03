@@ -88,14 +88,14 @@ if (NODE_ENV === 'production') {
   app.use(Sentry.Handlers.errorHandler());
 }
 
-// Node Cron to schedule the specific job
-const scheduledFunction = require('./schedule/service');
-scheduledFunction.initScheduledJobs();
+// // Node Cron to schedule the specific job
+// const scheduledFunction = require('./schedule/service');
+// scheduledFunction.initScheduledJobs();
 
 // 验证token
 // 错误中间件
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   console.log(err);
   if (err.name === 'UnauthorizedError') {
     res.status(401).send('invalid token...');

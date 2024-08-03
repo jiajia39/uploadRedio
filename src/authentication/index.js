@@ -1,9 +1,11 @@
-import controller from './controller';
+import auth from './auth.controller';
+import mini from './mini.controller';
 import service from './service';
 
 export const Authentication = {
-  controller,
   service,
 };
-
-export default controller;
+export default {
+  auth,
+  mini,
+};

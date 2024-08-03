@@ -3,14 +3,11 @@ import enableWs from '@small-tech/express-ws';
 
 import { INDEX_NAME } from '~/env';
 import helloWorld from '~/hello-world';
-import crudOperations from '~/crud-operations';
 import sys from '~/sys';
-import cofco from '~/cofco';
+import apm from '~/apm';
 import authentication from '~/authentication';
 import fileUploads from '~/file-uploads';
-import realtimeData from '~/realtime-data';
-import influx from '~/influx';
-import pems from '~/pems';
+import miniprogram from '~/miniprogram';
 
 const router = Router();
 enableWs(router);
@@ -20,8 +17,8 @@ router.get('/', (req, res) => {
 });
 
 router.use(helloWorld.prefix, helloWorld);
-router.use(crudOperations.prefix, crudOperations);
-router.use(authentication.prefix, authentication);
+router.use(authentication.auth.prefix, authentication.auth);
+router.use(authentication.mini.prefix, authentication.mini);
 router.use(sys.sys.prefix, sys.sys);
 router.use(sys.syslog.prefix, sys.syslog);
 router.use(sys.sysmenu.prefix, sys.sysmenu);
@@ -30,17 +27,12 @@ router.use(sys.sysrole.prefix, sys.sysrole);
 router.use(sys.sysdictionary.prefix, sys.sysdictionary);
 router.use(sys.sysrolemenu.prefix, sys.sysrolemenu);
 router.use(fileUploads.prefix, fileUploads);
-router.use(realtimeData.prefix, realtimeData);
-router.use(cofco.prodsummary.prefix, cofco.prodsummary);
-router.use(cofco.prodkpi.prefix, cofco.prodkpi);
-router.use(influx.influxman.prefix, influx.influxman);
-router.use(pems.meterPosition.prefix, pems.meterPosition);
-router.use(pems.meter.prefix, pems.meter);
-router.use(pems.meterValues.prefix, pems.meterValues);
-router.use(pems.energyFees.prefix, pems.energyFees);
-router.use(pems.report.prefix, pems.report);
-router.use(pems.meterProductionLine.prefix, pems.meterProductionLine);
-router.use(pems.energySubstitute.prefix, pems.energySubstitute);
-router.use(pems.shift.prefix, pems.shift);
-router.use(pems.meterRecording.prefix, pems.meterRecording);
+
+router.use(apm.attachments.prefix, apm.attachments);
+
+// 维护管理上传附件
+router.use(apm.apmfile.prefix, apm.apmfile);
+
+router.use(miniprogram.attachments.prefix, miniprogram.attachments)
+router.use(miniprogram.miniprogramauthenticate.prefix, miniprogram.miniprogramauthenticate)
 export default router;

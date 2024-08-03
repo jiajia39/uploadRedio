@@ -25,7 +25,7 @@ This seed repository provides the following features:
 - [x] Automatically restart application with [**Nodemon**](https://github.com/remy/nodemon).
 - [x] Keeping application alive with [**PM2**](https://github.com/Unitech/pm2).
 - [x] Reverse proxy with [**Caddy**](https://caddyserver.com/).
-- [x] Swagger3.0 Tool [**Swagger**] (https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md)
+- [x] Swagger3.0 Tool [**Swagger**](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md)
 - ---------- **Environments** ----------
 - [x] Cloud application hosting with [**Heroku**](https://www.heroku.com/).
 - [x] MSSQL database .
@@ -167,7 +167,6 @@ export const PORT = process.env.PORT || 3000;
 
 export const SECRET_KEY = process.env.SECRET_KEY || 'jbmpHPLoaV8N0nEpuLxlpT95FYakMPiu';
 
-
 // ---
 
 export const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID || 'XXX';
@@ -257,7 +256,6 @@ $ npm install babel-plugin-transform-inline-environment-variables env-cmd -D
 - [CRUD Operations](./src/crud-operations)
 - [Authentication](./src/authentication)
 - [File Uploads](./src/file-uploads)
-- [Realtime Data](./src/realtime-data)
 
 ## Directory Structure
 
